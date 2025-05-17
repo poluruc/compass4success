@@ -3,8 +3,8 @@
 ## Completed
 - Updated AnalyticsView.swift to remove duplicate chart components
 - Created SubjectPerformanceChart.swift in the Components directory
-- Fixed ClassAnalyticsViewV2.swift to use UIKit import
-- Renamed StatCard to ClassStatCard in ClassAnalyticsViewV2.swift
+- Fixed ClassAnalyticsView.swift to use UIKit import
+- Renamed StatCard to ClassStatCard in ClassAnalyticsView.swift
 - Made AddStudentView initializer public
 - Added typealias Class = SchoolClass in ClassService.swift
 - Created documentation for chart components

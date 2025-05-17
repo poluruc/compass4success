@@ -113,7 +113,7 @@ The project is currently in the **Alpha Stage with Most Build Issues Fixed** wit
 - ✅ Added @available attributes for macOS 12.0+ compatibility in SettingsView
 - ✅ Implemented platform-specific code paths for UI components with #if os(iOS)/#else
 - ✅ Created BatchExportView for handling batch exports
-- ✅ Replaced ClassAnalyticsView with ClassAnalyticsViewV2
+- ✅ Replaced ClassAnalyticsView with ClassAnalyticsView
 - ✅ Fixed ExportSettingsView with proper import handling
 - ✅ Added conditional Chart imports and availability checks
 - ✅ Created platform-specific picker sheets with EnvironmentObject injection
@@ -124,7 +124,7 @@ The project is currently in the **Alpha Stage with Most Build Issues Fixed** wit
 - ✅ Fixed duplicate picker sheet definitions in AnalyticsView
 - ✅ Fixed totalAssignments property redeclaration in Student.swift
 - ✅ Removed duplicate ClassAnalyticsView definition in AnalyticsView.swift
-- ✅ Updated AnalyticsPreviewProvider to use ClassAnalyticsViewV2
+- ✅ Updated AnalyticsPreviewProvider to use ClassAnalyticsView
 - ✅ Verified StatCard component uses ColorHelper correctly
 - ✅ Verified shareFile function has proper cross-platform implementation
 - ✅ Added explicit coding keys to SubmissionExport struct to fix Codable conformance
