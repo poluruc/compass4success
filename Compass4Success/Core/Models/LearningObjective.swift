@@ -6,7 +6,7 @@ class LearningObjective: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var code: String = ""
     @Persisted var title: String = ""
-    @Persisted var description: String = ""
+    @Persisted var objectiveDescription: String = "" // Renamed to avoid conflict with Object.description
     @Persisted var subject: String = ""
     @Persisted var gradeLevel: String = ""
     @Persisted var domain: String = ""
@@ -45,7 +45,7 @@ class LearningObjective: Object, Identifiable {
         self.init()
         self.code = code
         self.title = title
-        self.description = description
+        self.objectiveDescription = description
         self.subject = subject
         self.gradeLevel = gradeLevel
         self.domain = domain

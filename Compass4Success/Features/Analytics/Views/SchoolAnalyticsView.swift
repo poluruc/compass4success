@@ -1,10 +1,11 @@
 import SwiftUI
 import Charts
 
+@available(macOS 13.0, iOS 16.0, *)
 struct SchoolAnalyticsView: View {
     private let analyticsService = AnalyticsService()
     @State private var isLoading = false
-    @State private var selectedTimeFrame: AnalyticsView.TimeFrame = .semester
+    @State private var selectedTimeFrame: AnalyticsTimeFrame = .semester
     @State private var selectedMetric = SchoolMetric.gradeDistribution
     
     // Mock data
@@ -58,8 +59,7 @@ struct SchoolAnalyticsView: View {
             .padding(.vertical)
         }
         .navigationTitle("School Analytics")
-        .navigationBarTitleDisplayMode(.inline)
-        .overlay(
+        .platformSpecificTitleDisplayMode()    .overlay(
             isLoading ? LoadingOverlay() : nil
         )
         .onAppear {
@@ -163,7 +163,7 @@ struct SchoolAnalyticsView: View {
             
             Spacer()
             
-            ForEach(AnalyticsView.TimeFrame.allCases, id: \.self) { timeFrame in
+            ForEach(AnalyticsTimeFrame.allCases, id: \.self) { timeFrame in
                 Button(action: {
                     withAnimation {
                         selectedTimeFrame = timeFrame
@@ -502,6 +502,7 @@ struct AttendanceStatCard: View {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct SchoolAnalyticsView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {

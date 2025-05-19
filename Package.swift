@@ -5,7 +5,7 @@ let package = Package(
     name: "Compass4Success",
     platforms: [
         .iOS(.v16),
-        .macOS(.v11)
+        .macOS(.v12)
     ],
     products: [
         .library(
@@ -48,7 +48,7 @@ let package = Package(
         .testTarget(
             name: "Compass4SuccessTests",
             dependencies: ["Compass4Success"],
-            path: "Tests/Compass4SuccessTests"
+            path: "Compass4SuccessTests"
         )
     ]
 )

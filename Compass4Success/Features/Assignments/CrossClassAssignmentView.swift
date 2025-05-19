@@ -2,12 +2,13 @@ import SwiftUI
 import Combine
 
 struct CrossClassAssignmentView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var classService: ClassService
+    
     @State private var selectedClasses = Set<String>()
-    @State private var classes: [SchoolClass] = []
-    @State private var isLoading = false
     @State private var searchText = ""
+    @State private var isSubmitting = false
+    @State private var isShowingConfirmation = false
     @State private var errorMessage: String?
     
     var assignment: Assignment
@@ -16,156 +17,143 @@ struct CrossClassAssignmentView: View {
     var body: some View {
         NavigationView {
             Group {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if classes.isEmpty {
-                    ContentUnavailableView(
-                        "No Classes Available",
-                        systemImage: "book.closed",
-                        description: Text("There are no other classes to assign this assignment to.")
-                    )
+                if isSubmitting {
+                    LoadingOverlay(message: "Publishing assignment to selected classes...")
                 } else {
-                    List {
-                        ForEach(filteredClasses) { schoolClass in
-                            ClassRow(
-                                schoolClass: schoolClass,
-                                isSelected: selectedClasses.contains(schoolClass.id),
-                                onToggle: { isSelected in
-                                    if isSelected {
-                                        selectedClasses.insert(schoolClass.id)
-                                    } else {
+                    VStack {
+                        // Class list with checkboxes
+                        List {
+                            ForEach(filteredClasses) { schoolClass in
+                                ClassSelectionRow(
+                                    schoolClass: schoolClass,
+                                    isSelected: selectedClasses.contains(schoolClass.id)
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if selectedClasses.contains(schoolClass.id) {
                                         selectedClasses.remove(schoolClass.id)
+                                    } else {
+                                        selectedClasses.insert(schoolClass.id)
                                     }
                                 }
-                            )
+                            }
                         }
+                        .searchable(text: $searchText, prompt: "Search classes")
+                        
+                        // Summary and submit button at the bottom
+                        VStack(spacing: 16) {
+                            Text("\(selectedClasses.count) classes selected")
+                                .foregroundColor(.secondary)
+                            
+                            Button(action: {
+                                isShowingConfirmation = true
+                            }) {
+                                Text("Publish to Selected Classes")
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(selectedClasses.isEmpty ? Color.gray : Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(selectedClasses.isEmpty)
+                            .padding(.horizontal)
+                        }
+                        .padding()
+                        .background(Color(.systemBackground))
                     }
-                    .searchable(text: $searchText, prompt: "Search classes")
                 }
             }
-            .navigationTitle("Assign to Classes")
+            .navigationTitle("Publish to Classes")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        presentationMode.wrappedValue.dismiss()
                     }
                 }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Assign") {
-                        assignToClasses()
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
                     }
-                    .disabled(selectedClasses.isEmpty)
                 }
+                #endif
             }
-            .alert(
-                "Error",
-                isPresented: .init(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                ),
-                actions: { Button("OK") {} },
-                message: { Text(errorMessage ?? "") }
-            )
-        }
-        .onAppear {
-            loadClasses()
+            .alert(isPresented: $isShowingConfirmation) {
+                Alert(
+                    title: Text("Confirm Publication"),
+                    message: Text("Are you sure you want to publish \"\(assignment.title)\" to \(selectedClasses.count) classes?"),
+                    primaryButton: .default(Text("Publish")) {
+                        publishAssignment()
+                    },
+                    secondaryButton: .cancel()
+                )
+            }
         }
     }
     
     private var filteredClasses: [SchoolClass] {
         if searchText.isEmpty {
-            return classes
+            return classService.classes
         } else {
-            return classes.filter { schoolClass in
-                schoolClass.name.localizedCaseInsensitiveContains(searchText) ||
-                schoolClass.courseCode.localizedCaseInsensitiveContains(searchText)
+            return classService.classes.filter { schoolClass in
+                schoolClass.name.lowercased().contains(searchText.lowercased()) ||
+                (!schoolClass.courseCode.isEmpty && 
+                    schoolClass.courseCode.lowercased().contains(searchText.lowercased()))
             }
         }
     }
     
-    private func loadClasses() {
-        isLoading = true
-        
-        // In a real app, you would fetch classes from a service
-        // Here we'll create mock data
-        let mockClasses = [
-            SchoolClass(id: "1", name: "Algebra I", courseCode: "MATH101", gradeLevel: "9"),
-            SchoolClass(id: "2", name: "Biology", courseCode: "SCI101", gradeLevel: "9"),
-            SchoolClass(id: "3", name: "World History", courseCode: "HIST101", gradeLevel: "9"),
-            SchoolClass(id: "4", name: "English Literature", courseCode: "ENG101", gradeLevel: "9"),
-            SchoolClass(id: "5", name: "Physical Science", courseCode: "SCI201", gradeLevel: "10"),
-            SchoolClass(id: "6", name: "Geometry", courseCode: "MATH201", gradeLevel: "10"),
-            SchoolClass(id: "7", name: "Computer Science", courseCode: "CS101", gradeLevel: "11-12"),
-            SchoolClass(id: "8", name: "Art History", courseCode: "ART301", gradeLevel: "11-12")
-        ]
-        
-        // Filter out the class that the assignment is already assigned to
-        let filteredClasses = mockClasses.filter { $0.id != assignment.classId }
+    private func publishAssignment() {
+        // This would be an API call in a real app
+        isSubmitting = true
         
         // Simulate network delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.classes = filteredClasses
-            self.isLoading = false
-        }
-    }
-    
-    private func assignToClasses() {
-        isLoading = true
-        
-        // In a real app, you would save this data to a backend service
-        print("Assigning assignment '\(assignment.title)' to \(selectedClasses.count) classes")
-        
-        // Simulate network request
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.isLoading = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isSubmitting = false
             
-            // Simulate successful assignment
+            // Success callback
+            presentationMode.wrappedValue.dismiss()
             onComplete(.success(true))
-            dismiss()
-            
-            // Or simulate an error (uncomment to test)
-            // self.errorMessage = "Failed to assign to all classes. Please try again."
         }
     }
 }
 
-struct ClassRow: View {
+struct ClassSelectionRow: View {
     let schoolClass: SchoolClass
     let isSelected: Bool
-    let onToggle: (Bool) -> Void
     
     var body: some View {
-        Button(action: {
-            onToggle(!isSelected)
-        }) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(schoolClass.name)
-                        .font(.headline)
-                    
-                    Text("\(schoolClass.courseCode) • Grade \(schoolClass.gradeLevel)")
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(schoolClass.name)
+                    .font(.headline)
+                
+                if !schoolClass.courseCode.isEmpty {
+                    Text(schoolClass.courseCode)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                
-                Spacer()
-                
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isSelected ? .blue : .gray)
             }
-            .contentShape(Rectangle())
+            
+            Spacer()
+            
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .foregroundColor(.blue)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 8)
     }
 }
 
 // Preview provider
 struct CrossClassAssignmentView_Previews: PreviewProvider {
     static var previews: some View {
-        let mockAssignment = Assignment(id: "1", title: "Math Quiz", dueDate: Date().addingTimeInterval(86400), description: "Chapter 5 Quiz", submissions: [])
+        let mockAssignment = Assignment(id: "1", title: "Math Quiz", dueDate: Date().addingTimeInterval(86400), assignmentDescription: "Chapter 5 Quiz")
         mockAssignment.classId = "1"
         
         return CrossClassAssignmentView(assignment: mockAssignment) { result in

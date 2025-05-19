@@ -123,6 +123,7 @@ struct CurriculumView: View {
             }
             .navigationTitle("Curriculum Standards")
             .searchable(text: $searchText, prompt: "Search Standards")
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -132,6 +133,17 @@ struct CurriculumView: View {
                     .disabled(selectedStandards.isEmpty)
                 }
             }
+            #else
+            .toolbar {
+                ToolbarItem {
+                    Button("Done") {
+                        // Handle saving selected standards
+                        print("Selected \(selectedStandards.count) standards")
+                    }
+                    .disabled(selectedStandards.isEmpty)
+                }
+            }
+            #endif
             .sheet(isPresented: $showingAddCustomStandardSheet) {
                 CustomStandardView(onSave: { id, description in
                     // Handle saving custom standard
@@ -162,7 +174,9 @@ struct CustomStandardView: View {
                 }
             }
             .navigationTitle("Add Custom Standard")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {

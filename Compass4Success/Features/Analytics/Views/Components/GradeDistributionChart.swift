@@ -1,6 +1,9 @@
 import SwiftUI
 import Charts
 
+import Foundation
+
+@available(macOS 13.0, iOS 16.0, *)
 struct GradeDistributionChart: View {
     var data: [ChartDataPoint]
     var showLegend: Bool = true
@@ -74,6 +77,7 @@ struct GradeDistributionChart: View {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct GradeDistributionChart_Previews: PreviewProvider {
     static var previews: some View {
         GradeDistributionChart(data: [
@@ -84,6 +88,7 @@ struct GradeDistributionChart_Previews: PreviewProvider {
             ChartDataPoint(label: "F (0-59%)", value: 3)
         ])
         .padding()
-        .previewLayout(.sizeThatFits)
+        .frame(width: 350, height: 400)
+        .previewDisplayName("Grade Distribution Chart")
     }
 }

@@ -1,5 +1,22 @@
 import SwiftUI
 
+
+enum AnalyticsType: String, CaseIterable {
+    case performance = "Performance"
+    case attendance = "Attendance"
+    case behavior = "Behavior"
+    case engagement = "Engagement"
+    
+    var icon: String {
+        switch self {
+        case .performance: return "chart.bar.fill"
+        case .attendance: return "person.fill.checkmark"
+        case .behavior: return "hand.raised.fill"
+        case .engagement: return "person.3.fill"
+        }
+    }
+}
+
 // Helper sheets for picking various analytics-related options
 struct PickerSheets {
     
@@ -53,7 +70,7 @@ struct PickerSheets {
                     }
                 }
                 .navigationTitle("Select Class")
-                .navigationBarTitleDisplayMode(.inline)
+                .platformSpecificTitleDisplayMode()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
@@ -110,7 +127,7 @@ struct PickerSheets {
                     }
                 }
                 .navigationTitle("Select Grade Level")
-                .navigationBarTitleDisplayMode(.inline)
+                .platformSpecificTitleDisplayMode()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
@@ -124,13 +141,13 @@ struct PickerSheets {
     
     struct TimeFramePickerSheet: View {
         @Environment(\.dismiss) private var dismiss
-        @Binding var selectedTimeFrame: AnalyticsView.TimeFrame
+        @Binding var selectedTimeFrame: AnalyticsTimeFrame
         
         var body: some View {
             NavigationView {
                 List {
                     Section(header: Text("Time Frame")) {
-                        ForEach(AnalyticsView.TimeFrame.allCases, id: \.self) { timeFrame in
+                        ForEach(AnalyticsTimeFrame.allCases, id: \.self) { timeFrame in
                             Button {
                                 selectedTimeFrame = timeFrame
                                 dismiss()
@@ -151,7 +168,7 @@ struct PickerSheets {
                     }
                 }
                 .navigationTitle("Select Time Frame")
-                .navigationBarTitleDisplayMode(.inline)
+                .platformSpecificTitleDisplayMode()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
@@ -165,13 +182,13 @@ struct PickerSheets {
     
     struct AnalyticsTypePickerSheet: View {
         @Environment(\.dismiss) private var dismiss
-        @Binding var selectedAnalyticsType: AnalyticsView.AnalyticsType
+        @Binding var selectedAnalyticsType: AnalyticsViewType
         
         var body: some View {
             NavigationView {
                 List {
                     Section(header: Text("Analytics Type")) {
-                        ForEach(AnalyticsView.AnalyticsType.allCases, id: \.self) { type in
+                        ForEach(AnalyticsViewType.allCases, id: \.self) { type in
                             Button {
                                 selectedAnalyticsType = type
                                 dismiss()
@@ -197,7 +214,7 @@ struct PickerSheets {
                     }
                 }
                 .navigationTitle("Select Analytics Type")
-                .navigationBarTitleDisplayMode(.inline)
+                .platformSpecificTitleDisplayMode()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
@@ -207,5 +224,22 @@ struct PickerSheets {
                 }
             }
         }
+    }
+}
+
+// Helper extension to handle navigationBarTitleDisplayMode differences between iOS and macOS
+extension View {
+    @ViewBuilder
+    func platformSpecificTitleDisplayMode() -> some View {
+        #if os(iOS)
+        if #available(iOS 14.0, *) {
+            self.navigationBarTitleDisplayMode(.inline)
+        } else {
+            self
+        }
+        #else
+        // macOS doesn't support navigationBarTitleDisplayMode
+        self
+        #endif
     }
 }

@@ -20,14 +20,21 @@ struct Compass4SuccessApp: App {
     
     var body: some Scene {
         WindowGroup {
-            MainContentView()
-                .environmentObject(authService)
-                .environmentObject(classService)
+            if #available(macOS 13.0, iOS 16.0, *) {
+                MainContentView()
+                    .environmentObject(authService)
+                    .environmentObject(classService)
+            } else {
+                // Fallback for older OS versions
+                Text("This app requires macOS 13.0/iOS 16.0 or later")
+                    .padding()
+            }
         }
     }
 }
 
 // Main content view that handles authentication state
+@available(macOS 13.0, iOS 16.0, *)
 struct MainContentView: View {
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var classService: ClassService
@@ -83,7 +90,7 @@ struct MainContentView: View {
                     }
                     
                     NavigationView {
-                        GradebookView(classService: classService)
+                        GradebookView()
                             .onAppear {
                                 selectedTab = 4
                             }
@@ -104,6 +111,10 @@ struct MainContentView: View {
                         Label("Settings", systemImage: "gear")
                     }
                 }
+                .accentColor(.blue)
+                #if os(iOS)
+                .edgesIgnoringSafeArea(.top)
+                #endif
             } else {
                 LoginView()
             }

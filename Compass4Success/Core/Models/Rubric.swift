@@ -5,7 +5,7 @@ import RealmSwift
 class Rubric: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var title: String = ""
-    @Persisted var description: String = ""
+    @Persisted var rubricDescription: String = "" // Renamed to avoid conflict with Object.description
     @Persisted var createdAt: Date = Date()
     @Persisted var updatedAt: Date = Date()
     @Persisted var createdBy: String = ""
@@ -17,7 +17,7 @@ class Rubric: Object, Identifiable {
     convenience init(title: String, description: String, criteria: [RubricCriterion] = []) {
         self.init()
         self.title = title
-        self.description = description
+        self.rubricDescription = description
         
         let criteriaList = List<RubricCriterion>()
         criteria.forEach { criteriaList.append($0) }
@@ -37,7 +37,7 @@ class Rubric: Object, Identifiable {
 class RubricCriterion: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var title: String = ""
-    @Persisted var description: String = ""
+    @Persisted var criterionDescription: String = "" // Renamed to avoid conflict with Object.description
     @Persisted var weight: Double = 1.0
     @Persisted var maxScore: Int = 4
     @Persisted var levels = List<RubricLevel>()
@@ -46,7 +46,7 @@ class RubricCriterion: Object, Identifiable {
     convenience init(title: String, description: String, maxScore: Int = 4, levels: [RubricLevel] = []) {
         self.init()
         self.title = title
-        self.description = description
+        self.criterionDescription = description
         self.maxScore = maxScore
         
         let levelsList = List<RubricLevel>()
@@ -59,14 +59,14 @@ class RubricCriterion: Object, Identifiable {
 class RubricLevel: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var score: Int = 0
-    @Persisted var description: String = ""
+    @Persisted var levelDescription: String = "" // Renamed to avoid conflict with Object.description
     @Persisted var achievementLevel: Int = 0
     
     // Convenience initializer
     convenience init(score: Int, description: String, achievementLevel: AchievementLevel) {
         self.init()
         self.score = score
-        self.description = description
+        self.levelDescription = description
         self.achievementLevel = achievementLevel.rawValue
     }
     

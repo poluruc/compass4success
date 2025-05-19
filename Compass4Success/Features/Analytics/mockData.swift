@@ -49,7 +49,7 @@ struct AnalyticsMockData {
             assignment.id = "assignment_\(schoolClass.id)_\(i)"
             assignment.classId = schoolClass.id
             assignment.title = "\(assignmentTypes.randomElement()!) \(i + 1)"
-            assignment.description = "Description for assignment \(i + 1)"
+            assignment.assignmentDescription = "Description for assignment \(i + 1)"
             assignment.dueDate = dueDate
             assignment.points = Double([10, 25, 50, 100].randomElement()!)
             

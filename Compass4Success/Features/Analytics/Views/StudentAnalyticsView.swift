@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 
+@available(macOS 13.0, iOS 16.0, *)
 struct StudentAnalyticsView: View {
     let student: Student
     private let analyticsService = AnalyticsService()
@@ -13,7 +14,7 @@ struct StudentAnalyticsView: View {
     @State private var gradeOverTime: [TimeSeriesDataPoint] = []
     
     var body: some View {
-        ScrollView {
+        SwiftUI.ScrollView(.vertical, showsIndicators: true) {
             VStack(spacing: 20) {
                 // Student info header
                 studentHeader
@@ -42,7 +43,7 @@ struct StudentAnalyticsView: View {
             .padding(.vertical)
         }
         .navigationTitle("Student Analytics")
-        .navigationBarTitleDisplayMode(.inline)
+        .platformSpecificTitleDisplayMode()
         .overlay(
             isLoading ? LoadingOverlay() : nil
         )
@@ -259,30 +260,42 @@ struct StudentAnalyticsView: View {
                     .font(.headline)
                     .padding(.horizontal)
                 
-                Chart {
-                    ForEach(gradeOverTime) { item in
-                        LineMark(
-                            x: .value("Date", item.date),
-                            y: .value("Grade", item.value)
-                        )
-                        .foregroundStyle(by: .value("Course", item.label))
-                        .symbol(by: .value("Course", item.label))
-                        .interpolationMethod(.catmullRom)
+                #if os(iOS) || os(macOS)
+                if #available(iOS 16.0, macOS 13.0, *) {
+                    Chart {
+                        ForEach(gradeOverTime) { item in
+                            LineMark(
+                                x: .value("Date", item.date),
+                                y: .value("Grade", item.value)
+                            )
+                            .foregroundStyle(by: .value("Course", item.label))
+                            .symbol(by: .value("Course", item.label))
+                            .interpolationMethod(.catmullRom)
+                        }
                     }
-                }
-                .frame(height: 250)
-                .padding(.horizontal)
-                .chartYScale(domain: 0...100)
-                .chartYAxis {
-                    AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { value in
-                        AxisGridLine()
-                        AxisValueLabel {
-                            if let intValue = value.as(Int.self) {
-                                Text("\(intValue)%")
+                    .frame(height: 250)
+                    .padding(.horizontal)
+                    .chartYScale(domain: 0...100)
+                    .chartYAxis {
+                        AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { value in
+                            AxisGridLine()
+                            AxisValueLabel {
+                                if let intValue = value.as(Int.self) {
+                                    Text("\(intValue)%")
+                                }
                             }
                         }
                     }
+                } else {
+                    ChartCompatPlaceholder()
+                        .frame(height: 250)
+                        .padding(.horizontal)
                 }
+                #else
+                ChartCompatPlaceholder()
+                    .frame(height: 250)
+                    .padding(.horizontal)
+                #endif
             }
             .padding(.vertical)
             .background(
@@ -648,6 +661,7 @@ struct StrengthWeaknessRow: View {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct StudentAnalyticsView_Previews: PreviewProvider {
     static var previews: some View {
         // Create mock student for preview

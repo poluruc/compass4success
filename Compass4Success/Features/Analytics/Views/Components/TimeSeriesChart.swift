@@ -27,6 +27,20 @@ struct TimeSeriesChart: View {
         return colors[index]
     }
     
+    // Create the color scale as KeyValuePairs (not Dictionary) for the chart
+    private var seriesColorPairs: KeyValuePairs<String, Color> {
+        // Create KeyValuePairs directly without using Dictionary
+        var kvPairs: KeyValuePairs<String, Color>
+        
+        if uniqueSeries.isEmpty {
+            kvPairs = ["Default": .blue]
+        } else {
+            kvPairs = [uniqueSeries[0]: colorForSeries(uniqueSeries[0])]
+        }
+        
+        return kvPairs
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !title.isEmpty {
@@ -34,48 +48,120 @@ struct TimeSeriesChart: View {
                     .font(.headline)
             }
             
-            Chart {
-                ForEach(data) { item in
-                    LineMark(
-                        x: .value("Date", item.date),
-                        y: .value(yAxisLabel, item.value)
-                    )
-                    .foregroundStyle(by: .value("Series", item.label))
-                    .symbol(by: .value("Series", item.label))
-                    .interpolationMethod(.catmullRom)
-                }
+            // Use conditional compilation for OS version checking
+            #if os(macOS)
+            if #available(macOS 13.0, *) {
+                chartView
+                    .frame(height: height)
+            } else {
+                fallbackView
+                    .frame(height: height)
             }
-            .frame(height: height)
-            .chartYScale(domain: minY...maxY)
-            .chartForegroundStyleScale(uniqueSeries.reduce(into: [:]) { dict, label in
-                dict[label] = colorForSeries(label)
-            })
-            .chartYAxis {
-                AxisMarks(position: .leading) { value in
-                    AxisGridLine()
-                    AxisValueLabel {
-                        if let doubleValue = value.as(Double.self) {
-                            Text("\(Int(doubleValue))")
-                        }
-                    }
-                }
+            #else
+            if #available(iOS 16.0, *) {
+                chartView
+                    .frame(height: height)
+            } else {
+                fallbackView
+                    .frame(height: height)
             }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: 14)) { value in
-                    AxisGridLine()
-                    AxisValueLabel {
-                        if let date = value.as(Date.self) {
-                            Text(dateFormatter.string(from: date))
-                                .font(.caption)
-                        }
-                    }
-                }
-            }
+            #endif
             
             if showLegend {
                 legendView
             }
         }
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var chartView: some View {
+        Chart {
+            chartContent
+        }
+        .chartYScale(domain: minY...maxY)
+        .chartYAxis {
+            yAxisContent
+        }
+        .chartXAxis {
+            xAxisContent
+        }
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var chartContent: some ChartContent {
+        ForEach(data) { item in
+            LineMark(
+                x: .value("Date", item.date),
+                y: .value(yAxisLabel, item.value)
+            )
+            .foregroundStyle(colorForSeries(item.label))
+            .symbol {
+                Circle().fill(colorForSeries(item.label))
+            }
+            .symbolSize(30)
+            .interpolationMethod(.catmullRom)
+        }
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var yAxisContent: some AxisContent {
+        AxisMarks(position: .leading) { value in
+            AxisGridLine()
+            AxisValueLabel {
+                if let doubleValue = value.as(Double.self) {
+                    Text("\(Int(doubleValue))")
+                }
+            }
+        }
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var xAxisContent: some AxisContent {
+        AxisMarks(values: .stride(by: .day, count: 14)) { value in
+            AxisGridLine()
+            AxisValueLabel {
+                if let date = value.as(Date.self) {
+                    Text(dateFormatter.string(from: date))
+                        .font(.caption)
+                }
+            }
+        }
+    }
+    
+    private var fallbackView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Chart requires iOS 16+ / macOS 13+")
+                .font(.headline)
+                .foregroundColor(.secondary)
+            
+            Text("Time series data points:")
+                .font(.subheadline)
+                .padding(.top, 8)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(uniqueSeries, id: \.self) { series in
+                        Text(series)
+                            .fontWeight(.medium)
+                            .padding(.top, 4)
+                        
+                        ForEach(data.filter { $0.label == series }) { point in
+                            HStack {
+                                Text(dateFormatter.string(from: point.date))
+                                Spacer()
+                                Text(String(format: "%.1f", point.value))
+                            }
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 12)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(10)
     }
     
     private var legendView: some View {
@@ -96,6 +182,7 @@ struct TimeSeriesChart: View {
     }
 }
 
+// MARK: - Preview Provider
 struct TimeSeriesChart_Previews: PreviewProvider {
     static var previews: some View {
         TimeSeriesChart(data: generateMockTimeSeriesData())

@@ -4,22 +4,6 @@ import SwiftUI
 // MARK: - Student Extensions
 
 extension Student {
-    /// Get the full name of the student
-    var fullName: String {
-        return "\(firstName) \(lastName)"
-    }
-    
-    /// Get the display name (last name, first name) for sorting and formal display
-    var displayName: String {
-        return "\(lastName), \(firstName)"
-    }
-    
-    /// Get the student's initials
-    var initials: String {
-        let firstInitial = firstName.prefix(1).uppercased()
-        let lastInitial = lastName.prefix(1).uppercased()
-        return "\(firstInitial)\(lastInitial)"
-    }
     
     /// Generate a profile image color based on the student's name
     var profileColor: Color {
@@ -57,33 +41,7 @@ extension Student {
     var formattedGPA: String {
         return String(format: "%.2f", calculatedGPA)
     }
-    
-    /// Get the letter grade equivalent of the GPA
-    var letterGrade: String {
-        let gpa = calculatedGPA
-        
-        if gpa >= 3.7 {
-            return "A"
-        } else if gpa >= 3.3 {
-            return "A-"
-        } else if gpa >= 3.0 {
-            return "B+"
-        } else if gpa >= 2.7 {
-            return "B"
-        } else if gpa >= 2.3 {
-            return "B-"
-        } else if gpa >= 2.0 {
-            return "C+"
-        } else if gpa >= 1.7 {
-            return "C"
-        } else if gpa >= 1.3 {
-            return "C-"
-        } else if gpa >= 1.0 {
-            return "D"
-        } else {
-            return "F"
-        }
-    }
+
     
     /// Get the color associated with the student's academic standing
     var academicStandingColor: Color {
@@ -132,7 +90,15 @@ extension Student {
         for assignment in classAssignments {
             if let submission = assignment.submissions.first(where: { $0.studentId == id }) {
                 totalPoints += Double(assignment.totalPoints)
-                earnedPoints += submission.grade * Double(assignment.totalPoints) / 100.0
+                
+                // Check if submission has a grade and safely unwrap it
+                if let grade = submission.grade {
+                    // Use the percentage property of the Grade object
+                    earnedPoints += grade.percentage * Double(assignment.totalPoints) / 100.0
+                } else if submission.score > 0 {
+                    // Use the score property if no Grade object is available
+                    earnedPoints += Double(submission.score) / 100.0 * Double(assignment.totalPoints)
+                }
             }
         }
         

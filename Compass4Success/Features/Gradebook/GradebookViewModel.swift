@@ -99,16 +99,17 @@ class GradebookViewModel: ObservableObject {
                 if Double.random(in: 0...1) <= 0.8 {
                     // Create a grade between 60% and 100%
                     let gradeValue = Double.random(in: 60...100)
+                    // Calculate points as a percentage of total points
                     let pointsEarned = (gradeValue / 100.0) * Double(assignment.totalPoints)
                     
-                    let submission = AssignmentSubmission()
+                    // Create a Submission instance instead of AssignmentSubmission
+                    let submission = Submission()
                     submission.id = UUID().uuidString
                     submission.studentId = student.id
-                    submission.grade = gradeValue
-                    submission.pointsEarned = pointsEarned
-                    submission.submissionDate = assignment.dueDate.addingTimeInterval(-Double.random(in: 0...(86400)))
-                    submission.status = .submitted
-                    submission.feedback = ""
+                    submission.assignmentId = assignment.id
+                    submission.score = Int(gradeValue)
+                    submission.submittedDate = assignment.dueDate.addingTimeInterval(-Double.random(in: 0...(86400)))
+                    submission.status = CoreSubmissionStatus.submitted.rawValue
                     
                     assignment.submissions.append(submission)
                 }
@@ -126,17 +127,22 @@ class GradebookViewModel: ObservableObject {
     func updateGrade(for student: Student, assignment: Assignment, newGrade: Double?) {
         // Find the submission for this student
         if let submissionIndex = assignment.submissions.firstIndex(where: { $0.studentId == student.id }) {
-            // Update existing submission
-            assignment.submissions[submissionIndex].grade = newGrade ?? 0
+            // Get existing submission
+            if let newGradeValue = newGrade {
+                // Update the score property which is writable
+                assignment.submissions[submissionIndex].score = Int(newGradeValue)
+            }
         } else if let newGrade = newGrade {
             // Create a new submission
-            let submission = AssignmentSubmission()
+            let submission = Submission()
             submission.id = UUID().uuidString
             submission.studentId = student.id
-            submission.grade = newGrade
-            submission.submissionDate = Date()
-            submission.status = .submitted
+            submission.assignmentId = assignment.id
+            submission.submittedDate = Date()
+            submission.status = CoreSubmissionStatus.submitted.rawValue
+            submission.score = Int(newGrade)
             
+            // Add the submission to the assignment's submissions list
             assignment.submissions.append(submission)
         }
         
@@ -145,11 +151,35 @@ class GradebookViewModel: ObservableObject {
     }
     
     func studentGrade(for student: Student, assignment: Assignment) -> Double? {
-        return assignment.submissions.first(where: { $0.studentId == student.id })?.grade
+        if let submission = assignment.submissions.first(where: { $0.studentId == student.id }) {
+            return Double(submission.score)
+        }
+        return nil
     }
     
-    func studentSubmissionStatus(for student: Student, assignment: Assignment) -> SubmissionStatus {
-        return assignment.submissions.first(where: { $0.studentId == student.id })?.status ?? .missing
+    // Function to determine student submission status
+    func studentSubmissionStatus(for student: Student, assignment: Assignment) -> GradebookSubmissionStatus {
+        if let submission = assignment.submissions.first(where: { $0.studentId == student.id }) {
+            let status = CoreSubmissionStatus(rawValue: submission.status) ?? .notSubmitted
+            return statusToGradebookStatus(status)
+        }
+        return .missing
+    }
+    
+    // Helper method to convert status
+    private func statusToGradebookStatus(_ status: CoreSubmissionStatus) -> GradebookSubmissionStatus {
+        switch status {
+        case .submitted, .graded:
+            return .submitted
+        case .late:
+            return .late
+        case .notSubmitted:
+            return .missing
+        case .excused:
+            return .excused
+        default:
+            return .missing
+        }
     }
     
     func finalGrade(for student: Student) -> Double {
@@ -159,7 +189,9 @@ class GradebookViewModel: ObservableObject {
         for assignment in assignments {
             if let submission = assignment.submissions.first(where: { $0.studentId == student.id }) {
                 totalPoints += Double(assignment.totalPoints)
-                earnedPoints += submission.pointsEarned
+                // Convert score to points based on percentage
+                let scorePercentage = Double(submission.score) / 100.0
+                earnedPoints += scorePercentage * Double(assignment.totalPoints)
             }
         }
         
@@ -204,7 +236,7 @@ class GradebookViewModel: ObservableObject {
         assignment.title = title
         assignment.assignedDate = date
         assignment.dueDate = date.addingTimeInterval(604800) // due 1 week after assigned
-        assignment.totalPoints = totalPoints
+        assignment.totalPoints = Double(totalPoints)
         assignment.isActive = true
         assignment.category = AssignmentCategory.allCases.randomElement()?.rawValue ?? AssignmentCategory.assignment.rawValue
         return assignment
@@ -213,7 +245,7 @@ class GradebookViewModel: ObservableObject {
 
 // MARK: - Supporting Types
 
-enum SubmissionStatus: String {
+enum GradebookSubmissionStatus: String {
     case submitted = "Submitted"
     case late = "Late"
     case missing = "Missing"
@@ -229,22 +261,22 @@ enum SubmissionStatus: String {
     }
 }
 
-extension AssignmentSubmission {
-    var status: SubmissionStatus {
-        get {
-            return SubmissionStatus(rawValue: statusString) ?? .missing
-        }
-        set {
-            statusString = newValue.rawValue
-        }
-    }
-    
-    var pointsEarned: Double {
-        get {
-            return grade
-        }
-        set {
-            grade = newValue
+// Note: pointsEarned property is removed since we now directly use the grade property
+// in the AssignmentSubmission class that properly handles the type conversion
+
+extension CoreSubmissionStatus {
+    func toGradebookStatus() -> GradebookSubmissionStatus {
+        switch self {
+        case .submitted, .graded:
+            return .submitted
+        case .late:
+            return .late
+        case .notSubmitted:
+            return .missing
+        case .excused:
+            return .excused
+        default:
+            return .missing
         }
     }
 }

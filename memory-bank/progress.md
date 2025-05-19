@@ -117,7 +117,7 @@ The project is currently in the **Alpha Stage with Most Build Issues Fixed** wit
 - ✅ Reserved keyword 'class' replaced with 'schoolClass' in SchoolClass references
 - ✅ Added missing ViewModels (StudentsViewModel, DashboardViewModel, GradebookViewModel)
 - ✅ Fixed ForEach loop iterations with explicit id parameters
-- ✅ Added @available attributes for macOS 12.0+ compatibility in SettingsView
+- ✅ Added @available attributes for macOS 13.0+ compatibility in SettingsView
 - ✅ Implemented platform-specific code paths for UI components with #if os(iOS)/#else
 - ✅ Created BatchExportView for handling batch exports
 - ✅ Replaced ClassAnalyticsView with ClassAnalyticsView
@@ -151,7 +151,7 @@ The project is currently in the **Alpha Stage with Most Build Issues Fixed** wit
 - 🔄 Resolving model redeclaration issues
 - 🔄 Fixing Codable conformance in model classes
 - 🔄 Addressing generic type inference issues
-- 🔄 Creating more fallback non-Chart visualizations for macOS 12.0
+- 🔄 Creating more fallback non-Chart visualizations for macOS 13.0
 
 ## Known Issues
 
@@ -252,7 +252,7 @@ This progress document outlines what works, what's left to build, current status
 
 - Continue identifying and breaking down complex nested view structures
 - Add cross-platform compatibility checks where needed
-- Add fallback views for iOS 16.0+ and macOS 12.0+ compatibility
+- Add fallback views for iOS 16.0+ and macOS 13.0+ compatibility
 - Verify all Chart-based UI components have non-Chart alternatives for older platforms
 
 # Next Steps

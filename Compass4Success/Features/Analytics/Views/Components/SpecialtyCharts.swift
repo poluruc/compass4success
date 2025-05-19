@@ -1,8 +1,14 @@
 import SwiftUI
 import Charts
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 // Collection of special-purpose chart components that don't fit into the other categories
 
+@available(macOS 13.0, iOS 16.0, *)
 struct SpecialtyCharts {
     // Progress gauge chart
     struct CircularProgressGauge: View {
@@ -10,43 +16,45 @@ struct SpecialtyCharts {
         var label: String
         var color: Color = .blue
         var showPercentage: Bool = true
-        var size: CGFloat = 150
+        var size: CGFloat = 120
         
         var body: some View {
-            ZStack {
-                // Background track
-                Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 15)
-                    .frame(width: size, height: size)
-                
-                // Progress indicator
-                Circle()
-                    .trim(from: 0, to: CGFloat(min(value, 1.0)))
-                    .stroke(color, style: StrokeStyle(lineWidth: 15, lineCap: .round))
-                    .frame(width: size, height: size)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut, value: value)
-                
-                // Center content
-                VStack(spacing: 8) {
-                    if !label.isEmpty {
-                        Text(label)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+            VStack {
+                ZStack {
+                    Circle()
+                        .stroke(
+                            color.opacity(0.2),
+                            lineWidth: 10
+                        )
+                    
+                    Circle()
+                        .trim(from: 0, to: CGFloat(value))
+                        .stroke(
+                            color,
+                            style: StrokeStyle(
+                                lineWidth: 10,
+                                lineCap: .round
+                            )
+                        )
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut, value: value)
                     
                     if showPercentage {
                         Text("\(Int(value * 100))%")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(color)
+                            .font(.system(size: size / 5).bold())
                     }
                 }
+                .frame(width: size, height: size)
+                
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
     }
     
     // Comparison bar chart (side by side)
+    @available(macOS 13.0, iOS 16.0, *)
     struct ComparisonBarChart: View {
         var categories: [String]
         var dataset1: [Double]
@@ -57,6 +65,7 @@ struct SpecialtyCharts {
         var dataset2Color: Color = .green
         var height: CGFloat = 250
         
+        @available(macOS 13.0, iOS 16.0, *)
         var body: some View {
             VStack(alignment: .leading, spacing: 12) {
                 Chart {
@@ -81,25 +90,21 @@ struct SpecialtyCharts {
                 .frame(height: height)
                 
                 // Legend
-                HStack(spacing: 16) {
-                    HStack(spacing: 4) {
+                HStack(spacing: 20) {
+                    HStack(spacing: 8) {
                         Rectangle()
                             .fill(dataset1Color)
                             .frame(width: 12, height: 12)
-                        
                         Text(dataset1Label)
                             .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                     
-                    HStack(spacing: 4) {
+                    HStack(spacing: 8) {
                         Rectangle()
                             .fill(dataset2Color)
                             .frame(width: 12, height: 12)
-                        
                         Text(dataset2Label)
                             .font(.caption)
-                            .foregroundColor(.secondary)
                     }
                 }
             }
@@ -251,7 +256,7 @@ struct SpecialtyCharts {
                     if currentValue > 0 {
                         Rectangle()
                             .fill(getCurrentLevelColor())
-                            .frame(width: min(getWidthForValue(currentValue), UIScreen.main.bounds.width - 40), height: height)
+                            .frame(width: min(getWidthForValue(currentValue), getMaxScreenWidth() - 40), height: height)
                             .cornerRadius(8)
                     }
                     
@@ -287,15 +292,25 @@ struct SpecialtyCharts {
             achievementLevels.map { $0.threshold }.max() ?? 100
         }
         
+        private func getMaxScreenWidth() -> CGFloat {
+            #if os(iOS)
+            return UIScreen.main.bounds.width
+            #elseif os(macOS)
+            return NSScreen.main?.frame.width ?? 1000
+            #else
+            return 1000 // Default fallback
+            #endif
+        }
+        
         private func getWidthForThreshold(_ threshold: Double) -> CGFloat {
             let maxThreshold = getMaxThreshold()
-            let maxWidth = UIScreen.main.bounds.width - 40 // accounting for padding
+            let maxWidth = getMaxScreenWidth() - 40 // accounting for padding
             return CGFloat(threshold / maxThreshold) * maxWidth
         }
         
         private func getWidthForValue(_ value: Double) -> CGFloat {
             let maxThreshold = getMaxThreshold()
-            let maxWidth = UIScreen.main.bounds.width - 40 // accounting for padding
+            let maxWidth = getMaxScreenWidth() - 40 // accounting for padding
             return CGFloat(min(value, maxThreshold) / maxThreshold) * maxWidth
         }
         
@@ -311,6 +326,7 @@ struct SpecialtyCharts {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct SpecialtyCharts_Previews: PreviewProvider {
     static var previews: some View {
         ScrollView {

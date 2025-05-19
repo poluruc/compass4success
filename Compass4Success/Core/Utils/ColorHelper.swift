@@ -1,6 +1,57 @@
 import SwiftUI
 import Foundation
 
+// Color extensions for compatibility with older macOS versions
+extension Color {
+    static var compatibleTeal: Color {
+        #if os(macOS)
+            if #available(macOS 13.0, *) {
+                return Color.teal
+            } else {
+                return Color(NSColor(red: 0.0, green: 0.5, blue: 0.5, alpha: 1.0))
+            }
+        #else
+            return Color.teal
+        #endif
+    }
+    
+    static var compatibleIndigo: Color {
+        #if os(macOS)
+            if #available(macOS 13.0, *) {
+                return Color.indigo
+            } else {
+                return Color(NSColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1.0))
+            }
+        #else
+            return Color.indigo
+        #endif
+    }
+    
+    static var compatibleMint: Color {
+        #if os(macOS)
+            if #available(macOS 13.0, *) {
+                return Color.mint
+            } else {
+                return Color(NSColor(red: 0.0, green: 0.7, blue: 0.6, alpha: 1.0))
+            }
+        #else
+            return Color.mint
+        #endif
+    }
+    
+    static var compatibleCyan: Color {
+        #if os(macOS)
+            if #available(macOS 13.0, *) {
+                return Color.cyan
+            } else {
+                return Color(NSColor(red: 0.0, green: 0.8, blue: 0.9, alpha: 1.0))
+            }
+        #else
+            return Color.cyan
+        #endif
+    }
+}
+
 // Utility for working with colors throughout the application
 struct ColorHelper {
     // App theme colors
@@ -108,7 +159,7 @@ struct ColorHelper {
         static let art = Color.pink
         static let music = Color.indigo
         static let pe = Color.orange
-        static let language = Color.teal
+        static let language = Color.compatibleTeal
         
         static func color(for subject: String) -> Color {
             switch subject.lowercased() {
@@ -178,7 +229,7 @@ struct ColorHelper {
     // Generate a color for user avatar based on initials
     static func avatarColor(for initials: String) -> Color {
         let colors: [Color] = [
-            .blue, .green, .orange, .purple, .pink, .indigo, .teal, .mint, .cyan, .yellow
+            .blue, .green, .orange, .purple, .pink, .compatibleIndigo, .compatibleTeal, .compatibleMint, .compatibleCyan, .yellow
         ]
         
         // Use the hash of the initials to pick a color

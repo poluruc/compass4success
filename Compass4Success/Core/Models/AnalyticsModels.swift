@@ -18,11 +18,13 @@ struct TimeSeriesDataPoint: Identifiable {
     var label: String // Series label (e.g. "Class Average")
     var date: Date
     var value: Double
+    var color: Color = .blue
     
     init(label: String, date: Date, value: Double) {
         self.label = label
         self.date = date
         self.value = value
+        // The color is set via the default parameter
     }
 }
 
@@ -61,10 +63,4 @@ struct ExportOptions {
     var includeStudentNames: Bool
     var includeGradeBreakdown: Bool
     var includeNotes: Bool
-}
-
-enum ExportFormat: String {
-    case pdf = "PDF"
-    case csv = "CSV"
-    case excel = "Excel"
 }

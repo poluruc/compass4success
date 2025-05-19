@@ -82,7 +82,7 @@ struct AssignmentsView: View {
                 .padding(.horizontal)
                 
                 if filteredAssignments.isEmpty {
-                    EmptyStateView(
+                    AssignmentsEmptyStateView(
                         icon: "doc.text.magnifyingglass",
                         title: "No Assignments Found",
                         message: searchText.isEmpty ? 
@@ -108,24 +108,26 @@ struct AssignmentsView: View {
             }
             
             if isLoading {
-                LoadingOverlay()
+                AssignmentsLoadingOverlay()
             }
         }
         .navigationTitle("Assignments")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddAssignment = true }) {
-                    Image(systemName: "plus")
-                }
+        .platformNavigationBarTrailing {
+            Button(action: { showingAddAssignment = true }) {
+                Image(systemName: "plus")
             }
         }
         .sheet(isPresented: $showingAddAssignment) {
-            AddAssignmentView(classes: classService.classes)
-                .presentationDetents([.medium, .large])
+            NavigationView {
+                AssignmentsAddView(classes: classService.classes)
+            }
+            .platformPresentationDetent()
         }
         .sheet(item: $selectedAssignment) { assignment in
-            AssignmentDetailView(assignment: assignment)
-                .presentationDetents([.medium, .large])
+            NavigationView {
+                AssignmentsDetailView(assignment: assignment)
+            }
+            .platformPresentationDetent()
         }
         .onAppear {
             loadData()
@@ -150,6 +152,7 @@ struct SearchFilterBar: View {
     
     @State private var showingFilters = false
     
+    @available(iOS 13.0, macOS 12.0, *)
     var body: some View {
         VStack(spacing: 10) {
             // Search bar
@@ -216,12 +219,16 @@ struct SearchFilterBar: View {
             }
         }
         .sheet(isPresented: $showingFilters) {
-            FiltersView(
-                classFilter: $classFilter,
-                categoryFilter: $categoryFilter,
-                classes: classes
-            )
+            NavigationView {
+                FiltersView(
+                    classFilter: $classFilter,
+                    categoryFilter: $categoryFilter,
+                    classes: classes
+                )
+            }
+            #if os(iOS)
             .presentationDetents([.height(300)])
+            #endif
         }
     }
 }
@@ -256,6 +263,7 @@ struct FilterButton: View {
     }
 }
 
+@available(iOS 13.0, macOS 12.0, *)
 struct FiltersView: View {
     @Binding var classFilter: SchoolClass?
     @Binding var categoryFilter: AssignmentCategory?
@@ -263,72 +271,89 @@ struct FiltersView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
+        #if os(macOS)
+        if #available(macOS 13.0, *) {
+            NavigationStack {
+                filtersContent
+            }
+        } else {
+            NavigationView {
+                filtersContent
+            }
+        }
+        #else
         NavigationView {
-            Form {
-                Section(header: Text("Class")) {
-                    Button("All Classes") {
-                        classFilter = nil
-                    }
-                    
-                    ForEach(classes) { schoolClass in
-                        Button(action: {
-                            classFilter = schoolClass
-                        }) {
-                            HStack {
-                                Text(schoolClass.name)
-                                Spacer()
-                                if classFilter?.id == schoolClass.id {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                        .foregroundColor(.primary)
-                    }
+            filtersContent
+                .navigationBarTitleDisplayMode(.inline)
+        }
+        #endif
+    }
+    
+    private var filtersContent: some View {
+        Form {
+            Section(header: Text("Class")) {
+                Button("All Classes") {
+                    classFilter = nil
                 }
                 
-                Section(header: Text("Category")) {
-                    Button("All Categories") {
-                        categoryFilter = nil
-                    }
-                    
-                    ForEach(AssignmentCategory.allCases, id: \.self) { category in
-                        Button(action: {
-                            categoryFilter = category
-                        }) {
-                            HStack {
-                                Text(category.rawValue)
-                                Spacer()
-                                if categoryFilter == category {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
+                ForEach(classes) { schoolClass in
+                    Button(action: {
+                        classFilter = schoolClass
+                    }) {
+                        HStack {
+                            Text(schoolClass.name)
+                            Spacer()
+                            if classFilter?.id == schoolClass.id {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
                             }
                         }
-                        .foregroundColor(.primary)
                     }
+                    .foregroundColor(.primary)
                 }
             }
-            .navigationTitle("Filters")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
+            
+            Section(header: Text("Category")) {
+                Button("All Categories") {
+                    categoryFilter = nil
                 }
                 
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Reset") {
-                        classFilter = nil
-                        categoryFilter = nil
+                ForEach(AssignmentCategory.allCases, id: \.self) { category in
+                    Button(action: {
+                        categoryFilter = category
+                    }) {
+                        HStack {
+                            Text(category.rawValue)
+                            Spacer()
+                            if categoryFilter == category {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
+                            }
+                        }
                     }
+                    .foregroundColor(.primary)
+                }
+            }
+        }
+        .navigationTitle("Filters")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+            
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Reset") {
+                    classFilter = nil
+                    categoryFilter = nil
                 }
             }
         }
     }
 }
 
+@available(iOS 13.0, macOS 12.0, *)
 struct AssignmentCard: View {
     let assignment: Assignment
     
@@ -421,7 +446,9 @@ struct AssignmentCard: View {
     }
 }
 
-struct EmptyStateView: View {
+// Rename to avoid duplicate declarations
+@available(iOS 13.0, macOS 12.0, *)
+struct AssignmentsEmptyStateView: View {
     let icon: String
     let title: String
     let message: String
@@ -463,7 +490,8 @@ struct EmptyStateView: View {
     }
 }
 
-struct LoadingOverlay: View {
+// Rename to avoid duplicate declarations
+struct AssignmentsLoadingOverlay: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.3)
@@ -477,7 +505,8 @@ struct LoadingOverlay: View {
     }
 }
 
-struct AddAssignmentView: View {
+// Rename to avoid duplicate declarations
+struct AssignmentsAddView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var description = ""
@@ -511,13 +540,17 @@ struct AddAssignmentView: View {
                     }
                     
                     TextField("Points", text: $points)
+                        #if os(iOS)
                         .keyboardType(.numberPad)
+                        #endif
                     
                     DatePicker("Due Date", selection: $dueDate, displayedComponents: [.date, .hourAndMinute])
                 }
             }
             .navigationTitle("Add Assignment")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -537,7 +570,8 @@ struct AddAssignmentView: View {
     }
 }
 
-struct AssignmentDetailView: View {
+// Rename to avoid duplicate declarations
+struct AssignmentsDetailView: View {
     let assignment: Assignment
     
     var body: some View {
@@ -596,7 +630,8 @@ struct AssignmentDetailView: View {
     }
 }
 
-struct SectionHeader: View {
+// Rename to avoid duplicate declarations
+struct AssignmentsSectionHeader: View {
     let title: String
     
     var body: some View {
@@ -630,15 +665,15 @@ struct DetailRow: View {
 }
 
 struct SubmissionRow: View {
-    let submission: AssignmentSubmission
+    let submission: Submission
     
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Student Name") // This would be fetched from the student ID
+                Text("Student \(submission.studentId)") // This would be fetched from the student ID
                     .font(.headline)
                 
-                Text(submission.statusEnum.rawValue)
+                Text(CoreSubmissionStatus(rawValue: submission.status)?.rawValue ?? "Unknown")
                     .font(.caption)
                     .padding(4)
                     .background(Color.blue.opacity(0.1))
@@ -647,14 +682,8 @@ struct SubmissionRow: View {
             
             Spacer()
             
-            if let score = submission.score {
-                Text(submission.formattedScore)
-                    .font(.headline)
-            } else {
-                Text("Not Graded")
-                    .font(.headline)
-                    .foregroundColor(.gray)
-            }
+            Text("Score: \(submission.score)")
+                .font(.headline)
         }
         .padding()
         .background(

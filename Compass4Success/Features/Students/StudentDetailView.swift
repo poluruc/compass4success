@@ -121,22 +121,18 @@ struct StudentDetailView: View {
         updatedStudent.email = email
         updatedStudent.grade = grade
         
-        studentService.updateStudent(updatedStudent)
-            .sink(receiveCompletion: { completion in
+        studentService.updateStudent(updatedStudent) { result in
                 isLoading = false
                 
-                switch completion {
-                case .finished:
-                    break
+                switch result {
+                case .success:
+                    onComplete(.success)
+                    dismiss()
                 case .failure(let error):
                     errorMessage = error.localizedDescription
                     showError = true
                 }
-            }, receiveValue: { _ in
-                onComplete(.success)
-                dismiss()
-            })
-            .store(in: &cancellables)
+            }
     }
 }
 

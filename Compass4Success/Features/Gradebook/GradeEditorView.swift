@@ -16,7 +16,15 @@ struct GradeEditorView: View {
     
     // Get existing submission if it exists
     private var existingSubmission: AssignmentSubmission? {
-        return assignment.submissions.first { $0.studentId == student.id }
+        // Convert from CoreSubmission to AssignmentSubmission if found
+        if let coreSubmission = assignment.submissions.first(where: { $0.studentId == student.id }) {
+            let submission = AssignmentSubmission()
+            submission.id = coreSubmission.id
+            submission.studentId = coreSubmission.studentId
+            submission.score = Int(coreSubmission.score ?? 0)
+            return submission
+        }
+        return nil
     }
     
     var body: some View {
@@ -35,8 +43,12 @@ struct GradeEditorView: View {
                 }
                 
                 Section(header: Text("Grade")) {
+                    #if os(iOS)
                     TextField("Score", text: $score)
                         .keyboardType(.numberPad)
+                    #else
+                    TextField("Score", text: $score)
+                    #endif
                     
                     HStack {
                         Text("Status")
@@ -93,8 +105,7 @@ struct GradeEditorView: View {
                 }
             }
             .navigationTitle("Grade Assignment")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+            .platformSpecificTitleDisplayMode()            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
@@ -145,8 +156,8 @@ struct GradeEditorView: View {
             return
         }
         
-        if let scoreValue = Int(score), scoreValue > assignment.totalPoints {
-            alertMessage = "Score cannot exceed total points (\(assignment.totalPoints))."
+        if let scoreValue = Int(score), scoreValue > Int(assignment.totalPoints) {
+            alertMessage = "Score cannot exceed total points (\(Int(assignment.totalPoints)))."
             showingAlert = true
             return
         }
@@ -178,7 +189,7 @@ struct GradeEditorView_Previews: PreviewProvider {
         
         let mockClass = SchoolClass()
         mockClass.name = "Algebra"
-        mockClass.classCode = "MATH101"
+        mockClass.clazzCode = "MATH101"
         
         return GradeEditorView(
             student: mockStudent,

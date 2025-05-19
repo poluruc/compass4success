@@ -1,5 +1,8 @@
 import SwiftUI
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct LoginView: View {
     @EnvironmentObject private var authService: AuthenticationService
@@ -62,14 +65,18 @@ struct LoginView: View {
                                 .foregroundColor(.secondary)
                             
                             TextField("teacher@school.edu", text: $email)
-                                .textContentType(.emailAddress)
-                                .keyboardType(.emailAddress)
-                                .autocapitalization(.none)
+                                #if os(iOS)
+                                .textContentType(UITextContentType.emailAddress)
+                                .keyboardType(UIKeyboardType.emailAddress)
+                                .autocapitalization(UITextAutocapitalizationType.none)
+                                #endif
                                 .padding()
                                 .background(Color(.systemGray6))
                                 .cornerRadius(10)
                                 .focused($focusedField, equals: .email)
-                                .submitLabel(.next)
+                                #if os(iOS)
+                                .submitLabel(SubmitLabel.next)
+                                #endif
                                 .onSubmit {
                                     focusedField = .password
                                 }
@@ -82,12 +89,16 @@ struct LoginView: View {
                                 .foregroundColor(.secondary)
                             
                             SecureField("Enter password", text: $password)
-                                .textContentType(.password)
+                                #if os(iOS)
+                                .textContentType(UITextContentType.password)
+                                #endif
                                 .padding()
                                 .background(Color(.systemGray6))
                                 .cornerRadius(10)
                                 .focused($focusedField, equals: .password)
-                                .submitLabel(.go)
+                                #if os(iOS)
+                                .submitLabel(SubmitLabel.go)
+                                #endif
                                 .onSubmit(login)
                         }
                         

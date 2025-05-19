@@ -76,7 +76,7 @@ struct SettingsView: View {
                     
                     if notificationsEnabled {
                         ForEach(viewModel.notificationOptions) { option in
-                            Toggle(option.title, isOn: option.isEnabled)
+                            Toggle(option.title, isOn: option.$isEnabled)
                         }
                         
                         NavigationLink(destination: NotificationSettingsView()) {

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+@available(macOS 13.0, iOS 16.0, *)
 class AnalyticsService {
     private let mockService = MockDataService.shared
     
@@ -27,7 +28,7 @@ class AnalyticsService {
     }
     
     // Generate mock data for grades over time chart
-    func getGradeOverTimeData(timeFrame: AnalyticsView.TimeFrame, classId: String?) -> [TimeSeriesDataPoint] {
+    func getGradeOverTimeData(timeFrame: AnalyticsTimeFrame, classId: String?) -> [TimeSeriesDataPoint] {
         // Generate dates for the selected time frame
         let endDate = Date()
         let calendar = Calendar.current
@@ -131,7 +132,7 @@ class AnalyticsService {
     }
     
     // Generate insights based on current analytics view
-    func getInsights(for analyticsType: AnalyticsView.AnalyticsType, timeFrame: AnalyticsView.TimeFrame, classId: String?) -> [AnalyticsInsight] {
+    func getInsights(for analyticsType: AnalyticsViewType, timeFrame: AnalyticsTimeFrame, classId: String?) -> [AnalyticsInsight] {
         switch analyticsType {
         case .gradeDistribution:
             return [

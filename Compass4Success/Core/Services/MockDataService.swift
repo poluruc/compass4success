@@ -101,7 +101,7 @@ class MockDataService {
         let mathClass = SchoolClass()
         mathClass.id = "C001"
         mathClass.name = "Algebra 2"
-        mathClass.classCode = "MATH201"
+        mathClass.clazzCode = "MATH201"
         mathClass.subject = "Mathematics"
         mathClass.gradeLevel = "9"
         mathClass.period = 1
@@ -113,7 +113,7 @@ class MockDataService {
         let scienceClass = SchoolClass()
         scienceClass.id = "C002"
         scienceClass.name = "Biology"
-        scienceClass.classCode = "SCI101"
+        scienceClass.clazzCode = "SCI101"
         scienceClass.subject = "Science"
         scienceClass.gradeLevel = "9"
         scienceClass.period = 2
@@ -125,7 +125,7 @@ class MockDataService {
         let historyClass = SchoolClass()
         historyClass.id = "C003"
         historyClass.name = "World History"
-        historyClass.classCode = "HIST101"
+        historyClass.clazzCode = "HIST101"
         historyClass.subject = "History"
         historyClass.gradeLevel = "10"
         historyClass.period = 3
@@ -137,7 +137,7 @@ class MockDataService {
         let englishClass = SchoolClass()
         englishClass.id = "C004"
         englishClass.name = "English Literature"
-        englishClass.classCode = "ENG201"
+        englishClass.clazzCode = "ENG201"
         englishClass.subject = "English"
         englishClass.gradeLevel = "10"
         englishClass.period = 4
@@ -149,7 +149,7 @@ class MockDataService {
         let codingClass = SchoolClass()
         codingClass.id = "C005"
         codingClass.name = "Computer Science"
-        codingClass.classCode = "CS101"
+        codingClass.clazzCode = "CS101"
         codingClass.subject = "Technology"
         codingClass.gradeLevel = "11"
         codingClass.period = 5
@@ -202,14 +202,14 @@ class MockDataService {
             id: "A001",
             title: "Algebra Quiz 1",
             dueDate: currentDate.addingTimeInterval(86400 * 2), // 2 days from now
-            description: "Quiz covering linear equations"
+            assignmentDescription: "Quiz covering linear equations"
         )
         
         let mathHomework = Assignment(
             id: "A002",
             title: "Algebra Homework",
             dueDate: currentDate.addingTimeInterval(86400 * 4), // 4 days from now
-            description: "Problems 1-20 in Chapter 3"
+            assignmentDescription: "Problems 1-20 in Chapter 3"
         )
         
         // Science Assignments
@@ -217,14 +217,14 @@ class MockDataService {
             id: "A003",
             title: "Biology Lab Report",
             dueDate: currentDate.addingTimeInterval(86400 * 7), // 1 week from now
-            description: "Write up the results of our cell division experiment"
+            assignmentDescription: "Write up the results of our cell division experiment"
         )
         
         let scienceQuiz = Assignment(
             id: "A004",
             title: "Cell Structure Quiz",
             dueDate: currentDate.addingTimeInterval(86400 * 1), // Tomorrow
-            description: "Quiz covering cell organelles and their functions"
+            assignmentDescription: "Quiz covering cell organelles and their functions"
         )
         
         // History Assignments
@@ -232,7 +232,7 @@ class MockDataService {
             id: "A005",
             title: "World War II Essay",
             dueDate: currentDate.addingTimeInterval(86400 * 10), // 10 days from now
-            description: "1500 word essay on the causes of World War II"
+            assignmentDescription: "1500 word essay on the causes of World War II"
         )
         
         // English Assignments
@@ -240,7 +240,7 @@ class MockDataService {
             id: "A006",
             title: "Shakespeare Analysis",
             dueDate: currentDate.addingTimeInterval(86400 * 14), // 2 weeks from now
-            description: "Character analysis of Hamlet"
+            assignmentDescription: "Character analysis of Hamlet"
         )
         
         // Coding Assignments
@@ -248,7 +248,7 @@ class MockDataService {
             id: "A007",
             title: "Mobile App Project",
             dueDate: currentDate.addingTimeInterval(86400 * 21), // 3 weeks from now
-            description: "Develop a simple iOS app using Swift"
+            assignmentDescription: "Develop a simple iOS app using Swift"
         )
         
         // Add assignments to classes

@@ -5,7 +5,7 @@ struct BatchExportView: View {
     @EnvironmentObject private var classService: ClassService
     @State private var selectedClasses: [SchoolClass] = []
     @State private var selectedReportTypes: [ReportType] = []
-    @State private var selectedTimeFrame: AnalyticsView.TimeFrame = .semester
+    @State private var selectedTimeFrame: Compass4Success.AnalyticsTimeFrame = .semester
     @State private var selectedFormat = ExportFormat.pdf
     @State private var includeStudentDetails = true
     @State private var includeCharts = true
@@ -54,7 +54,7 @@ struct BatchExportView: View {
                 exportButton
             }
             .navigationTitle("Batch Export")
-            .navigationBarTitleDisplayMode(.inline)
+            .platformSpecificTitleDisplayMode()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -139,7 +139,7 @@ struct BatchExportView: View {
     private var timeFrameSection: some View {
         Section(header: Text("Time Frame")) {
             Picker("Time Period", selection: $selectedTimeFrame) {
-                ForEach(AnalyticsView.TimeFrame.allCases, id: \.self) { timeFrame in
+                ForEach(Compass4Success.AnalyticsTimeFrame.allCases, id: \.self) { timeFrame in
                     Text(timeFrame.rawValue).tag(timeFrame)
                 }
             }

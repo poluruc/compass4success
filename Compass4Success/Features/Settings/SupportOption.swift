@@ -1,12 +1,16 @@
 import Foundation
 
-struct SupportOption: Identifiable {
+struct SupportOption: Identifiable, Equatable {
     let id: String
     let title: String
     let icon: String
     let type: SupportOptionType
     
-    enum SupportOptionType {
+    static func == (lhs: SupportOption, rhs: SupportOption) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    enum SupportOptionType: Equatable {
         case faq, contactSupport, reportIssue, userGuide, tutorial
     }
     

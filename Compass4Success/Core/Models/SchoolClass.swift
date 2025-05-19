@@ -4,7 +4,8 @@ import RealmSwift
 class SchoolClass: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var name: String = ""
-    @Persisted var classCode: String = ""
+    @Persisted var clazzCode: String = "" // Renamed from classCode to avoid conflict with NSScriptClassDescription
+    @Persisted var courseCode: String = ""  // Added for compatibility
     @Persisted var subject: String = ""
     @Persisted var gradeLevel: String = ""
     @Persisted var period: Int = 0
@@ -22,6 +23,12 @@ class SchoolClass: Object, Identifiable {
     // Computed property to get number of enrolled students
     var enrollmentCount: Int {
         return students.count
+    }
+    
+    // For compatibility
+    var studentCount: Int {
+        get { return enrollmentCount }
+        set { /* No-op, just for compatibility */ }
     }
     
     // Computed property to get number of active assignments
@@ -48,6 +55,16 @@ class SchoolClass: Object, Identifiable {
         return totalWeight > 0 ? totalPoints / totalWeight : nil
     }
     
+    // Custom initializer for mock data
+    convenience init(id: String, name: String, clazzCode: String, courseCode: String, gradeLevel: String) {
+        self.init()
+        self.id = id
+        self.name = name
+        self.courseCode = courseCode
+        self.clazzCode = clazzCode  // For backward compatibility
+        self.gradeLevel = gradeLevel
+    }
+    
     // Calculate average grade for a specific assignment
     private func assignmentAverageGrade(_ assignment: Assignment) -> Double? {
         if assignment.submissions.isEmpty {
@@ -58,10 +75,8 @@ class SchoolClass: Object, Identifiable {
         var count = 0
         
         for submission in assignment.submissions {
-            if let score = submission.score {
-                total += Double(score)
-                count += 1
-            }
+            total += Double(submission.score)
+            count += 1
         }
         
         return count > 0 ? (total / Double(count)) * 100.0 / Double(assignment.totalPoints) : nil

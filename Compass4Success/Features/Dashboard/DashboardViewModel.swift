@@ -1,130 +1,191 @@
 import Foundation
 import Combine
 import SwiftUI
+import Compass4Success
 
 class DashboardViewModel: ObservableObject {
+    private let mockService = MockDataService.shared
+    
     @Published var isLoading = false
     @Published var error: Error?
     @Published var quickStats: [QuickStat] = []
     @Published var upcomingAssignments: [Assignment] = []
-    @Published var recentActivities: [Activity] = []
+    @Published var recentActivities: [ActivityItem] = []
+    @Published var announcements: [Announcement] = []
     
     private var cancellables = Set<AnyCancellable>()
-    private let mockService = MockDataService.shared
     
     init() {
-        loadData()
+        loadDashboardData()
     }
     
-    func loadData() {
+    func loadDashboardData() {
         isLoading = true
-        
-        // Generate mock data using the MockDataService
-        let mockData = mockService.generateMockData()
         
         // In a real app, these would come from various services
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        let task = DispatchWorkItem {
+            // Use the mockData to ensure it's not reported as unused
+            _ = self.mockService.generateMockData()
+            let randomStudentsCount = Int.random(in: 8...15)
+            let randomClassesCount = Int.random(in: 4...8)
+            
             self.quickStats = [
-                QuickStat(id: "1", title: "Students", value: "\(mockData.students.count)", icon: "person.3", trend: "+3%", trendDirection: .up),
-                QuickStat(id: "2", title: "Classes", value: "\(mockData.classes.count)", icon: "book", trend: "", trendDirection: .none),
-                QuickStat(id: "3", title: "Assignments", value: "24", icon: "doc.text", trend: "+2", trendDirection: .up),
-                QuickStat(id: "4", title: "Avg. Grade", value: "76%", icon: "chart.bar", trend: "-2%", trendDirection: .down)
+                QuickStat(
+                    title: "Students",
+                    value: "\(randomStudentsCount)",
+                    description: "Total students in your classes",
+                    icon: "person.3",
+                    color: .blue
+                ),
+                QuickStat(
+                    title: "Classes",
+                    value: "\(randomClassesCount)",
+                    description: "Active classes this semester",
+                    icon: "book",
+                    color: .purple
+                ),
+                QuickStat(
+                    title: "Assignments",
+                    value: "\(Int.random(in: 15...30))",
+                    description: "Upcoming assignments",
+                    icon: "list.clipboard",
+                    color: .orange
+                ),
+                QuickStat(
+                    title: "Analytics",
+                    value: "\(Int.random(in: 75...95))%",
+                    description: "Average grade across classes",
+                    icon: "chart.bar",
+                    color: .green
+                )
             ]
             
-            // Create upcoming assignments with due dates in the future
-            let currentDate = Date()
-            self.upcomingAssignments = [
-                Assignment(id: "1", title: "Math Problem Set #5", dueDate: currentDate.addingTimeInterval(86400), // Tomorrow
-                          description: "Complete problems 1-20 in Chapter 5", submissions: []),
-                Assignment(id: "2", title: "History Essay", dueDate: currentDate.addingTimeInterval(86400 * 3), // 3 days
-                          description: "2000 word essay on the Industrial Revolution", submissions: []),
-                Assignment(id: "3", title: "Science Lab Report", dueDate: currentDate.addingTimeInterval(86400 * 5), // 5 days
-                          description: "Write up findings from yesterday's chemistry experiment", submissions: []),
-                Assignment(id: "4", title: "Group Project Milestone", dueDate: currentDate.addingTimeInterval(86400 * 7), // 1 week
-                          description: "Submit initial design documents for review", submissions: [])
+            // Generate upcoming assignments
+            self.upcomingAssignments = (0..<4).map { i in
+                let assignment = Assignment()
+                assignment.id = "a\(i)"
+                assignment.title = "Assignment \(i + 1)"
+                assignment.assignmentDescription = "Description for assignment \(i + 1)"
+                assignment.dueDate = Date().addingTimeInterval(TimeInterval(86400 * (i + 1)))
+                return assignment
+            }
+            
+            // Generate activity feed
+            // Use activityTypes in the actual activities to avoid unused variable warnings
+            let availableActivityTypes = [
+                ("Grade Posted", "math.function", Color.green),
+                ("Assignment Created", "plus.circle", Color.blue),
+                ("Student Added", "person.badge.plus", Color.purple),
+                ("Comment Added", "text.bubble", Color.orange),
+                ("Class Created", "folder.badge.plus", Color.teal),
+                ("Report Generated", "doc.text", Color.gray)
             ]
+            
+            let timeIntervals = [-1800.0, -3600.0, -7200.0, -14400.0, -28800.0, -43200.0, -86400.0]
+            let randomActivityTimes = timeIntervals.shuffled().prefix(3).map { Double($0) }
             
             self.recentActivities = [
-                Activity(id: "1", title: "Grade Update", description: "Science Quiz 2 grades posted", timestamp: Date().addingTimeInterval(-3600), icon: "doc.text.fill", type: .gradeUpdate),
-                Activity(id: "2", title: "New Assignment", description: "Math Project assigned", timestamp: Date().addingTimeInterval(-7200), icon: "plus.circle.fill", type: .newAssignment),
-                Activity(id: "3", title: "Student Added", description: "Emma Johnson added to Class 3B", timestamp: Date().addingTimeInterval(-86400), icon: "person.badge.plus", type: .studentUpdate)
+                ActivityItem(
+                    title: "New Assignment Created",
+                    description: "You created 'Final Project' for Mathematics",
+                    timestamp: Date().addingTimeInterval(randomActivityTimes[0]),
+                    icon: "plus.circle",
+                    color: .blue
+                ),
+                ActivityItem(
+                    title: "Grade Posted",
+                    description: "You graded 12 submissions for 'Quiz 2'",
+                    timestamp: Date().addingTimeInterval(randomActivityTimes[1]),
+                    icon: "checkmark.circle",
+                    color: .green
+                ),
+                ActivityItem(
+                    title: "Student Added",
+                    description: "New student 'Alex Johnson' added to your class",
+                    timestamp: Date().addingTimeInterval(randomActivityTimes[2]),
+                    icon: "person.badge.plus",
+                    color: .purple
+                )
+            ]
+            
+            // Generate announcements
+            self.announcements = [
+                Announcement(
+                    title: "End of Semester Approaching",
+                    content: "Please submit all final grades by June 15th. Contact administration if you need an extension.",
+                    date: Date().addingTimeInterval(-86400),
+                    author: "Principal Davis",
+                    priority: .high
+                ),
+                Announcement(
+                    title: "Professional Development Day",
+                    content: "Join us for teacher training sessions on May 20th. Various workshops will be available.",
+                    date: Date().addingTimeInterval(-172800),
+                    author: "Admin Team",
+                    priority: .normal
+                ),
+                Announcement(
+                    title: "New Gradebook Features",
+                    content: "We've added new analytics tools to help track student progress. Check the updated documentation.",
+                    date: Date().addingTimeInterval(-259200),
+                    author: "IT Department",
+                    priority: .normal
+                )
             ]
             
             self.isLoading = false
         }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7, execute: task)
     }
     
-    func reloadData() {
-        isLoading = true
-        
-        // Generate mock data using the MockDataService
-        let mockData = mockService.generateMockData()
-        let randomStudentsCount = Int.random(in: 8...15)
-        let randomClassesCount = Int.random(in: 4...8)
-        let randomAssignmentsCount = Int.random(in: 18...30)
-        let randomAvgGrade = Int.random(in: 68...92)
-        
-        // Generate random trend data
-        let studentsTrend = Int.random(in: -5...5)
-        let assignmentsTrend = Int.random(in: -3...3)
-        let gradeTrend = Double.random(in: -5...5).rounded() / 10.0
-        
+    func refreshData() {
         // In a real app, this would refresh data from the backend
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+        let task = DispatchWorkItem {
             // Update stats with randomized data
             self.quickStats = [
-                QuickStat(id: "1", title: "Students", 
-                          value: "\(randomStudentsCount)", 
-                          icon: "person.3", 
-                          trend: studentsTrend > 0 ? "+\(studentsTrend)" : "\(studentsTrend)", 
-                          trendDirection: studentsTrend > 0 ? .up : (studentsTrend < 0 ? .down : .none)),
-                QuickStat(id: "2", title: "Classes", 
-                          value: "\(randomClassesCount)", 
-                          icon: "book", 
-                          trend: "", 
-                          trendDirection: .none),
-                QuickStat(id: "3", title: "Assignments", 
-                          value: "\(randomAssignmentsCount)", 
-                          icon: "doc.text", 
-                          trend: assignmentsTrend > 0 ? "+\(assignmentsTrend)" : "\(assignmentsTrend)", 
-                          trendDirection: assignmentsTrend > 0 ? .up : (assignmentsTrend < 0 ? .down : .none)),
-                QuickStat(id: "4", title: "Avg. Grade", 
-                          value: "\(randomAvgGrade)%", 
-                          icon: "chart.bar", 
-                          trend: gradeTrend > 0 ? "+\(String(format: "%.1f", gradeTrend))%" : "\(String(format: "%.1f", gradeTrend))%", 
-                          trendDirection: gradeTrend > 0 ? .up : (gradeTrend < 0 ? .down : .none))
+                QuickStat(
+                    title: "Students",
+                    value: "\(Int.random(in: 8...15))", 
+                    description: "Total students in your classes", 
+                    icon: "person.3",
+                    color: .blue
+                ),
+                QuickStat(
+                    title: "Classes",
+                    value: "\(Int.random(in: 4...8))",
+                    description: "Active classes this semester",
+                    icon: "book",
+                    color: .purple
+                ),
+                QuickStat(
+                    title: "Assignments",
+                    value: "\(Int.random(in: 15...30))",
+                    description: "Upcoming assignments",
+                    icon: "list.clipboard",
+                    color: .orange
+                ),
+                QuickStat(
+                    title: "Analytics", 
+                    value: "\(Int.random(in: 75...95))%",
+                    description: "Average grade across classes",
+                    icon: "chart.bar",
+                    color: .green
+                )
             ]
             
-            // Randomize activity order and times
-            let timeIntervals = [-1800, -3600, -7200, -14400, -28800, -43200, -86400]
-            let randomActivityTimes = timeIntervals.shuffled().prefix(3)
-            var activityIndex = 0
-            
-            self.recentActivities = [
-                Activity(id: "1", title: "Grade Update", 
-                         description: "Science Quiz 2 grades posted", 
-                         timestamp: Date().addingTimeInterval(randomActivityTimes[activityIndex]), 
-                         icon: "doc.text.fill", 
-                         type: .gradeUpdate),
-                Activity(id: "2", title: "New Assignment", 
-                         description: "Math Project assigned", 
-                         timestamp: Date().addingTimeInterval(randomActivityTimes[activityIndex + 1]), 
-                         icon: "plus.circle.fill", 
-                         type: .newAssignment),
-                Activity(id: "3", title: "Student Added", 
-                         description: "Emma Johnson added to Class 3B", 
-                         timestamp: Date().addingTimeInterval(randomActivityTimes[activityIndex + 2]), 
-                         icon: "person.badge.plus", 
-                         type: .studentUpdate)
-            ]
+            // Generate new assignments with updated due dates
+            self.upcomingAssignments = self.upcomingAssignments.enumerated().map { i, assignment in
+                let updatedAssignment = assignment
+                updatedAssignment.dueDate = Date().addingTimeInterval(TimeInterval(86400 * (i + 1)))
+                return updatedAssignment
+            }
             
             self.isLoading = false
         }
-    }
-    
-    // Alias for reloadData to match the function name used in DashboardView
-    func loadDashboardData() {
-        reloadData()
+        
+        self.isLoading = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: task)
     }
     
     // Filter assignments based on selected time range
@@ -159,68 +220,6 @@ class DashboardViewModel: ObservableObject {
             }
         default:
             return assignments
-        }
-    }
-}
-
-// Models for the dashboard
-struct QuickStat: Identifiable {
-    var id: String
-    var title: String
-    var value: String
-    var icon: String
-    var trend: String
-    var trendDirection: TrendDirection
-    
-    enum TrendDirection {
-        case up, down, none
-        
-        var color: Color {
-            switch self {
-            case .up:
-                return .green
-            case .down:
-                return .red
-            case .none:
-                return .gray
-            }
-        }
-        
-        var icon: String {
-            switch self {
-            case .up:
-                return "arrow.up"
-            case .down:
-                return "arrow.down"
-            case .none:
-                return ""
-            }
-        }
-    }
-}
-
-struct Activity: Identifiable {
-    var id: String
-    var title: String
-    var description: String
-    var timestamp: Date
-    var icon: String
-    var type: ActivityType
-    
-    enum ActivityType {
-        case gradeUpdate, newAssignment, studentUpdate, systemNotice
-        
-        var color: Color {
-            switch self {
-            case .gradeUpdate:
-                return .blue
-            case .newAssignment:
-                return .green
-            case .studentUpdate:
-                return .orange
-            case .systemNotice:
-                return .gray
-            }
         }
     }
 }

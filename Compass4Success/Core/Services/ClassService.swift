@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import RealmSwift
 
 class ClassService: ObservableObject {
     @Published var classes: [SchoolClass] = []
@@ -106,7 +107,7 @@ class ClassService: ObservableObject {
             // Simulate network request
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 if let index = self.classes.firstIndex(where: { $0.id == classId }) {
-                    let studentsList = List<Student>()
+                    let studentsList = RealmSwift.List<Student>()
                     self.classes[index].students.forEach { studentsList.append($0) }
                     studentsList.append(student)
                     self.classes[index].students = studentsList
@@ -130,7 +131,7 @@ class ClassService: ObservableObject {
             // Simulate network request
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 if let index = self.classes.firstIndex(where: { $0.id == classId }) {
-                    let assignmentsList = List<Assignment>()
+                    let assignmentsList = RealmSwift.List<Assignment>()
                     self.classes[index].assignments.forEach { assignmentsList.append($0) }
                     assignmentsList.append(assignment)
                     self.classes[index].assignments = assignmentsList

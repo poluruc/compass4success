@@ -71,19 +71,33 @@ struct StudentsView: View {
         }
         .navigationTitle("Students")
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingAddStudent = true }) {
                     Image(systemName: "person.badge.plus")
                 }
             }
+            #else
+            ToolbarItem {
+                Button(action: { showingAddStudent = true }) {
+                    Image(systemName: "person.badge.plus")
+                }
+            }
+            #endif
         }
         .sheet(isPresented: $showingAddStudent) {
-            AddStudentView()
-                .presentationDetents([.medium, .large])
+            Text("Add Student feature is not available")
+                #if os(iOS)
+                .presentationDetents([.medium])
+                #endif
         }
         .sheet(item: $selectedStudent) { student in
-            StudentDetailView(student: student)
-                .presentationDetents([.medium, .large])
+            StudentDetailView(student: student) { _ in
+                // Handle student update completion here if needed
+            }
+            #if os(iOS)
+            .presentationDetents([.medium, .large])
+            #endif
         }
         .onAppear {
             loadData()
@@ -96,33 +110,6 @@ struct StudentsView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.isLoading = false
         }
-    }
-}
-
-struct SearchBar: View {
-    @Binding var text: String
-    var placeholder: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField(placeholder, text: $text)
-                .foregroundColor(.primary)
-            
-            if !text.isEmpty {
-                Button(action: {
-                    text = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                }
-            }
-        }
-        .padding(10)
-        .background(Color(.systemGray6))
-        .cornerRadius(10)
     }
 }
 
@@ -256,137 +243,6 @@ struct EmptyStateView: View {
             Spacer()
         }
     }
-}
-
-struct LoadingOverlay: View {
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.3)
-                .edgesIgnoringSafeArea(.all)
-            
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.5)
-                .foregroundColor(.white)
-        }
-    }
-}
-
-struct AddStudentView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var firstName = ""
-    @State private var lastName = ""
-    @State private var email = ""
-    @State private var studentNumber = ""
-    @State private var grade = "9"
-    
-    let grades = ["9", "10", "11", "12"]
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Student Information")) {
-                    TextField("First Name", text: $firstName)
-                    TextField("Last Name", text: $lastName)
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    TextField("Student ID", text: $studentNumber)
-                        .keyboardType(.numberPad)
-                    
-                    Picker("Grade", selection: $grade) {
-                        ForEach(grades, id: \.self) { grade in
-                            Text(grade).tag(grade)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                }
-            }
-            .navigationTitle("Add Student")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        // Save the student
-                        dismiss()
-                    }
-                    .disabled(firstName.isEmpty || lastName.isEmpty || email.isEmpty || studentNumber.isEmpty)
-                }
-            }
-        }
-    }
-}
-
-struct StudentDetailView: View {
-    let student: Student
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                HStack {
-                    ZStack {
-                        Circle()
-                            .fill(getColorForName(student.fullName))
-                            .frame(width: 80, height: 80)
-                        
-                        Text(student.initials)
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(student.fullName)
-                            .font(.title)
-                            .fontWeight(.bold)
-                        
-                        Text("Grade \(student.grade)")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.leading, 16)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                // Contact Info
-                Section(header: SectionHeader(title: "Contact Information")) {
-                    InfoRow(label: "Email", value: student.email)
-                    InfoRow(label: "Student ID", value: student.studentNumber)
-                    
-                    if !student.guardianEmail.isEmpty {
-                        InfoRow(label: "Guardian Email", value: student.guardianEmail)
-                    }
-                    
-                    if !student.guardianPhone.isEmpty {
-                        InfoRow(label: "Guardian Phone", value: student.guardianPhone)
-                    }
-                }
-                
-                // Academics
-                Section(header: SectionHeader(title: "Academic Information")) {
-                    if student.courses.isEmpty {
-                        Text("Not enrolled in any classes")
-                            .foregroundColor(.secondary)
-                            .padding()
-                    } else {
-                        ForEach(Array(student.courses)) { course in
-                            ClassRow(schoolClass: course)
-                        }
-                    }
-                }
-            }
-            .padding(.bottom, 20)
-        }
-    }
-    
     // Generates a consistent color based on the student's name
     private func getColorForName(_ name: String) -> Color {
         let colors: [Color] = [.blue, .green, .orange, .purple, .pink, .red, .yellow]

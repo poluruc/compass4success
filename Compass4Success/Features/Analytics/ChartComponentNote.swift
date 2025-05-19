@@ -2,58 +2,7 @@ import SwiftUI
 import Charts
 
 // This file contains shared models and utilities for chart components
-
-// Basic chart data point for bar charts and other simple visualizations
-struct ChartDataPoint: Identifiable {
-    var id = UUID()
-    var label: String
-    var value: Double
-    
-    // Optional color for when individual data points need custom colors
-    var color: Color? = nil
-}
-
-// Time series data point for tracking changes over time
-struct TimeSeriesDataPoint: Identifiable {
-    var id = UUID()
-    var label: String
-    var date: Date
-    var value: Double
-}
-
-// Data point for scatter plots (e.g., attendance vs grades)
-struct ScatterPlotDataPoint: Identifiable {
-    var id = UUID()
-    var label: String
-    var x: Double
-    var y: Double
-    var size: Double = 8 // Optional size for emphasizing certain points
-}
-
-// Model for subject performance analysis
-struct SubjectPerformance: Identifiable {
-    var id = UUID()
-    var subject: String
-    var averageGrade: Double
-    var studentCount: Int = 0
-}
-
-// Model for grade level performance analysis
-struct GradeLevelPerformance: Identifiable {
-    var id = UUID()
-    var gradeLevel: String
-    var averageGrade: Double
-    var targetGrade: Double = 80
-}
-
-// Model for analytics insights
-struct AnalyticsInsight: Identifiable {
-    var id = UUID()
-    var title: String
-    var description: String
-    var icon: String
-    var color: Color
-}
+// Note: Use the canonical types from AnalyticsChartModels for data structures
 
 // Export formats supported by the analytics system
 enum ExportFormat: String, CaseIterable {
@@ -91,33 +40,6 @@ enum ExportFormat: String, CaseIterable {
             return "text/csv"
         case .excel:
             return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        }
-    }
-}
-
-// Reusable loading overlay for chart operations that might take time
-struct LoadingOverlay: View {
-    var message: String = "Loading..."
-    
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.4)
-                .edgesIgnoringSafeArea(.all)
-            
-            VStack(spacing: 15) {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .tint(.white)
-                
-                Text(message)
-                    .font(.headline)
-                    .foregroundColor(.white)
-            }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.systemGray6).opacity(0.8))
-            )
         }
     }
 }
@@ -184,6 +106,7 @@ struct ChartUtilities {
 }
 
 // Chart note documentation browser (for use in development and onboarding)
+@available(macOS 13.0, iOS 16.0, *)
 struct ChartComponentNoteBrowser: View {
     @State private var markdownText = ""
     
@@ -252,34 +175,42 @@ struct ChartComponentNoteBrowser: View {
     }
     
     private func loadMarkdownDocumentation() {
-        if let fileURL = Bundle.main.url(forResource: "ChartComponentNote", withExtension: "md"),
-           let content = try? String(contentsOf: fileURL) {
-            markdownText = content
+        if let markdownURL = Bundle.main.url(forResource: "ChartComponentNote", withExtension: "md"),
+           let markdown = try? String(contentsOf: markdownURL, encoding: .utf8) {
+            markdownText = markdown
         } else {
-            markdownText = "Documentation not found. Please check that ChartComponentNote.md is included in the project bundle."
+            markdownText = "Documentation not found."
         }
     }
     
+    @available(macOS 13.0, iOS 16.0, *)
     private func generateMockTimeSeriesData() -> [TimeSeriesDataPoint] {
         let calendar = Calendar.current
         let endDate = Date()
-        let startDate = calendar.date(byAdding: .month, value: -1, to: endDate)!
-        let timeInterval = endDate.timeIntervalSince(startDate) / 8
-        var dates: [Date] = []
-        
-        for i in 0...8 {
-            let date = startDate.addingTimeInterval(timeInterval * Double(i))
-            dates.append(date)
-        }
+        let startDate = calendar.date(byAdding: .month, value: -6, to: endDate)!
         
         var result: [TimeSeriesDataPoint] = []
         
         // Class Average series
-        var avg = 75.0
-        for date in dates {
-            avg += Double.random(in: -3...3)
-            avg = min(max(avg, 60), 95)
-            result.append(TimeSeriesDataPoint(label: "Class Average", date: date, value: avg))
+        for month in 0..<6 {
+            let date = calendar.date(byAdding: .month, value: month, to: startDate)!
+            let value = Double.random(in: 70...85)
+            result.append(TimeSeriesDataPoint(
+                label: "Class Average",
+                date: date,
+                value: value
+            ))
+        }
+        
+        // School Average series
+        for month in 0..<6 {
+            let date = calendar.date(byAdding: .month, value: month, to: startDate)!
+            let value = Double.random(in: 75...88)
+            result.append(TimeSeriesDataPoint(
+                label: "School Average",
+                date: date,
+                value: value
+            ))
         }
         
         return result

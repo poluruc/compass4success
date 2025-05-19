@@ -9,7 +9,7 @@
 - **Swift 5.7+**: Primary programming language
 - **SwiftUI**: UI framework for declarative interface building
 - **iOS 16.0+**: Primary target platform
-- **macOS 12.0+**: Secondary target platform
+- **macOS 13.0+**: Secondary target platform
 - **Xcode 14.0+**: Development environment
 
 ### Frameworks & Libraries

@@ -77,9 +77,9 @@ The application is designed to work on both iOS and macOS with minimal platform-
 #endif
 
 // API availability
-@available(macOS 12.0, iOS 16.0, *)
+@available(macOS 13.0, iOS 16.0, *)
 struct MyView: View {
-    // Uses APIs available on macOS 12.0+ and iOS 16.0+
+    // Uses APIs available on macOS 13.0+ and iOS 16.0+
 }
 ```
 
@@ -195,7 +195,7 @@ Section("Settings") {
 }
 
 // GOOD: Using availability check
-if #available(macOS 12.0, *) {
+if #available(macOS 13.0, *) {
     Section("Settings") {
         Toggle("Dark Mode", isOn: $isDarkMode)
     }

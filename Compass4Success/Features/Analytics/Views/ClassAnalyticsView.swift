@@ -1,9 +1,9 @@
 import SwiftUI
 import Charts
 
+@available(macOS 13.0, iOS 16.0, *)
 struct ClassAnalyticsView: View {
     let schoolClass: SchoolClass
-    private let analyticsService = AnalyticsService()
     @State private var selectedMetric: MetricType = .grades
     @State private var isLoading = false
     
@@ -16,7 +16,7 @@ struct ClassAnalyticsView: View {
         var icon: String {
             switch self {
             case .grades: return "chart.bar.fill"
-            case .assignments: return "checklist"
+            case .assignments: return "doc.text.fill"
             case .attendance: return "calendar"
             case .participation: return "hand.raised.fill"
             }
@@ -24,15 +24,46 @@ struct ClassAnalyticsView: View {
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Class details header
-                ClassHeader(schoolClass: schoolClass)
-                
-                // Metric selector
-                MetricSelector(selectedMetric: $selectedMetric)
-                
-                // Content based on selected metric
+        #if os(iOS)
+        SwiftUI.ScrollView(.vertical, showsIndicators: true) {
+            mainContent
+        }
+        .navigationTitle(schoolClass.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .overlay(content: {
+            if isLoading {
+                LoadingOverlay()
+            }
+        })
+        .onAppear {
+            loadData()
+        }
+        #else
+        SwiftUI.ScrollView(.vertical, showsIndicators: true) {
+            mainContent
+        }
+        .navigationTitle(schoolClass.name)
+        .overlay(content: {
+            if isLoading {
+                LoadingOverlay()
+            }
+        })
+        .onAppear {
+            loadData()
+        }
+        #endif
+    }
+    
+    private var mainContent: some View {
+        VStack(spacing: 20) {
+            // Class details header
+            ClassHeader(schoolClass: schoolClass)
+            
+            // Metric selector
+            MetricSelector(selectedMetric: $selectedMetric)
+            
+            // Content based on selected metric
+            if #available(macOS 13.0, *) {
                 switch selectedMetric {
                 case .grades:
                     GradeAnalyticsView(schoolClass: schoolClass)
@@ -43,17 +74,27 @@ struct ClassAnalyticsView: View {
                 case .participation:
                     ParticipationAnalyticsView(schoolClass: schoolClass)
                 }
+            } else {
+                // Fallback for unsupported OS versions
+                VStack {
+                    Text("Advanced analytics require macOS 13.0 or newer")
+                        .font(.headline)
+                    
+                    Text("Please update your operating system to access all features")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.systemBackground))
+                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                )
             }
-            .padding()
         }
-        .navigationTitle(schoolClass.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .overlay(
-            isLoading ? LoadingOverlay() : nil
-        )
-        .onAppear {
-            loadData()
-        }
+        .padding()
     }
     
     private func loadData() {
@@ -119,6 +160,7 @@ struct ClassHeader: View {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct MetricSelector: View {
     @Binding var selectedMetric: ClassAnalyticsView.MetricType
     
@@ -155,6 +197,7 @@ struct MetricSelector: View {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct GradeAnalyticsView: View {
     let schoolClass: SchoolClass
     @State private var gradeDistribution: [ChartDataPoint] = []
@@ -222,48 +265,39 @@ struct GradeAnalyticsView: View {
 
 struct StudentGradeRow: View {
     let student: Student
-    @State private var grade = Double.random(in: 60...100)
+    @State private var grade = Double.random(in: 65...95) // Mock grade
     
     var body: some View {
         HStack {
-            Text(student.fullName)
-                .fontWeight(.medium)
+            // Student name
+            VStack(alignment: .leading) {
+                Text("\(student.firstName) \(student.lastName)")
+                    .fontWeight(.medium)
+                
+                Text("ID: \(student.studentNumber)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
             
             Spacer()
             
-            Text("\(Int(grade))%")
-                .font(.headline)
-                .foregroundColor(getGradeColor(grade))
-            
-            Text(getLetterGrade(grade))
-                .font(.subheadline)
-                .frame(width: 30)
-                .padding(4)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(getGradeColor(grade).opacity(0.2))
-                )
-                .foregroundColor(getGradeColor(grade))
+            // Grade
+            VStack(alignment: .trailing) {
+                Text("\(Int(grade))%")
+                    .fontWeight(.bold)
+                    .foregroundColor(gradeColor)
+                
+                Text(letterGrade)
+                    .font(.caption)
+                    .foregroundColor(gradeColor)
+            }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
+        .background(Color(.systemBackground))
     }
     
-    private func getGradeColor(_ grade: Double) -> Color {
-        switch grade {
-        case 90...100:
-            return .green
-        case 80..<90:
-            return .blue
-        case 70..<80:
-            return .yellow
-        case 60..<70:
-            return .orange
-        default:
-            return .red
-        }
-    }
-    
-    private func getLetterGrade(_ grade: Double) -> String {
+    private var letterGrade: String {
         switch grade {
         case 90...100:
             return "A"
@@ -277,80 +311,51 @@ struct StudentGradeRow: View {
             return "F"
         }
     }
+    
+    private var gradeColor: Color {
+        switch grade {
+        case 90...100:
+            return .green
+        case 80..<90:
+            return .blue
+        case 70..<80:
+            return .yellow
+        case 60..<70:
+            return .orange
+        default:
+            return .red
+        }
+    }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct AssignmentAnalyticsView: View {
     let schoolClass: SchoolClass
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Assignment Completion")
-                .font(.headline)
-            
-            // Simplified placeholder
-            Text("Assignment analytics content will appear here")
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, minHeight: 200)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-        )
+        Text("Assignment Analytics")
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct AttendanceAnalyticsView: View {
     let schoolClass: SchoolClass
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Attendance Records")
-                .font(.headline)
-            
-            // Simplified placeholder
-            Text("Attendance analytics content will appear here")
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, minHeight: 200)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-        )
+        Text("Attendance Analytics")
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct ParticipationAnalyticsView: View {
     let schoolClass: SchoolClass
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Class Participation")
-                .font(.headline)
-            
-            // Simplified placeholder
-            Text("Participation analytics content will appear here")
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, minHeight: 200)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-        )
+        Text("Participation Analytics")
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct ClassAnalyticsView_Previews: PreviewProvider {
     static var previews: some View {
         // Create mock class for preview

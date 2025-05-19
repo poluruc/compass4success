@@ -6,7 +6,7 @@ import SwiftUI
 class CurriculumUnit: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var title: String = ""
-    @Persisted var description: String = ""
+    @Persisted var detailedDescription: String = ""
     @Persisted var subject: String = ""
     @Persisted var gradeLevel: String = ""
     @Persisted var duration: Int = 0 // Number of weeks
@@ -25,7 +25,7 @@ class CurriculumUnit: Object, Identifiable {
     convenience init(title: String, description: String, subject: String, gradeLevel: String, duration: Int = 0, order: Int = 0) {
         self.init()
         self.title = title
-        self.description = description
+        self.detailedDescription = description
         self.subject = subject
         self.gradeLevel = gradeLevel
         self.duration = duration
@@ -59,7 +59,7 @@ class Lesson: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var unitId: String = ""
     @Persisted var title: String = ""
-    @Persisted var description: String = ""
+    @Persisted var detailedDescription: String = ""
     @Persisted var objectives: String = ""
     @Persisted var duration: Int = 0 // In minutes
     @Persisted var order: Int = 0
@@ -87,7 +87,7 @@ class Lesson: Object, Identifiable {
         self.init()
         self.unitId = unitId
         self.title = title
-        self.description = description
+        self.detailedDescription = description
         self.duration = duration
         self.order = order
         self.lessonTypeEnum = lessonType
@@ -169,7 +169,7 @@ enum LessonType: String, CaseIterable {
 class CurriculumResource: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
     @Persisted var title: String = ""
-    @Persisted var description: String = ""
+    @Persisted var detailedDescription: String = ""
     @Persisted var url: String?
     @Persisted var resourceType: String = ResourceType.document.rawValue
     @Persisted var createdBy: String = ""
@@ -192,7 +192,7 @@ class CurriculumResource: Object, Identifiable {
     convenience init(title: String, description: String, url: String? = nil, resourceType: ResourceType = .document) {
         self.init()
         self.title = title
-        self.description = description
+        self.detailedDescription = description
         self.url = url
         self.resourceTypeEnum = resourceType
     }

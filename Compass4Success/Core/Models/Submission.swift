@@ -3,23 +3,24 @@ import RealmSwift
 import SwiftUI
 
 // Model representing a student's submission for an assignment
-class Submission: Object, Identifiable {
-    @Persisted(primaryKey: true) var id: String = UUID().uuidString
+public class Submission: Object, Identifiable {
+    @Persisted(primaryKey: true) public var id: String = UUID().uuidString
     @Persisted var assignmentId: String = ""
     @Persisted var studentId: String = ""
     @Persisted var submittedDate: Date?
-    @Persisted var status: String = SubmissionStatus.notSubmitted.rawValue
+    @Persisted var status: String = CoreSubmissionStatus.notSubmitted.rawValue
     @Persisted var attachmentUrls = List<String>()
     @Persisted var comments: String = ""
     @Persisted var feedbackRequestFlag: Bool = false
     @Persisted var draft: Bool = false
     @Persisted var attempts: Int = 0
+    @Persisted var score: Int = 0
     @Persisted var rubricScoreId: String?
     
     // Computed property for the status as an enum
-    var statusEnum: SubmissionStatus {
+    var statusEnum: CoreSubmissionStatus {
         get {
-            return SubmissionStatus(rawValue: status) ?? .notSubmitted
+            return CoreSubmissionStatus(rawValue: status) ?? .notSubmitted
         }
         set {
             status = newValue.rawValue
@@ -47,7 +48,7 @@ class Submission: Object, Identifiable {
     }
     
     // Convenience initializer
-    convenience init(assignmentId: String, studentId: String, submittedDate: Date? = nil, status: SubmissionStatus = .notSubmitted) {
+    convenience init(assignmentId: String, studentId: String, submittedDate: Date? = nil, status: CoreSubmissionStatus = .notSubmitted) {
         self.init()
         self.assignmentId = assignmentId
         self.studentId = studentId
@@ -82,7 +83,7 @@ class Submission: Object, Identifiable {
 }
 
 // Enumeration of possible submission statuses
-enum SubmissionStatus: String, CaseIterable {
+enum CoreSubmissionStatus: String, CaseIterable {
     case notSubmitted = "Not Submitted"
     case draft = "Draft"
     case submitted = "Submitted"
@@ -135,6 +136,9 @@ enum SubmissionStatus: String, CaseIterable {
     }
 }
 
+// For backward compatibility
+typealias SubmissionStatus = CoreSubmissionStatus
+
 // Model for tracking submission history
 class SubmissionHistory: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString
@@ -145,7 +149,7 @@ class SubmissionHistory: Object, Identifiable {
     @Persisted var statusAfter: String = ""
     @Persisted var userId: String = "" // ID of user who made the change
     
-    convenience init(submissionId: String, action: String, statusBefore: SubmissionStatus, statusAfter: SubmissionStatus, userId: String) {
+    convenience init(submissionId: String, action: String, statusBefore: CoreSubmissionStatus, statusAfter: CoreSubmissionStatus, userId: String) {
         self.init()
         self.submissionId = submissionId
         self.action = action

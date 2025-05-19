@@ -14,77 +14,142 @@ struct TeacherPickerView: View {
     
     var body: some View {
         NavigationView {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = error {
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.largeTitle)
-                            .foregroundColor(.orange)
-                        
-                        Text("Error loading teachers")
-                            .font(.headline)
-                        
-                        Text(error.localizedDescription)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        Button("Retry") {
-                            loadTeachers()
-                        }
-                        .buttonStyle(.borderedProminent)
+            VStack {
+                // Custom header with cancel button
+                HStack {
+                    Button("Cancel") {
+                        dismiss()
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if teachers.isEmpty {
-                    ContentUnavailableView(
-                        "No Teachers Found",
-                        systemImage: "person.slash",
-                        description: Text("There are no teachers in the system yet.")
-                    )
-                } else {
-                    List {
-                        ForEach(filteredTeachers) { teacher in
-                            Button(action: {
-                                onTeacherSelected(teacher)
-                                dismiss()
-                            }) {
-                                HStack {
-                                    Image(systemName: "person.fill")
-                                        .foregroundColor(.blue)
-                                        .font(.title3)
-                                    
-                                    VStack(alignment: .leading) {
-                                        Text("\(teacher.firstName) \(teacher.lastName)")
-                                            .font(.headline)
+                    .padding(.leading)
+                    
+                    Spacer()
+                    
+                    Text("Select Teacher")
+                        .font(.headline)
+                    
+                    Spacer()
+                    
+                    // Balance the layout
+                    Button("") {
+                        // Empty action
+                    }
+                    .opacity(0)
+                    .padding(.trailing)
+                }
+                .padding(.vertical, 8)
+                
+                // Main content
+                Group {
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let error = error {
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.largeTitle)
+                                .foregroundColor(.orange)
+                            
+                            Text("Error loading teachers")
+                                .font(.headline)
+                            
+                            Text(error.localizedDescription)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                            
+                            Button("Retry") {
+                                loadTeachers()
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if teachers.isEmpty {
+                        #if os(macOS)
+                        // Use our fallback on macOS 13 since ContentUnavailableView is macOS 14+
+                        // Fallback for macOS 13
+                        VStack(spacing: 16) {
+                            Image(systemName: "person.slash")
+                                .font(.system(size: 50))
+                                .foregroundColor(.secondary)
+                            
+                            Text("No Teachers Found")
+                                .font(.headline)
+                            
+                            Text("There are no teachers in the system yet.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
+                        #elseif os(iOS)
+                        // ContentUnavailableView on iOS is available from iOS 17+
+                        // Always use fallback on iOS 16
+                        VStack(spacing: 16) {
+                            Image(systemName: "person.slash")
+                                .font(.system(size: 50))
+                                .foregroundColor(.secondary)
+                            
+                            Text("No Teachers Found")
+                                .font(.headline)
+                            
+                            Text("There are no teachers in the system yet.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
+                        #else
+                        // For any other platform, use the same fallback
+                        VStack(spacing: 16) {
+                            Image(systemName: "person.slash")
+                                .font(.system(size: 50))
+                                .foregroundColor(.secondary)
+                            
+                            Text("No Teachers Found")
+                                .font(.headline)
+                            
+                            Text("There are no teachers in the system yet.")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
+                        #endif
+                    } else {
+                        List {
+                            ForEach(filteredTeachers) { teacher in
+                                Button(action: {
+                                    onTeacherSelected(teacher)
+                                    dismiss()
+                                }) {
+                                    HStack {
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.blue)
+                                            .font(.title3)
                                         
-                                        if !teacher.email.isEmpty {
-                                            Text(teacher.email)
+                                        VStack(alignment: .leading) {
+                                            Text("\(teacher.firstName) \(teacher.lastName)")
+                                                .font(.headline)
+                                            
+                                            Text("Subjects: \(teacher.subjects.joined(separator: ", "))")
                                                 .font(.subheadline)
                                                 .foregroundColor(.secondary)
                                         }
                                     }
+                                    .padding(.vertical, 4)
                                 }
-                                .padding(.vertical, 4)
+                                .buttonStyle(PlainButtonStyle())
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
-                    }
-                    .searchable(text: $searchText, prompt: "Search by name or email")
-                }
-            }
-            .navigationTitle("Select Teacher")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
+                        .searchable(text: $searchText, prompt: "Search by name or email")
                     }
                 }
             }
+            // No toolbar used anymore
         }
         .onAppear {
             loadTeachers()
@@ -98,8 +163,9 @@ struct TeacherPickerView: View {
             let lowercasedQuery = searchText.lowercased()
             return teachers.filter { teacher in
                 let fullName = "\(teacher.firstName) \(teacher.lastName)".lowercased()
+                let subjects = teacher.subjects.joined(separator: " ").lowercased()
                 return fullName.contains(lowercasedQuery) || 
-                       teacher.email.lowercased().contains(lowercasedQuery)
+                       subjects.contains(lowercasedQuery)
             }
         }
     }
@@ -111,14 +177,14 @@ struct TeacherPickerView: View {
         // In a real app, you would use a service to fetch data
         // This is mock data for demonstration
         let mockTeachers = [
-            Teacher(firstName: "John", lastName: "Smith", email: "john.smith@school.edu"),
-            Teacher(firstName: "Sarah", lastName: "Johnson", email: "sjohnson@school.edu"),
-            Teacher(firstName: "Michael", lastName: "Davis", email: "mdavis@school.edu"),
-            Teacher(firstName: "Emily", lastName: "Wilson", email: "ewilson@school.edu"),
-            Teacher(firstName: "Robert", lastName: "Brown", email: "rbrown@school.edu"),
-            Teacher(firstName: "Jennifer", lastName: "Miller", email: "jmiller@school.edu"),
-            Teacher(firstName: "William", lastName: "Taylor", email: "wtaylor@school.edu"),
-            Teacher(firstName: "Elizabeth", lastName: "Anderson", email: "eanderson@school.edu")
+            Teacher(id: "T1", firstName: "John", lastName: "Smith", subjects: ["Math", "Science"], classes: []),
+            Teacher(id: "T2", firstName: "Sarah", lastName: "Johnson", subjects: ["English", "History"], classes: []),
+            Teacher(id: "T3", firstName: "Michael", lastName: "Davis", subjects: ["Science", "Biology"], classes: []),
+            Teacher(id: "T4", firstName: "Emily", lastName: "Wilson", subjects: ["Art", "Music"], classes: []),
+            Teacher(id: "T5", firstName: "Robert", lastName: "Brown", subjects: ["Physical Education"], classes: []),
+            Teacher(id: "T6", firstName: "Jennifer", lastName: "Miller", subjects: ["Chemistry", "Physics"], classes: []),
+            Teacher(id: "T7", firstName: "William", lastName: "Taylor", subjects: ["Computer Science"], classes: []),
+            Teacher(id: "T8", firstName: "Elizabeth", lastName: "Anderson", subjects: ["Mathematics"], classes: [])
         ]
         
         // Simulate network delay

@@ -15,15 +15,32 @@ class Student: Object, Identifiable {
     @Persisted var updatedAt: Date = Date()
     @Persisted var isActive: Bool = true
     @Persisted var courses = List<SchoolClass>()
+    @Persisted var gender: String = ""
     
-    var fullName: String {
+    // Computed property for GPA (to be compatible with the StudentViewModel)
+    var gpa: Double {
+        return averageGrade ?? 0.0
+    }
+    
+    // Renamed to avoid conflicts
+    var displayName: String {
         return "\(firstName) \(lastName)"
     }
     
+    var fullName: String {
+        "\(firstName) \(lastName)"
+    }
+    
+    // Renamed to initials for clarity
     var initials: String {
         let firstInitial = firstName.first?.uppercased() ?? ""
         let lastInitial = lastName.first?.uppercased() ?? ""
         return "\(firstInitial)\(lastInitial)"
+    }
+    
+    // Provide compatibility with code that expects student.name
+    var name: String {
+        return displayName
     }
     
     // Calculate average grade across all courses

@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct EngagementRadarChart: View {
     let scores: [EngagementScore]
@@ -14,70 +15,161 @@ struct EngagementRadarChart: View {
     
     var body: some View {
         ZStack {
-            // Background circles
-            ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { scale in
-                Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    .frame(width: maxRadius * 2 * scale)
-            }
-            
-            // Axis lines
-            ForEach(0..<scores.count, id: \.self) { index in
-                let angle = (2 * .pi / Double(scores.count)) * Double(index) - .pi / 2
-                Line(
-                    from: .zero,
-                    to: CGPoint(
-                        x: cos(angle) * maxRadius,
-                        y: sin(angle) * maxRadius
-                    )
-                )
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            }
-            
-            // Data polygon
-            RadarPolygon(scores: scores, maxRadius: maxRadius)
-                .fill(Color.blue.opacity(0.2))
-            
-            RadarPolygon(scores: scores, maxRadius: maxRadius)
-                .stroke(Color.blue, lineWidth: 2)
-            
-            // Data points
-            ForEach(scores) { score in
-                if let index = scores.firstIndex(where: { $0.id == score.id }) {
-                    let angle = (2 * .pi / Double(scores.count)) * Double(index) - .pi / 2
-                    let point = CGPoint(
-                        x: cos(angle) * maxRadius * score.score,
-                        y: sin(angle) * maxRadius * score.score
-                    )
-                    
-                    Circle()
-                        .fill(score.color)
-                        .frame(width: 8, height: 8)
-                        .position(x: point.x + maxRadius, y: point.y + maxRadius)
-                }
-            }
-            
-            // Category labels
-            ForEach(scores) { score in
-                if let index = scores.firstIndex(where: { $0.id == score.id }) {
-                    let angle = (2 * .pi / Double(scores.count)) * Double(index) - .pi / 2
-                    let labelDistance = maxRadius * 1.15
-                    let point = CGPoint(
-                        x: cos(angle) * labelDistance,
-                        y: sin(angle) * labelDistance
-                    )
-                    
-                    Text(score.category)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .position(x: point.x + maxRadius, y: point.y + maxRadius)
-                        .multilineTextAlignment(.center)
-                        .frame(width: 70)
-                }
-            }
+            BackgroundCircles(maxRadius: maxRadius)
+            AxisLines(scores: scores, maxRadius: maxRadius)
+            DataPolygons(scores: scores, maxRadius: maxRadius)
+            DataPoints(scores: scores, maxRadius: maxRadius)
+            CategoryLabels(scores: scores, maxRadius: maxRadius)
         }
         .frame(width: maxRadius * 2, height: maxRadius * 2)
         .padding(.vertical, 30)
+    }
+}
+
+// MARK: - Component Views
+struct BackgroundCircles: View {
+    let maxRadius: CGFloat
+    let scaleFactors = [0.25, 0.5, 0.75, 1.0]
+    
+    var body: some View {
+        ForEach(scaleFactors, id: \.self) { scale in
+            Circle()
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                .frame(width: maxRadius * 2 * scale)
+        }
+    }
+}
+
+struct AxisLines: View {
+    let scores: [EngagementRadarChart.EngagementScore]
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        ForEach(0..<scores.count, id: \.self) { index in
+            AxisLine(index: index, count: scores.count, maxRadius: maxRadius)
+        }
+    }
+}
+
+struct AxisLine: View {
+    let index: Int
+    let count: Int
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        let angle = calculateAngle(index: index, count: count)
+        return Line(
+            from: .zero,
+            to: CGPoint(
+                x: Foundation.cos(angle) * maxRadius,
+                y: Foundation.sin(angle) * maxRadius
+            )
+        )
+        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+    }
+    
+    private func calculateAngle(index: Int, count: Int) -> Double {
+        return (2 * .pi / Double(count)) * Double(index) - .pi / 2
+    }
+}
+
+struct DataPolygons: View {
+    let scores: [EngagementRadarChart.EngagementScore]
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        RadarPolygon(scores: scores, maxRadius: maxRadius)
+            .fill(Color.blue.opacity(0.2))
+        
+        RadarPolygon(scores: scores, maxRadius: maxRadius)
+            .stroke(Color.blue, lineWidth: 2)
+    }
+}
+
+struct DataPoints: View {
+    let scores: [EngagementRadarChart.EngagementScore]
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        ForEach(scores) { score in
+            if let index = scores.firstIndex(where: { $0.id == score.id }) {
+                DataPoint(
+                    score: score,
+                    index: index,
+                    count: scores.count,
+                    maxRadius: maxRadius
+                )
+            }
+        }
+    }
+}
+
+struct DataPoint: View {
+    let score: EngagementRadarChart.EngagementScore
+    let index: Int
+    let count: Int
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        let position = calculatePosition()
+        
+        return Circle()
+            .fill(score.color)
+            .frame(width: 8, height: 8)
+            .position(x: position.x + maxRadius, y: position.y + maxRadius)
+    }
+    
+    private func calculatePosition() -> CGPoint {
+        let angle = (2 * .pi / Double(count)) * Double(index) - .pi / 2
+        return CGPoint(
+            x: Foundation.cos(angle) * maxRadius * score.score,
+            y: Foundation.sin(angle) * maxRadius * score.score
+        )
+    }
+}
+
+struct CategoryLabels: View {
+    let scores: [EngagementRadarChart.EngagementScore]
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        ForEach(scores) { score in
+            if let index = scores.firstIndex(where: { $0.id == score.id }) {
+                CategoryLabel(
+                    category: score.category,
+                    index: index,
+                    count: scores.count,
+                    maxRadius: maxRadius
+                )
+            }
+        }
+    }
+}
+
+struct CategoryLabel: View {
+    let category: String
+    let index: Int
+    let count: Int
+    let maxRadius: CGFloat
+    
+    var body: some View {
+        let position = calculatePosition()
+        
+        return Text(category)
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .position(x: position.x + maxRadius, y: position.y + maxRadius)
+            .multilineTextAlignment(.center)
+            .frame(width: 70)
+    }
+    
+    private func calculatePosition() -> CGPoint {
+        let angle = (2 * .pi / Double(count)) * Double(index) - .pi / 2
+        let labelDistance = maxRadius * 1.15
+        return CGPoint(
+            x: Foundation.cos(angle) * labelDistance,
+            y: Foundation.sin(angle) * labelDistance
+        )
     }
 }
 
@@ -105,8 +197,8 @@ struct RadarPolygon: Shape {
         for (index, score) in scores.enumerated() {
             let angle = (2 * .pi / Double(scores.count)) * Double(index) - .pi / 2
             let point = CGPoint(
-                x: cos(angle) * maxRadius * score.score + center.x,
-                y: sin(angle) * maxRadius * score.score + center.y
+                x: Foundation.cos(angle) * maxRadius * score.score + center.x,
+                y: Foundation.sin(angle) * maxRadius * score.score + center.y
             )
             
             if index == 0 {

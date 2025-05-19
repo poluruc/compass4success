@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 // Preview provider for analytics components
+@available(macOS 13.0, iOS 16.0, *)
 struct AnalyticsPreviewProvider {
     
     // Generate mock data for grade distribution chart

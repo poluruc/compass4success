@@ -2,8 +2,8 @@ import SwiftUI
 
 struct ExportSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    let analyticsType: AnalyticsView.AnalyticsType
-    let timeFrame: AnalyticsView.TimeFrame
+    let analyticsType: Compass4Success.AnalyticsViewType
+    let timeFrame: Compass4Success.AnalyticsTimeFrame
     
     @State private var selectedFormat = ExportFormat.pdf
     @State private var includeCharts = true
@@ -90,7 +90,9 @@ struct ExportSettingsView: View {
                 }
             }
             .navigationTitle("Export Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -123,8 +125,8 @@ struct ExportSettingsView: View {
 struct ExportSettingsView_Previews: PreviewProvider {
     static var previews: some View {
         ExportSettingsView(
-            analyticsType: .gradeDistribution,
-            timeFrame: .semester
+            analyticsType: Compass4Success.AnalyticsViewType.gradeDistribution,
+            timeFrame: Compass4Success.AnalyticsTimeFrame.semester
         )
     }
 }

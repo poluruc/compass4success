@@ -1,6 +1,8 @@
 import SwiftUI
 import Charts
 
+// Reuse definitions already defined in ChartComponentNote.swift
+
 struct GradeLevelPerformance: Identifiable {
     var id = UUID()
     var gradeLevel: String
@@ -8,13 +10,7 @@ struct GradeLevelPerformance: Identifiable {
     var targetGrade: Double
 }
 
-struct SubjectPerformance: Identifiable {
-    var id = UUID()
-    var subject: String
-    var averageGrade: Double
-    var studentCount: Int
-}
-
+@available(macOS 13.0, iOS 16.0, *)
 struct GradeLevelAnalyticsView: View {
     private let analyticsService = AnalyticsService()
     @State private var gradeLevelData: [GradeLevelPerformance] = []
@@ -23,7 +19,7 @@ struct GradeLevelAnalyticsView: View {
     @State private var isLoading = false
     
     var body: some View {
-        ScrollView {
+        SwiftUI.ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
                 // Grade level selector
                 gradeLevelPicker
@@ -43,8 +39,7 @@ struct GradeLevelAnalyticsView: View {
             .padding()
         }
         .navigationTitle("Grade Level Analytics")
-        .navigationBarTitleDisplayMode(.inline)
-        .overlay(
+        .platformSpecificTitleDisplayMode()        .overlay(
             isLoading ? LoadingOverlay() : nil
         )
         .onAppear {
@@ -340,6 +335,7 @@ struct GradeLevelAnalyticsView: View {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct GradeLevelAnalyticsView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {

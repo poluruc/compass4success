@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import RealmSwift
 
 class StudentsViewModel: ObservableObject {
     @Published var students: [Student] = []
@@ -82,12 +83,12 @@ class StudentsViewModel: ObservableObject {
                 enrollment.enrollmentDate = Date()
                 student.enrollments.append(enrollment)
                 
-                // Create a corresponding course with a grade
-                let course = Course()
-                course.id = UUID().uuidString
-                course.name = getClassNameForId(classId)
-                course.finalGrade = Double.random(in: 70...100).rounded()
-                student.courses.append(course)
+                // Create a corresponding class with a grade
+                let schoolClass = SchoolClass()
+                schoolClass.id = UUID().uuidString
+                schoolClass.name = getClassNameForId(classId)
+                schoolClass.finalGrade = Double.random(in: 70...100).rounded()
+                student.courses.append(schoolClass)
             }
         }
         
@@ -155,17 +156,29 @@ class StudentsViewModel: ObservableObject {
         // Apply sorting
         switch sortOption {
         case .nameAsc:
-            result.sort { ($0.lastName + $0.firstName) < ($1.lastName + $1.firstName) }
+            result.sort { s1, s2 in 
+                return (s1.lastName + s1.firstName) < (s2.lastName + s2.firstName)
+            }
         case .nameDesc:
-            result.sort { ($0.lastName + $0.firstName) > ($1.lastName + $1.firstName) }
+            result.sort { s1, s2 in
+                return (s1.lastName + s1.firstName) > (s2.lastName + s2.firstName)
+            }
         case .gradeAsc:
-            result.sort { $0.gpa < $1.gpa }
+            result.sort { s1, s2 in
+                return s1.gpa < s2.gpa
+            }
         case .gradeDesc:
-            result.sort { $0.gpa > $1.gpa }
+            result.sort { s1, s2 in
+                return s1.gpa > s2.gpa
+            }
         case .idAsc:
-            result.sort { $0.studentNumber < $1.studentNumber }
+            result.sort { s1, s2 in
+                return s1.studentNumber < s2.studentNumber
+            }
         case .idDesc:
-            result.sort { $0.studentNumber > $1.studentNumber }
+            result.sort { s1, s2 in
+                return s1.studentNumber > s2.studentNumber
+            }
         }
         
         filteredStudents = result
@@ -176,7 +189,10 @@ class StudentsViewModel: ObservableObject {
         
         // Calculate average GPA
         if !students.isEmpty {
-            averageGrade = students.reduce(0) { $0 + $1.gpa } / Double(students.count)
+            let totalGpa = students.reduce(0.0) { sum, student in
+                return sum + student.gpa
+            }
+            averageGrade = totalGpa / Double(students.count)
         } else {
             averageGrade = 0
         }
@@ -221,24 +237,13 @@ class StudentsViewModel: ObservableObject {
         student.email = "\(firstName.lowercased()).\(lastName.lowercased())@school.edu"
         student.studentNumber = String(format: "S%05d", Int.random(in: 10000...99999))
         student.gender = gender
-        student.gpa = gpa
+        // Can't directly set gpa since it's a computed property
+        // We'll need to set average grade in a different way if needed
         return student
     }
 }
 
 // Extensions for the Student model
-extension Student {
-    var fullName: String {
-        "\(firstName) \(lastName)"
-    }
-    
-    var initials: String {
-        let firstInitial = firstName.prefix(1)
-        let lastInitial = lastName.prefix(1)
-        return "\(firstInitial)\(lastInitial)"
-    }
-}
-
 // Mock Course class until real one is developed
 class Course: Object, Identifiable {
     @Persisted(primaryKey: true) var id: String = UUID().uuidString

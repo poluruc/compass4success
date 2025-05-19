@@ -67,7 +67,7 @@ struct AssignmentDetailView: View {
                     
                     Spacer()
                     
-                    Text("Due \(assignment.dueDate, formatter: dateFormatter)")
+                    Text("Due \(dateFormatter.string(from: assignment.dueDate))")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
@@ -82,7 +82,7 @@ struct AssignmentDetailView: View {
                     
                     detailRow(label: "Title", value: assignment.title)
                     detailRow(label: "Type", value: assignment.category)
-                    detailRow(label: "Assigned", value: "\(assignment.assignedDate, formatter: dateFormatter)")
+                    detailRow(label: "Assigned", value: dateFormatter.string(from: assignment.assignedDate))
                     detailRow(label: "Points", value: "\(assignment.totalPoints)")
                     
                     if !assignment.assignmentDescription.isEmpty {
@@ -124,7 +124,9 @@ struct AssignmentDetailView: View {
                                     .font(.caption)
                             }
                             .buttonStyle(.borderedProminent)
+                            #if os(iOS)
                             .buttonBorderShape(.capsule)
+                            #endif
                             .controlSize(.small)
                         }
                     }
@@ -223,7 +225,9 @@ struct AssignmentDetailView: View {
             .padding()
         }
         .navigationTitle("Assignment Details")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .sheet(isPresented: $showingEdit) {
             // This would link to your edit assignment view
             Text("Edit Assignment View")
@@ -325,8 +329,9 @@ struct AssignmentDetailView: View {
         
         // In a real app, you would fetch this from a service
         let mockClass = SchoolClass(
-            id: assignment.classId,
+            id: assignment.classId!,
             name: "Algebra I",
+            clazzCode: "ALG1",
             courseCode: "MATH101",
             gradeLevel: "9"
         )
@@ -377,13 +382,13 @@ struct AssignmentDetailView_Previews: PreviewProvider {
             mockAssignment.category = AssignmentCategory.quiz.rawValue
             mockAssignment.isActive = true
             
-            // Add some mock submissions
+            // Add some mock submissions - using Submission instead of AssignmentSubmission
             for i in 0..<15 {
-                let submission = AssignmentSubmission()
+                let submission = Submission()
                 submission.id = UUID().uuidString
-                submission.studentId = "student\(i)"
-                submission.submissionDate = Date()
-                submission.grade = Double.random(in: 60...100)
+                submission.studentId = "student\(i+1)"
+                submission.submittedDate = Date()
+                submission.score = Int.random(in: 60...100)
                 mockAssignment.submissions.append(submission)
             }
             

@@ -12,6 +12,27 @@ class AssignmentSubmission: Object, Identifiable {
     @Persisted var attachments = List<String>()
     @Persisted var notes: String = ""
     
+    // Added for compatibility with AssignmentsViewModel
+    var grade: Double {
+        get {
+            return Double(score ?? 0)
+        }
+        set {
+            score = Int(newValue)
+        }
+    }
+    
+    // Convenience property for formatted score (default version)
+    var formattedScore: String {
+        guard let scoreValue = score else { return "Not Graded" }
+        
+        if let assignment = getAssignment() {
+            return "\(scoreValue)/\(assignment.totalPoints)"
+        } else {
+            return "\(scoreValue)/100"
+        }
+    }
+    
     enum SubmissionStatus: String, CaseIterable {
         case notSubmitted = "Not Submitted"
         case submitted = "Submitted"
@@ -64,11 +85,7 @@ class AssignmentSubmission: Object, Identifiable {
         }
     }
     
-    var formattedScore: String {
-        guard let score = score, let assignment = getAssignment() else { return "Not Graded" }
-        return "\(score)/\(assignment.totalPoints)"
-    }
-    
+    // Remove the second implementation in favor of the combined one above
     private func getAssignment() -> Assignment? {
         // In a real app, this would fetch the assignment from Realm
         // For now, we'll return nil since we don't have access to Realm

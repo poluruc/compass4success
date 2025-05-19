@@ -77,7 +77,7 @@ The development team is currently focused on:
    - ⬜ Ensure cross-platform compatibility of chart components
 
 ### Cross-Platform Fixes
-- Continue creating fallback views for Chart visualizations for macOS 12.0
+- Continue creating fallback views for Chart visualizations for macOS 13.0
 - Enhance platform-specific utilities in ColorHelper
 
 ### Upcoming Features
@@ -99,7 +99,7 @@ The development team is currently focused on:
 
 ### Cross-Platform Coding Requirements
 
-- **ALWAYS** use @available(macOS 12.0, *) for APIs not available on older macOS versions
+- **ALWAYS** use @available(macOS 13.0, iOS 16.0, *) for APIs not available on older macOS versions
 - **ALWAYS** use #if os(iOS) / #else for platform-specific UI components
 - **NEVER** use Color.systemBackground directly, use ColorHelper instead
 - **NEVER** use 'class' as a variable name, use 'schoolClass' instead
@@ -126,7 +126,7 @@ The development team is currently focused on:
 
 ### Build Error Insights
 
-- SwiftUI Chart components require macOS 13.0+ but project targets macOS 12.0+
+- SwiftUI Chart components require macOS 13.0+ but project targets macOS 13.0+
 - Type checking in SwiftUI fails silently until build time
 - ForEach loops need explicit id parameters to avoid type inference issues
 - Using Swift keywords as variable names causes cryptic compiler errors

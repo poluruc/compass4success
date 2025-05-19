@@ -1,11 +1,12 @@
 import SwiftUI
 import Charts
 
+@available(macOS 13.0, iOS 16.0, *)
 struct TeacherAnalyticsView: View {
     let teacher: Teacher
     private let analyticsService = AnalyticsService()
     @State private var isLoading = false
-    @State private var selectedTimeFrame: AnalyticsView.TimeFrame = .semester
+    @State private var selectedTimeFrame: AnalyticsTimeFrame = .semester
     
     // Mock data
     @State private var classPerformance: [ChartDataPoint] = []
@@ -13,33 +14,41 @@ struct TeacherAnalyticsView: View {
     @State private var studentProgress: [ChartDataPoint] = []
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Teacher header info
-                teacherHeader
-                
-                // Time frame picker
-                timeFramePicker
-                
-                // Class performance chart
-                classPerformanceChart
-                
-                // Assignment stats
-                assignmentStatsChart
-                
-                // Student progress metrics
-                studentProgressChart
-                
-                // Insights
-                insightsView
+        ZStack {
+            SwiftUI.ScrollView(.vertical, showsIndicators: true) {
+                VStack(spacing: 20) {
+                    // Teacher header info
+                    teacherHeader
+                    
+                    // Time frame picker
+                    timeFramePicker
+                    
+                    // Class performance chart
+                    classPerformanceChart
+                    
+                    // Assignment stats
+                    assignmentStatsChart
+                    
+                    // Student progress metrics
+                    studentProgressChart
+                    
+                    // Insights
+                    insightsView
+                }
+                .padding(.vertical)
             }
-            .padding(.vertical)
+            .navigationTitle("Teacher Analytics")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            
+            if isLoading {
+                Color.black.opacity(0.3).edgesIgnoringSafeArea(.all)
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .scaleEffect(1.5)
+            }
         }
-        .navigationTitle("Teacher Analytics")
-        .navigationBarTitleDisplayMode(.inline)
-        .overlay(
-            isLoading ? LoadingOverlay() : nil
-        )
         .onAppear {
             loadData()
         }
@@ -92,7 +101,7 @@ struct TeacherAnalyticsView: View {
             
             Spacer()
             
-            ForEach(AnalyticsView.TimeFrame.allCases, id: \.self) { timeFrame in
+            ForEach(AnalyticsTimeFrame.allCases, id: \.self) { timeFrame in
                 Button(action: {
                     withAnimation {
                         selectedTimeFrame = timeFrame
@@ -122,34 +131,46 @@ struct TeacherAnalyticsView: View {
                 .font(.headline)
                 .padding(.horizontal)
             
-            Chart {
-                ForEach(classPerformance) { item in
-                    BarMark(
-                        x: .value("Class", item.label),
-                        y: .value("Average Grade", item.value)
+            #if os(iOS) || os(macOS)
+            if #available(iOS 16.0, macOS 13.0, *) {
+                Chart {
+                    ForEach(classPerformance) { item in
+                        BarMark(
+                            x: .value("Class", item.label),
+                            y: .value("Average Grade", item.value)
+                        )
+                        .foregroundStyle(getGradeColor(item.value))
+                        .annotation(position: .top) {
+                            Text("\(Int(item.value))%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    RuleMark(
+                        y: .value("Target", 80)
                     )
-                    .foregroundStyle(getGradeColor(item.value))
-                    .annotation(position: .top) {
-                        Text("\(Int(item.value))%")
+                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                    .foregroundStyle(.gray)
+                    .annotation(position: .top, alignment: .trailing) {
+                        Text("Target: 80%")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.gray)
                     }
                 }
-                
-                RuleMark(
-                    y: .value("Target", 80)
-                )
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                .foregroundStyle(.gray)
-                .annotation(position: .top, alignment: .trailing) {
-                    Text("Target: 80%")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
+                .frame(height: 250)
+                .padding(.horizontal)
+                .chartYScale(domain: 0...100)
+            } else {
+                ChartCompatPlaceholder()
+                    .frame(height: 250)
+                    .padding(.horizontal)
             }
-            .frame(height: 250)
-            .padding(.horizontal)
-            .chartYScale(domain: 0...100)
+            #else
+            ChartCompatPlaceholder()
+                .frame(height: 250)
+                .padding(.horizontal)
+            #endif
         }
         .padding(.vertical)
         .background(
@@ -368,6 +389,7 @@ struct Teacher: Identifiable {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, *)
 struct TeacherAnalyticsView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {

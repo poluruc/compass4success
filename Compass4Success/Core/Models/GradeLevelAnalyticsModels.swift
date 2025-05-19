@@ -2,6 +2,14 @@ import Foundation
 import SwiftUI
 import Charts
 
+// Subject performance model with all necessary fields
+struct SubjectPerformance: Identifiable {
+    var id = UUID()
+    var subject: String
+    var averageGrade: Double
+    var studentCount: Int = 0
+}
+
 // Models for grade level-specific analytics
 struct GradeLevelAnalytics {
     let gradeLevel: GradeLevel

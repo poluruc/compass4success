@@ -9,15 +9,21 @@ protocol ServiceFactory {
     // Data services
     func makeClassService() -> ClassService
     func makeStudentService() -> StudentService
-    func makeAssignmentService() -> AssignmentService
-    func makeGradebookService() -> GradebookService
-    func makeAnalyticsService() -> AnalyticsService
-    func makeCurriculumService() -> CurriculumService
     
-    // Utility services
-    func makeNotificationService() -> NotificationService
-    func makeExportService() -> ExportService
-    func makeLogService() -> LogService
+    // Commented out for now - needs implementation
+    // func makeAssignmentService() -> any AssignmentService
+    // func makeGradebookService() -> any GradebookService
+    
+    #if os(iOS) || (os(macOS) && swift(>=5.9))
+    @available(macOS 13.0, iOS 16.0, *)
+    func makeAnalyticsService() -> AnalyticsService
+    #endif
+    
+    // Commented out for now - needs implementation
+    // func makeCurriculumService() -> any CurriculumService
+    // func makeNotificationService() -> any NotificationService
+    // func makeExportService() -> any ExportService
+    // func makeLogService() -> any LogService
 }
 
 // Production service factory that creates real service implementations
@@ -41,34 +47,49 @@ class ProductionServiceFactory: ServiceFactory {
         return StudentService()
     }
     
-    func makeAssignmentService() -> AssignmentService {
-        return AssignmentService()
+    // Commented out for now - needs implementation
+    /*
+    func makeAssignmentService() -> any AssignmentService {
+        // Create a concrete implementation
+        fatalError("Not implemented")
     }
     
-    func makeGradebookService() -> GradebookService {
-        return GradebookService()
+    func makeGradebookService() -> any GradebookService {
+        // Create a concrete implementation
+        fatalError("Not implemented")
     }
+    */
     
+    #if os(iOS) || (os(macOS) && swift(>=5.9))
+    @available(macOS 13.0, iOS 16.0, *)
     func makeAnalyticsService() -> AnalyticsService {
         return AnalyticsService()
     }
+    #endif
     
-    func makeCurriculumService() -> CurriculumService {
-        return CurriculumService()
+    // Commented out for now - needs implementation
+    /*
+    func makeCurriculumService() -> any CurriculumService {
+        // Create a concrete implementation
+        fatalError("Not implemented")
     }
     
     // Utility services
-    func makeNotificationService() -> NotificationService {
-        return NotificationService()
+    func makeNotificationService() -> any NotificationService {
+        // Create a concrete implementation
+        fatalError("Not implemented")
     }
     
-    func makeExportService() -> ExportService {
-        return ExportService()
+    func makeExportService() -> any ExportService {
+        // Create a concrete implementation
+        fatalError("Not implemented")
     }
     
-    func makeLogService() -> LogService {
-        return LogService()
+    func makeLogService() -> any LogService {
+        // Create a concrete implementation
+        fatalError("Not implemented")
     }
+    */
 }
 
 // Mock service factory for testing and previews
@@ -80,60 +101,61 @@ class MockServiceFactory: ServiceFactory {
     
     // Authentication service
     func makeAuthenticationService() -> AuthenticationService {
-        let service = AuthenticationService()
-        service.useTestMode = true
-        return service
+        return AuthenticationService()
     }
     
     // Data services
     func makeClassService() -> ClassService {
-        let service = ClassService()
-        service.useTestMode = true
-        return service
+        return ClassService()
     }
     
     func makeStudentService() -> StudentService {
-        let service = StudentService()
-        service.useTestMode = true
-        return service
+        return StudentService()
     }
     
-    func makeAssignmentService() -> AssignmentService {
-        let service = AssignmentService()
-        service.useTestMode = true
-        return service
+    // Commented out for now - needs implementation
+    /*
+    func makeAssignmentService() -> any AssignmentService {
+        // Create a mock implementation
+        fatalError("Not implemented")
     }
     
-    func makeGradebookService() -> GradebookService {
-        return GradebookService()
+    func makeGradebookService() -> any GradebookService {
+        // Create a mock implementation
+        fatalError("Not implemented")
     }
+    */
     
+    #if os(iOS) || (os(macOS) && swift(>=5.9))
+    @available(macOS 13.0, iOS 16.0, *)
     func makeAnalyticsService() -> AnalyticsService {
-        let service = AnalyticsService()
-        service.useTestMode = true
-        return service
+        return AnalyticsService()
     }
+    #endif
     
-    func makeCurriculumService() -> CurriculumService {
-        return CurriculumService()
+    // Commented out for now - needs implementation
+    /*
+    func makeCurriculumService() -> any CurriculumService {
+        // Create a mock implementation
+        fatalError("Not implemented")
     }
     
     // Utility services
-    func makeNotificationService() -> NotificationService {
-        let service = NotificationService()
-        service.useTestMode = true
-        return service
+    func makeNotificationService() -> any NotificationService {
+        // Create a mock implementation
+        fatalError("Not implemented")
     }
     
-    func makeExportService() -> ExportService {
-        return ExportService()
+    func makeExportService() -> any ExportService {
+        // Create a mock implementation
+        fatalError("Not implemented")
     }
     
-    func makeLogService() -> LogService {
-        let service = LogService()
-        service.useTestMode = true
-        return service
+    func makeLogService() -> any LogService {
+        // Create a mock implementation
+        fatalError("Not implemented")
     }
+    */
 }
 
 // Factory provider

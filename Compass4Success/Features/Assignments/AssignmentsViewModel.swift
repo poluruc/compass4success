@@ -159,7 +159,7 @@ class AssignmentsViewModel: ObservableObject {
             description: assignment.assignmentDescription,
             dueDate: assignment.dueDate,
             assignedDate: Date(),
-            classId: assignment.classId,
+            classId: assignment.classId!,
             category: AssignmentCategory(rawValue: assignment.category) ?? .assignment,
             isActive: assignment.isActive,
             submissions: 0
@@ -240,11 +240,11 @@ class AssignmentsViewModel: ObservableObject {
         
         // Create mock submissions
         for i in 0..<submissions {
-            let submission = AssignmentSubmission()
+            let submission = Submission()
             submission.id = UUID().uuidString
             submission.studentId = "student\(i)"
-            submission.submissionDate = Date().addingTimeInterval(Double(-i) * 3600)
-            submission.grade = Double.random(in: 60...100)
+            submission.submittedDate = Date().addingTimeInterval(Double(-i) * 3600)
+            submission.score = Int.random(in: 60...100)
             assignment.submissions.append(submission)
         }
         

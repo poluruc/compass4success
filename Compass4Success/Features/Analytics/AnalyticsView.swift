@@ -1,41 +1,48 @@
 import SwiftUI
 import Charts
 
+// Move these enums outside the main view so they can be accessed without the @available restriction
+enum AnalyticsViewType: String, CaseIterable {
+    case gradeDistribution = "Grade Distribution"
+    case assignmentCompletion = "Assignment Completion"
+    case gradeOverTime = "Grades Over Time"
+    case studentPerformance = "Student Performance"
+    case attendanceVsGrades = "Attendance vs Grades"
+    
+    var icon: String {
+        switch self {
+        case .gradeDistribution: return "chart.bar.fill"
+        case .assignmentCompletion: return "checkmark.circle.fill"
+        case .gradeOverTime: return "chart.line.uptrend.xyaxis"
+        case .studentPerformance: return "person.3.fill"
+        case .attendanceVsGrades: return "calendar.badge.clock"
+        }
+    }
+}
+
+enum AnalyticsTimeFrame: String, CaseIterable {
+    case month = "30 Days"
+    case semester = "Semester"
+    case year = "Year"
+    case all = "All Time"
+}
+
+// Class for holding analytics components that are compatible with both platforms
+struct AnalyticsComponents {
+    // Placeholder compatibility components can be added here
+}
+
+@available(macOS 13.0, iOS 16.0, *)
 struct AnalyticsView: View {
     @EnvironmentObject private var classService: ClassService
     @State private var selectedClass: SchoolClass?
-    @State private var selectedAnalytic: AnalyticsType = .gradeDistribution
-    @State private var selectedTimeFrame: TimeFrame = .semester
+    @State private var selectedAnalytic: AnalyticsViewType = .gradeDistribution
+    @State private var selectedTimeFrame: AnalyticsTimeFrame = .semester
     @State private var isLoading = false
     @State private var showExportSheet = false
     
     // Mock analytics service
     private let analyticsService = AnalyticsService()
-    
-    enum AnalyticsType: String, CaseIterable {
-        case gradeDistribution = "Grade Distribution"
-        case assignmentCompletion = "Assignment Completion"
-        case gradeOverTime = "Grades Over Time"
-        case studentPerformance = "Student Performance"
-        case attendanceVsGrades = "Attendance vs Grades"
-        
-        var icon: String {
-            switch self {
-            case .gradeDistribution: return "chart.bar.fill"
-            case .assignmentCompletion: return "checkmark.circle.fill"
-            case .gradeOverTime: return "chart.line.uptrend.xyaxis"
-            case .studentPerformance: return "person.3.fill"
-            case .attendanceVsGrades: return "calendar.badge.clock"
-            }
-        }
-    }
-    
-    enum TimeFrame: String, CaseIterable {
-        case month = "30 Days"
-        case semester = "Semester"
-        case year = "Year"
-        case all = "All Time"
-    }
     
     var body: some View {
         ZStack {
@@ -66,17 +73,21 @@ struct AnalyticsView: View {
             }
             
             if isLoading {
-                LoadingOverlay()
+                AnalyticsLoadingOverlay()
             }
         }
         .navigationTitle("Analytics")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
+            #if os(iOS)
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showExportSheet = true }) {
                     Image(systemName: "square.and.arrow.up")
                 }
             }
+            #endif
         }
         .sheet(isPresented: $showExportSheet) {
             ExportSettingsView(analyticsType: selectedAnalytic, timeFrame: selectedTimeFrame)
@@ -107,7 +118,7 @@ struct AnalyticsView: View {
     private var analyticTypePicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(AnalyticsType.allCases, id: \.self) { type in
+                ForEach(AnalyticsViewType.allCases, id: \.self) { type in
                     AnalyticTypeButton(
                         type: type,
                         isSelected: selectedAnalytic == type,
@@ -135,7 +146,7 @@ struct AnalyticsView: View {
             
             Spacer()
             
-            ForEach(TimeFrame.allCases, id: \.self) { timeFrame in
+            ForEach(AnalyticsTimeFrame.allCases, id: \.self) { timeFrame in
                 Button(action: {
                     withAnimation {
                         selectedTimeFrame = timeFrame
@@ -422,7 +433,7 @@ struct AnalyticsView: View {
 }
 
 struct AnalyticTypeButton: View {
-    let type: AnalyticsView.AnalyticsType
+    let type: AnalyticsViewType
     let isSelected: Bool
     let action: () -> Void
     
@@ -452,7 +463,22 @@ struct AnalyticTypeButton: View {
     }
 }
 
-struct LoadingOverlay: View {
+@available(macOS 13.0, iOS 16.0, *)
+struct AnalyticsView_Previews: PreviewProvider {
+    static var previews: some View {
+        if #available(macOS 13.0, *) {
+            NavigationView {
+                AnalyticsView()
+                    .environmentObject(ClassService())
+            }
+        } else {
+            Text("Analytics requires macOS 13.0 or newer")
+        }
+    }
+}
+
+// Loading overlay view
+struct AnalyticsLoadingOverlay: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.3)
@@ -462,15 +488,6 @@ struct LoadingOverlay: View {
                 .progressViewStyle(CircularProgressViewStyle())
                 .scaleEffect(1.5)
                 .foregroundColor(.white)
-        }
-    }
-}
-
-struct AnalyticsView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            AnalyticsView()
-                .environmentObject(ClassService())
         }
     }
 }

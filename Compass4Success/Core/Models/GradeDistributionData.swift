@@ -127,9 +127,9 @@ struct GradeDistributionData: Identifiable {
     }
     
     // Context for what this distribution represents
-    enum DistributionContext: Equatable {
+    enum DistributionContext {
         case assignment(id: String, name: String)
-        case class(id: String, name: String)
+        case schoolClass(id: String, name: String)
         case subject(name: String)
         case gradeLevel(level: GradeLevel)
         case school
@@ -138,14 +138,32 @@ struct GradeDistributionData: Identifiable {
             switch self {
             case .assignment(_, let name):
                 return "Assignment: \(name)"
-            case .class(_, let name):
+            case .schoolClass(_, let name):
                 return "Class: \(name)"
             case .subject(let name):
                 return "Subject: \(name)"
             case .gradeLevel(let level):
-                return "Grade Level: \(level.name)"
+                return "Grade Level: \(level.rawValue)"
             case .school:
                 return "School-wide"
+            }
+        }
+        
+        // Manual implementation of Equatable
+        static func ==(lhs: DistributionContext, rhs: DistributionContext) -> Bool {
+            switch (lhs, rhs) {
+            case (.assignment(let lid, let lname), .assignment(let rid, let rname)):
+                return lid == rid && lname == rname
+            case (.schoolClass(let lid, let lname), .schoolClass(let rid, let rname)):
+                return lid == rid && lname == rname
+            case (.subject(let lname), .subject(let rname)):
+                return lname == rname
+            case (.gradeLevel(let llevel), .gradeLevel(let rlevel)):
+                return llevel == rlevel
+            case (.school, .school):
+                return true
+            default:
+                return false
             }
         }
     }
@@ -156,8 +174,7 @@ struct GradeDistributionData: Identifiable {
             let count = distribution[range] ?? 0
             return ChartDataPoint(
                 label: range.rawValue,
-                value: Double(count),
-                color: range.color
+                value: Double(count)
             )
         }
     }
