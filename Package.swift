@@ -1,4 +1,4 @@
-// swift-tools-version:5.7
+// swift-tools-version:5.9
 import PackageDescription
 
 let package = Package(
@@ -40,7 +40,10 @@ let package = Package(
                 .product(name: "RealmSwift", package: "realm-swift"),
                 .product(name: "DGCharts", package: "Charts")
             ],
-            path: "Compass4Success"
+            path: "Compass4Success",
+            swiftSettings: [
+                .unsafeFlags(["-Xfrontend", "-enable-experimental-feature", "-Xfrontend", "Macros"])
+            ]
         ),
         .testTarget(
             name: "Compass4SuccessTests",
@@ -48,4 +51,4 @@ let package = Package(
             path: "Tests/Compass4SuccessTests"
         )
     ]
-) 
+)

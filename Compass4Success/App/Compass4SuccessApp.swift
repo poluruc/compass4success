@@ -1,0 +1,112 @@
+import SwiftUI
+import SwiftData
+
+@main
+struct Compass4SuccessApp: App {
+    // Create instances of services to be injected into the environment
+    @StateObject private var authService = AuthenticationService()
+    @StateObject private var classService = ClassService()
+    
+    // Create a singleton dashboard view model to share across app
+    @StateObject private var dashboardViewModel = DashboardViewModel()
+    @State private var selectedTab = 0 {
+        didSet {
+            // When switching back to the dashboard tab, refresh the data
+            if selectedTab == 0 && oldValue != 0 {
+                dashboardViewModel.loadDashboardData()
+            }
+        }
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            MainContentView()
+                .environmentObject(authService)
+                .environmentObject(classService)
+        }
+    }
+}
+
+// Main content view that handles authentication state
+struct MainContentView: View {
+    @EnvironmentObject var authService: AuthenticationService
+    @EnvironmentObject var classService: ClassService
+    @State private var selectedTab = 0
+    
+    var body: some View {
+        Group {
+            if authService.isAuthenticated {
+                TabView(selection: $selectedTab) {
+                    NavigationView {
+                        DashboardView(viewModel: DashboardViewModel())
+                            .onAppear {
+                                // Refresh dashboard data when tab is selected
+                                selectedTab = 0
+                            }
+                    }
+                    .tag(0)
+                    .tabItem {
+                        Label("Dashboard", systemImage: "house")
+                    }
+                    
+                    NavigationView {
+                        ClassesView()
+                            .onAppear {
+                                selectedTab = 1
+                            }
+                    }
+                    .tag(1)
+                    .tabItem {
+                        Label("Classes", systemImage: "book")
+                    }
+                    
+                    NavigationView {
+                        StudentsView()
+                            .onAppear {
+                                selectedTab = 2
+                            }
+                    }
+                    .tag(2)
+                    .tabItem {
+                        Label("Students", systemImage: "person.3")
+                    }
+                    
+                    NavigationView {
+                        AssignmentsView()
+                            .onAppear {
+                                selectedTab = 3
+                            }
+                    }
+                    .tag(3)
+                    .tabItem {
+                        Label("Assignments", systemImage: "list.clipboard")
+                    }
+                    
+                    NavigationView {
+                        GradebookView(classService: classService)
+                            .onAppear {
+                                selectedTab = 4
+                            }
+                    }
+                    .tag(4)
+                    .tabItem {
+                        Label("Gradebook", systemImage: "book.closed")
+                    }
+                    
+                    NavigationView {
+                        SettingsView()
+                            .onAppear {
+                                selectedTab = 5
+                            }
+                    }
+                    .tag(5)
+                    .tabItem {
+                        Label("Settings", systemImage: "gear")
+                    }
+                }
+            } else {
+                LoginView()
+            }
+        }
+    }
+}
