@@ -14,18 +14,16 @@ extension View {
     func compatibleAutocapitalization(_ type: CompatibleTextInputCapitalization) -> some View {
         #if os(iOS)
         if #available(iOS 16.0, *) {
-            let nativeType: TextInputAutocapitalization
             switch type {
             case .never:
-                nativeType = .never
+                self.textInputAutocapitalization(.never)
             case .words:
-                nativeType = .words
+                self.textInputAutocapitalization(.words)
             case .sentences:
-                nativeType = .sentences
+                self.textInputAutocapitalization(.sentences)
             case .characters:
-                nativeType = .characters
+                self.textInputAutocapitalization(.characters)
             }
-            self.textInputAutocapitalization(nativeType)
         } else {
             // For older iOS versions, we use the deprecated API
             switch type {

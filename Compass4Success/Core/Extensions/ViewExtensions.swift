@@ -2,16 +2,30 @@ import SwiftUI
 
 extension View {
     /// Platform-compatible presentation detent modifier
-    /// Returns the original view on platforms where presentationDetent is not available
+    /// This is a placeholder function that handles availability checking
+    /// and allows callers to safely use presentation detent features
+    /// 
+    /// Example usage:
+    /// ```
+    /// .platformPresentationDetent()
+    /// #if os(iOS)
+    /// .if #available(iOS 16.0, *) {
+    ///     presentationDetent(.medium)
+    /// }
+    /// #endif
+    /// ```
     @ViewBuilder
     func platformPresentationDetent() -> some View {
         #if os(iOS)
         if #available(iOS 16.0, *) {
-            self.presentationDetent(.large)
+            // Simply return the view itself on iOS 16+ and let the caller apply the proper presentation detent
+            self
         } else {
+            // On earlier iOS versions, just return the view as is
             self
         }
         #else
+        // On non-iOS platforms, just return the view as is
         self
         #endif
     }
@@ -70,19 +84,39 @@ extension View {
             self
         }
     }
-}
-
-/// Platform-compatible extension for PresentationDetent
-#if os(iOS)
-extension PresentationDetent {
-    /// Returns a large detent on iOS 16+ and has no effect on other platforms
-    public static var large: PresentationDetent {
-        if #available(iOS 16.0, *) {
-            return .large
-        } else {
-            // This is a fallback that won't actually be used since the modifier itself is unavailable
-            return .fraction(0.8)
+    
+    /// Convenience modifier for sheets that automatically applies medium presentation detent
+    /// on iOS 16+ and does nothing on other platforms
+    @ViewBuilder
+    func adaptiveSheet<Content: View>(
+        isPresented: Binding<Bool>,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        self.sheet(isPresented: isPresented) {
+            content()
+                #if os(iOS)
+                .if16Available { view in
+                    if #available(iOS 16.0, *) {
+                        view.presentationDetents([.medium, .large])
+                    } else {
+                        view
+                    }
+                }
+                #endif
         }
     }
-}
-#endif 
+    
+    /// Helper to conditionally apply iOS 16 specific modifiers
+    @ViewBuilder
+    func if16Available<Content: View>(@ViewBuilder transform: (Self) -> Content) -> some View {
+        #if os(iOS)
+        if #available(iOS 16.0, *) {
+            transform(self)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+} 

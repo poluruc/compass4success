@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 // Create cross-platform keyboard type enum
 public enum CompatibleKeyboardType {
@@ -18,24 +21,22 @@ extension View {
     func compatibleKeyboardType(_ type: CompatibleKeyboardType) -> some View {
         #if os(iOS)
         // iOS supports keyboardType
-        let uiKeyboardType: UIKeyboardType
         switch type {
         case .default:
-            uiKeyboardType = .default
+            self.keyboardType(.default)
         case .emailAddress:
-            uiKeyboardType = .emailAddress
+            self.keyboardType(.emailAddress)
         case .numberPad:
-            uiKeyboardType = .numberPad
+            self.keyboardType(.numberPad)
         case .decimalPad:
-            uiKeyboardType = .decimalPad
+            self.keyboardType(.decimalPad)
         case .phonePad:
-            uiKeyboardType = .phonePad
+            self.keyboardType(.phonePad)
         case .URL:
-            uiKeyboardType = .URL
+            self.keyboardType(.URL)
         case .namePhonePad:
-            uiKeyboardType = .namePhonePad
+            self.keyboardType(.namePhonePad)
         }
-        self.keyboardType(uiKeyboardType)
         #else
         // macOS doesn't support keyboardType
         self
@@ -47,11 +48,8 @@ extension View {
     func compatibleTextContentType(_ type: String) -> some View {
         #if os(iOS)
         // Convert string to UITextContentType
-        if let contentType = UITextContentType(rawValue: type) {
-            self.textContentType(contentType)
-        } else {
-            self
-        }
+        let contentType = UITextContentType(rawValue: type)
+        self.textContentType(contentType)
         #else
         // macOS doesn't support textContentType
         self
@@ -63,20 +61,18 @@ extension View {
     func compatibleSubmitLabel(_ label: CompatibleSubmitLabel) -> some View {
         #if os(iOS)
         if #available(iOS 15.0, *) {
-            let submitLabel: SubmitLabel
             switch label {
             case .done:
-                submitLabel = .done
+                self.submitLabel(.done)
             case .next:
-                submitLabel = .next
+                self.submitLabel(.next)
             case .search:
-                submitLabel = .search
+                self.submitLabel(.search)
             case .send:
-                submitLabel = .send
+                self.submitLabel(.send)
             case .go:
-                submitLabel = .go
+                self.submitLabel(.go)
             }
-            self.submitLabel(submitLabel)
         } else {
             self
         }

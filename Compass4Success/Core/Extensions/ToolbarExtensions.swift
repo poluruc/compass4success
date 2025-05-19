@@ -21,7 +21,7 @@ extension View {
     func adaptivePresentationDetents(_ detents: Set<PresentationDetent>) -> some View {
         #if os(iOS) && canImport(UIKit)
         if #available(iOS 16.0, *) {
-            self.presentationDetents(detents as! Set<PresentationDetent>)
+            self.presentationDetents(detents)
         } else {
             self
         }
