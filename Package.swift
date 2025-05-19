@@ -1,11 +1,11 @@
-// swift-tools-version:5.9
+// swift-tools-version: 5.8
 import PackageDescription
 
 let package = Package(
     name: "Compass4Success",
     platforms: [
         .iOS(.v16),
-        .macOS(.v12)
+        .macOS(.v13)
     ],
     products: [
         .library(
@@ -18,7 +18,7 @@ let package = Package(
         .package(url: "https://github.com/auth0/JWTDecode.swift.git", from: "3.1.0"),
         
         // UI Components
-        .package(url: "https://github.com/siteline/swiftui-introspect.git", from: "1.0.0"),
+        .package(url: "https://github.com/siteline/SwiftUI-Introspect.git", from: "1.0.0"),
         .package(url: "https://github.com/onevcat/Kingfisher.git", from: "7.10.1"),
         
         // Utilities
@@ -34,7 +34,7 @@ let package = Package(
             dependencies: [
                 "Alamofire",
                 .product(name: "JWTDecode", package: "JWTDecode.swift"),
-                .product(name: "SwiftUIIntrospect", package: "swiftui-introspect"),
+                .product(name: "SwiftUIIntrospect", package: "SwiftUI-Introspect"),
                 "Kingfisher",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "RealmSwift", package: "realm-swift"),
@@ -42,7 +42,7 @@ let package = Package(
             ],
             path: "Compass4Success",
             swiftSettings: [
-                .unsafeFlags(["-Xfrontend", "-enable-experimental-feature", "-Xfrontend", "Macros"])
+                .unsafeFlags(["-Xfrontend", "--enable-experimental-feature", "-Xfrontend", "Macros"])
             ]
         ),
         .testTarget(
