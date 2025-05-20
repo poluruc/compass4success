@@ -216,6 +216,13 @@ struct ClassDetailView: View {
             // Class performance summary
             classPerformanceSummaryView
             
+            // Attendance chart
+            if #available(iOS 16.0, macOS 13.0, *) {
+                attendanceChartView
+            } else {
+                unavailableChartMessage(message: "Attendance chart available on iOS 16.0+ and macOS 13.0+")
+            }
+            
             // Performance by assignment type chart
             if #available(iOS 16.0, macOS 13.0, *) {
                 assignmentTypePerformanceView
@@ -429,6 +436,74 @@ struct ClassDetailView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.systemBackground))
         )
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var attendanceChartView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Attendance Trends")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            attendanceChart
+                .frame(height: 220)
+                .padding(.horizontal)
+            
+            HStack(spacing: 20) {
+                LegendItem(color: .blue, label: "Daily Attendance")
+                LegendItem(color: .green, label: "Weekly Average")
+                LegendItem(color: .red, label: "Required (90%)")
+            }
+            .font(.caption)
+            .padding(.horizontal)
+        }
+        .padding(.vertical)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+        )
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var attendanceChart: some View {
+        Chart {
+            // Daily attendance data
+            ForEach(viewModel.attendanceData) { item in
+                LineMark(
+                    x: .value("Date", item.date),
+                    y: .value("Attendance", item.percentage)
+                )
+                .foregroundStyle(.blue)
+                .symbol(.circle)
+                .symbolSize(6)
+            }
+            
+            // Weekly averages
+            ForEach(viewModel.weeklyAttendanceData) { item in
+                LineMark(
+                    x: .value("Date", item.date),
+                    y: .value("Weekly Avg", item.percentage)
+                )
+                .lineStyle(StrokeStyle(lineWidth: 3))
+                .foregroundStyle(.green)
+            }
+            
+            // Required attendance line
+            RuleMark(
+                y: .value("Required", 90)
+            )
+            .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+            .foregroundStyle(.red)
+            .annotation(position: .trailing) {
+                Text("90%")
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+        }
+        .chartYScale(domain: 70...100)
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
     }
     
     @available(iOS 16.0, macOS 13.0, *)
@@ -988,6 +1063,22 @@ struct StudentListItem: View {
     }
 }
 
+struct LegendItem: View {
+    let color: Color
+    let label: String
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 8, height: 8)
+            
+            Text(label)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
 struct AssignmentListItem: View {
     let assignment: Assignment
     
@@ -1063,6 +1154,8 @@ class ClassDetailViewModel: ObservableObject {
     @Published var skillGapData: [SkillGapDataPoint] = []
     @Published var attendancePerformanceData: [AttendancePerformanceDataPoint] = []
     @Published var trendLineData: [TrendDataPoint] = []
+    @Published var attendanceData: [AttendanceDataPoint] = []
+    @Published var weeklyAttendanceData: [AttendanceDataPoint] = []
     
     // Data structures for new analytics
     struct StandardMasteryDataPoint: Identifiable {
@@ -1091,6 +1184,12 @@ class ClassDetailViewModel: ObservableObject {
         var id = UUID()
         var x: Double
         var y: Double
+    }
+    
+    struct AttendanceDataPoint: Identifiable {
+        var id = UUID()
+        var date: Date
+        var percentage: Double
     }
     
     func loadClassData(for schoolClass: SchoolClass) {
@@ -1185,5 +1284,33 @@ class ClassDetailViewModel: ObservableObject {
             TrendDataPoint(x: 60.0, y: 60.0),
             TrendDataPoint(x: 100.0, y: 95.0)
         ]
+        
+        // Generate attendance data
+        // Daily attendance data for past 14 days
+        attendanceData = []
+        let dailyAttendanceValues: [Double] = [
+            92.5, 89.8, 94.2, 95.0, 91.3, 90.8, 88.5,
+            93.7, 96.2, 94.8, 92.1, 88.3, 93.5, 97.1
+        ]
+        
+        for i in 0..<14 {
+            let date = calendar.date(byAdding: Calendar.Component.day, value: -13 + i, to: now)!
+            attendanceData.append(AttendanceDataPoint(
+                date: date,
+                percentage: dailyAttendanceValues[i]
+            ))
+        }
+        
+        // Weekly average attendance data
+        weeklyAttendanceData = []
+        let weeklyAverages: [Double] = [91.0, 92.5, 94.5]
+        
+        for i in 0..<3 {
+            let date = calendar.date(byAdding: Calendar.Component.day, value: -10 + (i * 5), to: now)!
+            weeklyAttendanceData.append(AttendanceDataPoint(
+                date: date,
+                percentage: weeklyAverages[i]
+            ))
+        }
     }
 } 
