@@ -425,7 +425,7 @@ struct AssignmentCard: View {
                 
                 Spacer()
                 
-                Text("\(assignment.totalPoints.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(assignment.totalPoints)) : String(format: "%.2f", assignment.totalPoints))) pts")
+                Text("\(assignment.totalPoints.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(assignment.totalPoints)) : String(format: "%.2f", assignment.totalPoints)) pts")
                     .font(.subheadline)
                     .padding(6)
                     .background(Color.blue.opacity(0.1))

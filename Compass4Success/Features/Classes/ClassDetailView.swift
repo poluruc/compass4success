@@ -177,8 +177,7 @@ struct ClassDetailView: View {
                         Text(tab.title)
                             .font(.caption)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, minHeight: 100)
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(selectedTab == tab.rawValue ? .blue : .gray)
@@ -259,43 +258,37 @@ struct ClassDetailView: View {
             Text("Class Performance")
                 .font(.headline)
                 .padding(.horizontal)
-            
-            VStack(spacing: 16) {
-                HStack {
-                    PerformanceIndicator(
-                        title: "Avg. Grade",
-                        value: schoolClass.formattedAverageGrade,
-                        icon: "chart.bar.fill",
-                        color: .blue,
-                        trend: "+2.3%"
-                    )
-                    
-                    PerformanceIndicator(
-                        title: "Assignment Completion",
-                        value: "\(viewModel.assignmentCompletionRate)%",
-                        icon: "checkmark.circle.fill",
-                        color: .green,
-                        trend: "-1.5%"
-                    )
-                }
-                
-                HStack {
-                    PerformanceIndicator(
-                        title: "At Risk Students",
-                        value: "\(viewModel.atRiskStudentsCount)",
-                        icon: "exclamationmark.triangle.fill",
-                        color: .orange,
-                        trend: "+2"
-                    )
-                    
-                    PerformanceIndicator(
-                        title: "Missing Submissions",
-                        value: "\(viewModel.missingSubmissionsCount)",
-                        icon: "xmark.circle.fill",
-                        color: .red,
-                        trend: "+5"
-                    )
-                }
+
+            let columns = [GridItem(.flexible()), GridItem(.flexible())]
+            LazyVGrid(columns: columns, spacing: 16) {
+                PerformanceIndicator(
+                    title: "Avg. Grade",
+                    value: schoolClass.formattedAverageGrade,
+                    icon: "chart.bar.fill",
+                    color: .blue,
+                    trend: "+2.3%"
+                )
+                PerformanceIndicator(
+                    title: "Assignment Completion",
+                    value: "\(viewModel.assignmentCompletionRate)%",
+                    icon: "checkmark.circle.fill",
+                    color: .green,
+                    trend: "-1.5%"
+                )
+                PerformanceIndicator(
+                    title: "At Risk Students",
+                    value: "\(viewModel.atRiskStudentsCount)",
+                    icon: "exclamationmark.triangle.fill",
+                    color: .orange,
+                    trend: "+2"
+                )
+                PerformanceIndicator(
+                    title: "Missing Submissions",
+                    value: "\(viewModel.missingSubmissionsCount)",
+                    icon: "xmark.circle.fill",
+                    color: .red,
+                    trend: "+5"
+                )
             }
             .padding(.horizontal)
         }
@@ -618,9 +611,9 @@ struct ClassDetailView: View {
                     .padding(.vertical, 12)
             }
             .buttonStyle(.borderedProminent)
-            
             // Assignment list
             VStack(alignment: .leading, spacing: 12) {
+                Spacer()
                 Text("Current Assignments")
                     .font(.headline)
                     .padding(.horizontal)
@@ -1002,7 +995,7 @@ struct PerformanceIndicator: View {
                 }
                 .foregroundColor(trend.hasPrefix("+") ? .red : .green)
             }
-            
+            .frame(maxWidth: .infinity, minHeight: 80)
             Spacer()
         }
         .padding(12)

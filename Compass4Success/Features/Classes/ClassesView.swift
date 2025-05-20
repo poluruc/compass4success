@@ -469,13 +469,13 @@ struct ClassCard: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 14)
                 .fill(Color(.systemBackground))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(.systemGray4), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color(.separator), lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
         )
     }
     
