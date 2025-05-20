@@ -96,6 +96,7 @@ struct SubmissionDetailView: View {
                     .foregroundColor(.secondary)
                     .font(.headline)
             }
+            .buttonStyle(PressableButtonStyle())
             
             Spacer()
             
@@ -128,6 +129,7 @@ struct SubmissionDetailView: View {
                     .font(.headline)
                     .foregroundColor(.secondary)
             }
+            .buttonStyle(PressableButtonStyle())
         }
         .padding()
         .background(Color(.systemBackground))
@@ -182,6 +184,7 @@ struct SubmissionDetailView: View {
                 .padding()
                 .background(Color(.systemBackground))
                 .cornerRadius(12)
+                .pressableCard()
             } else {
                 Text("No student information available")
                     .padding()
@@ -252,6 +255,7 @@ struct SubmissionDetailView: View {
                             }) {
                                 AttachmentThumbnail(url: url)
                             }
+                            .buttonStyle(PressableButtonStyle())
                         }
                     }
                     .padding()
@@ -310,14 +314,14 @@ struct SubmissionDetailView: View {
                     Button(action: { showingRubric = true }) {
                         Label("Use Rubric", systemImage: "list.bullet.clipboard")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PressableBorderedButtonStyle())
                     
                     Spacer()
                     
                     Button(action: { showingFeedbackTemplate = true }) {
                         Label("Templates", systemImage: "text.badge.checkmark")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(PressableBorderedButtonStyle())
                 }
                 .padding(.horizontal)
             }
@@ -334,6 +338,7 @@ struct SubmissionDetailView: View {
                     .padding(.horizontal)
             }
             .disabled(currentSubmissionIndex <= 0 || isSubmitting)
+            .buttonStyle(PressableButtonStyle())
             
             Spacer()
             
@@ -346,8 +351,8 @@ struct SubmissionDetailView: View {
                         .padding(.horizontal, 20)
                 }
             }
-            .buttonStyle(.borderedProminent)
             .disabled(isSubmitting)
+            .buttonStyle(PressableProminentButtonStyle())
             
             Spacer()
             
@@ -356,6 +361,7 @@ struct SubmissionDetailView: View {
                     .padding(.horizontal)
             }
             .disabled(currentSubmissionIndex >= viewModel.submissions.count - 1 || isSubmitting)
+            .buttonStyle(PressableButtonStyle())
         }
         .padding()
         .background(Color(.systemBackground))

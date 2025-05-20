@@ -52,6 +52,7 @@ struct DashboardView: View {
                             NavigationLink(destination: destinationView(for: stat)) {
                                 QuickStatCard(stat: stat)
                             }
+                            .buttonStyle(PressableButtonStyle())
                         }
                     }
                     .padding(.horizontal)
@@ -66,6 +67,7 @@ struct DashboardView: View {
                     
                     ForEach(viewModel.recentActivities) { activity in
                         RecentActivityRow(activity: activity)
+                            .pressableCard()
                     }
                 }
                 .padding(.bottom, 5)
@@ -87,6 +89,7 @@ struct DashboardView: View {
                     } else {
                         ForEach(viewModel.upcomingAssignments) { assignment in
                             UpcomingAssignmentRow(assignment: assignment)
+                                .pressableCard()
                         }
                     }
                 }
@@ -168,6 +171,7 @@ struct DashboardView: View {
                     } else {
                         ForEach(viewModel.announcements) { announcement in
                             AnnouncementCard(announcement: announcement)
+                                .pressableCard()
                         }
                     }
                 }
@@ -194,10 +198,12 @@ struct DashboardView: View {
                     authService.logout()
                 }) {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
-                },
+                }
+                .buttonStyle(PressableButtonStyle()),
                 trailing: Button(action: refreshDashboard) {
                     Image(systemName: "arrow.clockwise")
                 }
+                .buttonStyle(PressableButtonStyle())
             )
         #else
         return content

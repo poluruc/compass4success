@@ -74,6 +74,7 @@ struct ClassesView: View {
                 Button(action: refreshClasses) {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
+                .buttonStyle(PressableButtonStyle())
                 
                 Spacer()
                 
@@ -87,6 +88,7 @@ struct ClassesView: View {
                 }) {
                     Label("Add", systemImage: "plus")
                 }
+                .buttonStyle(PressableButtonStyle())
             }
             .padding()
             
@@ -104,6 +106,7 @@ struct ClassesView: View {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(.secondary)
                         }
+                        .buttonStyle(PressableButtonStyle())
                     }
                 }
                 .padding(8)
@@ -125,6 +128,7 @@ struct ClassesView: View {
                         .frame(minWidth: 120, alignment: .leading)
                         .foregroundColor(.primary)
                     }
+                    .buttonStyle(PressableButtonStyle())
                     
                     Spacer()
                     
@@ -139,6 +143,7 @@ struct ClassesView: View {
                         }
                         .foregroundColor(.primary)
                     }
+                    .buttonStyle(PressableButtonStyle())
                 }
                 .padding(.horizontal, 8)
             }
@@ -194,6 +199,7 @@ struct ClassesView: View {
                                     .onTapGesture {
                                         selectedClass = schoolClass
                                     }
+                                    .pressableCard()
                             }
                         }
                         .padding()
