@@ -270,7 +270,7 @@ struct StudentDetailView: View {
         }
     }
     
-    // Chart data model used by GradeTrendChart
+    // Chart data model
     struct TimeSeriesDataPoint: Identifiable {
         let id = UUID()
         let label: String
@@ -744,119 +744,100 @@ struct StudentDetailView: View {
                         .padding(.horizontal)
                     
                     VStack {
+                        // Legend for subjects
                         HStack(spacing: 20) {
-                            VStack(spacing: 6) {
-                                Circle()
-                                    .fill(Color.blue)
-                                    .frame(width: 12, height: 12)
-                                Text("Math")
-                                    .font(.caption)
-                            }
-                            
-                            VStack(spacing: 6) {
-                                Circle()
-                                    .fill(Color.green)
-                                    .frame(width: 12, height: 12)
-                                Text("Science")
-                                    .font(.caption)
-                            }
-                            
-                            VStack(spacing: 6) {
-                                Circle()
-                                    .fill(Color.orange)
-                                    .frame(width: 12, height: 12)
-                                Text("English")
-                                    .font(.caption)
+                            ForEach(viewModel.gradeHistory) { history in
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(history.color)
+                                        .frame(width: 8, height: 8)
+                                    Text(history.subject)
+                                        .font(.caption)
+                                }
                             }
                         }
+                        .padding(.top, 8)
                         
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 100))
-                            .foregroundColor(.blue.opacity(0.7))
-                            .padding(.top)
-                    }
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(.systemBackground))
-                    .padding(.horizontal)
-                }
-                .padding(.vertical)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemBackground))
-                )
-                
-                // Attendance record
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Attendance")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    
-                    VStack {
-                        HStack(spacing: 15) {
-                            AttendanceStatBox(label: "Present", count: 24, total: 30, color: .green)
-                            AttendanceStatBox(label: "Absent", count: 4, total: 30, color: .red)
-                            AttendanceStatBox(label: "Late", count: 2, total: 30, color: .orange)
-                        }
-                        .padding()
-                        
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 60))
-                            .foregroundColor(.blue.opacity(0.7))
-                            .padding(.top)
-                    }
-                    .frame(height: 220)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(.systemBackground))
-                    .padding(.horizontal)
-                }
-                .padding(.vertical)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemBackground))
-                )
-                
-                // Skills assessment
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Skills Assessment")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    
-                    VStack(spacing: 16) {
-                        Text("Ontario Curriculum Achievement Categories")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        VStack(spacing: 12) {
-                            SkillProgressBar(label: "Knowledge", value: 0.85, color: .blue)
-                            SkillProgressBar(label: "Thinking", value: 0.75, color: .green)
-                            SkillProgressBar(label: "Communication", value: 0.9, color: .orange)
-                            SkillProgressBar(label: "Application", value: 0.8, color: .purple)
-                        }
-                        .padding(.horizontal)
+                        simpleGradeChart
                     }
                     .padding()
-                    .frame(maxWidth: .infinity)
                     .background(Color(.systemBackground))
+                    .cornerRadius(12)
                     .padding(.horizontal)
                 }
-                .padding(.vertical)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.systemBackground))
-                )
+
+                // Simple skills section
+                simpleSkillsSection
             } else {
                 Text("Advanced analytics available on iOS 16.0+ and macOS 13.0+")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity)
                     .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.systemBackground))
-                    )
             }
         }
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var simpleSkillsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Skills Assessment")
+                .font(.headline)
+            
+            Text("Ontario Curriculum Achievement Categories")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 12) {
+                SkillProgressBar(label: "Knowledge", value: 0.85, color: .blue)
+                SkillProgressBar(label: "Thinking", value: 0.75, color: .green)
+                SkillProgressBar(label: "Communication", value: 0.9, color: .orange)
+                SkillProgressBar(label: "Application", value: 0.8, color: .purple)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(10)
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var simpleGradeChart: some View {
+        Chart {
+            ForEach(viewModel.gradeHistory) { history in
+                ForEach(history.dataPoints) { point in
+                    LineMark(
+                        x: .value("Month", point.date, unit: .month),
+                        y: .value("Grade", point.grade)
+                    )
+                    .foregroundStyle(history.color)
+                    .interpolationMethod(.catmullRom)
+                    
+                    PointMark(
+                        x: .value("Month", point.date, unit: .month),
+                        y: .value("Grade", point.grade)
+                    )
+                    .foregroundStyle(history.color)
+                    .symbolSize(30)
+                }
+            }
+        }
+        .chartYScale(domain: 60...100)
+        .chartYAxis {
+            AxisMarks(position: .leading, values: .stride(by: 10)) { value in
+                AxisGridLine()
+                AxisValueLabel {
+                    if let grade = value.as(Double.self) {
+                        Text("\(Int(grade))%")
+                    }
+                }
+            }
+        }
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .month, count: 1)) { value in
+                AxisGridLine()
+                AxisValueLabel(format: .dateTime.month(.abbreviated))
+            }
+        }
+        .frame(height: 220)
     }
     
     // MARK: - Supporting Views
@@ -896,6 +877,7 @@ struct StudentDetailView: View {
         @Published var numericAverage: Double = 0.0
         @Published var achievementLevel: String = "N/A"
         @Published var attendanceRate: Double = 0.0
+        @Published var gradeHistory: [GradeHistory] = []
         
         struct CourseGrade: Identifiable {
             let id = UUID()
@@ -928,6 +910,31 @@ struct StudentDetailView: View {
             let skill: String
             let level: Int
             let description: String
+        }
+        
+        // Data structures for grade history chart
+        struct GradeHistory: Identifiable {
+            let id = UUID()
+            let subject: String
+            let color: Color
+            let dataPoints: [GradeDataPoint]
+            
+            init(subject: String, color: Color, dataPoints: [GradeDataPoint]) {
+                self.subject = subject
+                self.color = color
+                self.dataPoints = dataPoints
+            }
+        }
+        
+        struct GradeDataPoint: Identifiable {
+            let id = UUID()
+            let date: Date
+            let grade: Double
+            
+            init(date: Date, grade: Double) {
+                self.date = date
+                self.grade = grade
+            }
         }
         
         func loadStudentData(for student: Student) {
@@ -990,6 +997,13 @@ struct StudentDetailView: View {
                 )
             ]
             
+            // Generate grade history data for trending chart
+            let mathHistory = generateSubjectGradeHistory(subject: "Mathematics", baseGrade: 82.0, color: .blue, variance: 5.0)
+            let scienceHistory = generateSubjectGradeHistory(subject: "Science", baseGrade: 78.0, color: .green, variance: 6.0)
+            let englishHistory = generateSubjectGradeHistory(subject: "English", baseGrade: 75.0, color: .orange, variance: 4.0)
+            
+            gradeHistory = [mathHistory, scienceHistory, englishHistory]
+            
             // Generate attendance records
             attendanceData = []
             for i in 0..<30 {
@@ -1034,6 +1048,29 @@ struct StudentDetailView: View {
             // Calculate attendance rate
             let presentCount = attendanceData.filter { $0.isPresent }.count
             attendanceRate = (Double(presentCount) / Double(attendanceData.count)) * 100
+        }
+        
+        // Helper to generate grade history data for a subject
+        private func generateSubjectGradeHistory(subject: String, baseGrade: Double, color: Color, variance: Double) -> GradeHistory {
+            let calendar = Calendar.current
+            let now = Date()
+            var dataPoints: [GradeDataPoint] = []
+            
+            // Create data points for the last 5 months (one per month)
+            for i in 0..<5 {
+                // Start from 4 months ago to current month
+                let monthOffset = 4 - i
+                let date = calendar.date(byAdding: .month, value: -monthOffset, to: now)!
+                
+                // Generate a grade that trends upward with some randomness
+                let randomVariance = Double.random(in: -variance...variance)
+                let trendFactor = Double(i) * 1.2 // Gradual improvement
+                let grade = min(max(baseGrade + trendFactor + randomVariance, 60.0), 98.0)
+                
+                dataPoints.append(GradeDataPoint(date: date, grade: grade))
+            }
+            
+            return GradeHistory(subject: subject, color: color, dataPoints: dataPoints)
         }
     }
     
