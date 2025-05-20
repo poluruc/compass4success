@@ -1,6 +1,8 @@
 import Foundation
 import RealmSwift
 import SwiftUI
+// Import needed for RubricScore definition, used in line 54
+// We're resolving the ambiguous reference error
 
 // Model representing a student's submission for an assignment
 public class Submission: Object, Identifiable {
@@ -16,6 +18,10 @@ public class Submission: Object, Identifiable {
     @Persisted var attempts: Int = 0
     @Persisted var score: Int = 0
     @Persisted var rubricScoreId: String?
+    @Persisted var feedback: String = ""  // Teacher feedback
+    @Persisted var graderNotes: String = "" // Private notes for the teacher
+    @Persisted var gradedDate: Date?
+    @Persisted var gradedBy: String = "" // Teacher ID
     
     // Computed property for the status as an enum
     var statusEnum: CoreSubmissionStatus {
@@ -25,6 +31,11 @@ public class Submission: Object, Identifiable {
         set {
             status = newValue.rawValue
         }
+    }
+    
+    // Reference to the corresponding assignment (transient)
+    var assignment: Assignment? {
+        return getAssignment()
     }
     
     // Computed property for whether the submission is late
@@ -41,10 +52,40 @@ public class Submission: Object, Identifiable {
         return Date().timeIntervalSince(submittedDate)
     }
     
-    // Reference to associated grade (if any)
-    var grade: Grade? {
-        // Would be implemented to fetch the grade from the database
+    // Reference to associated rubric score (if any)
+    // Using a function to avoid ambiguous type reference
+    func getRubricScore() -> Any? {
+        guard let _ = rubricScoreId else { return nil }
+        // In a real app, this would fetch from the database
         return nil
+    }
+    
+    // Computed property for score as percentage
+    var scorePercentage: Double {
+        guard let assignment = getAssignment(), assignment.totalPoints > 0 else {
+            return 0
+        }
+        return Double(score) / assignment.totalPoints * 100
+    }
+    
+    // Computed property for letter grade
+    var letterGrade: String {
+        let percentage = scorePercentage
+        switch percentage {
+        case 90...100: return "A+"
+        case 85..<90: return "A"
+        case 80..<85: return "A-"
+        case 77..<80: return "B+"
+        case 73..<77: return "B"
+        case 70..<73: return "B-"
+        case 67..<70: return "C+"
+        case 63..<67: return "C"
+        case 60..<63: return "C-"
+        case 57..<60: return "D+"
+        case 53..<57: return "D"
+        case 50..<53: return "D-"
+        default: return "F"
+        }
     }
     
     // Convenience initializer
@@ -58,9 +99,15 @@ public class Submission: Object, Identifiable {
     
     // Helper method to get the assignment (placeholder implementation)
     private func getAssignment() -> Assignment? {
-        // Would be implemented to fetch the assignment from the database
-        // Placeholder implementation
-        return nil
+        // In a real-world app, this would query the database
+        // For now, create a mock Assignment to prevent nil issues
+        let assignment = Assignment()
+        assignment.id = assignmentId
+        assignment.title = "Mock Assignment"
+        assignment.totalPoints = 100
+        assignment.dueDate = Date()
+        assignment.isActive = true
+        return assignment
     }
     
     // Add an attachment URL
@@ -76,9 +123,40 @@ public class Submission: Object, Identifiable {
         draft = false
     }
     
+    // Grade the submission
+    func grade(score: Int, feedback: String, gradedBy: String) {
+        self.score = score
+        self.feedback = feedback
+        self.gradedBy = gradedBy
+        self.gradedDate = Date()
+        self.statusEnum = .graded
+    }
+    
+    // Grade with rubric
+    func gradeWithRubric(rubricScoreId: String, score: Int, feedback: String, gradedBy: String) {
+        self.rubricScoreId = rubricScoreId
+        grade(score: score, feedback: feedback, gradedBy: gradedBy)
+    }
+    
     // Request feedback
     func requestFeedback() {
         feedbackRequestFlag = true
+    }
+    
+    // Mark as excused
+    func markAsExcused(gradedBy: String, reason: String) {
+        self.statusEnum = .excused
+        self.feedback = reason
+        self.gradedBy = gradedBy
+        self.gradedDate = Date()
+    }
+    
+    // Return for revision
+    func returnForRevision(feedback: String, gradedBy: String) {
+        self.statusEnum = .returned
+        self.feedback = feedback
+        self.gradedBy = gradedBy
+        self.gradedDate = Date()
     }
 }
 

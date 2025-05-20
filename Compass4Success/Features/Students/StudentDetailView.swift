@@ -641,23 +641,35 @@ struct StudentDetailView: View {
             
             // Assignment completion stats
             HStack(spacing: 12) {
+                // Break down complex expression for completed assignments
+                let completedAssignments = viewModel.recentAssignments.filter { $0.status == "Completed" }
+                let completedCount = completedAssignments.count
+                
                 DetailCompletionStatCard(
                     title: "Completed",
-                    count: viewModel.recentAssignments.filter { $0.status == "Completed" }.count,
+                    count: completedCount,
                     total: viewModel.recentAssignments.count,
                     color: .green
                 )
                 
+                // Break down complex expression for in progress assignments
+                let inProgressAssignments = viewModel.recentAssignments.filter { $0.status == "In Progress" }
+                let inProgressCount = inProgressAssignments.count
+                
                 DetailCompletionStatCard(
                     title: "In Progress",
-                    count: viewModel.recentAssignments.filter { $0.status == "In Progress" }.count,
+                    count: inProgressCount,
                     total: viewModel.recentAssignments.count,
                     color: .blue
                 )
                 
+                // Break down complex expression for not started assignments
+                let notStartedAssignments = viewModel.recentAssignments.filter { $0.status == "Not Started" }
+                let notStartedCount = notStartedAssignments.count
+                
                 DetailCompletionStatCard(
                     title: "Not Started",
-                    count: viewModel.recentAssignments.filter { $0.status == "Not Started" }.count,
+                    count: notStartedCount,
                     total: viewModel.recentAssignments.count,
                     color: .orange
                 )
@@ -679,44 +691,8 @@ struct StudentDetailView: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(viewModel.recentAssignments) { assignment in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(assignment.title)
-                                        .font(.headline)
-                                    
-                                    Spacer()
-                                    
-                                    Text(assignment.courseName)
-                                        .font(.caption)
-                                        .padding(4)
-                                        .background(Color.blue.opacity(0.1))
-                                        .cornerRadius(4)
-                                }
-                                
-                                HStack {
-                                    Label("Due: \(Self.formatDate(assignment.dueDate))", systemImage: "calendar")
-                                    
-                                    Spacer()
-                                    
-                                    DetailStatusBadge(status: assignment.status)
-                                }
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                
-                                if let grade = assignment.grade {
-                                    HStack {
-                                        Text("Grade: \(String(format: "%.1f", grade))/\(String(format: "%.1f", assignment.maxPoints))")
-                                            .font(.subheadline)
-                                        
-                                        Text("(\(String(format: "%.0f%%", (grade/assignment.maxPoints) * 100)))")
-                                            .font(.subheadline)
-                                            .foregroundColor(Self.getColorForGrade((grade/assignment.maxPoints) * 100))
-                                    }
-                                    .padding(.top, 2)
-                                }
-                            }
-                            .padding()
-                            .background(Color(.systemBackground))
+                            // Helper method for assignment items
+                            assignmentItemView(for: assignment)
                             
                             if assignment.id != viewModel.recentAssignments.last?.id {
                                 Divider()
@@ -758,7 +734,7 @@ struct StudentDetailView: View {
                         }
                         .padding(.top, 8)
                         
-                        simpleGradeChart
+                        simpleGradeTrendSection
                     }
                     .padding()
                     .background(Color(.systemBackground))
@@ -800,44 +776,79 @@ struct StudentDetailView: View {
     }
     
     @available(iOS 16.0, macOS 13.0, *)
+    private var simpleGradeTrendSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Grade Trend")
+                .font(.headline)
+            
+            // Simple legend
+            HStack {
+                ForEach(viewModel.gradeHistory) { history in
+                    Label(history.subject, systemImage: "circle.fill")
+                        .foregroundColor(history.color)
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                }
+            }
+            
+            // Use the standard chart - no longer complex due to our improvements
+            gradeChart
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(10)
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
+    private var gradeChart: some View {
+        // Simply delegate to our simpleGradeChart implementation
+        simpleGradeChart
+    }
+    
+    @available(iOS 16.0, macOS 13.0, *)
     private var simpleGradeChart: some View {
-        Chart {
-            ForEach(viewModel.gradeHistory) { history in
-                ForEach(history.dataPoints) { point in
-                    LineMark(
-                        x: .value("Month", point.date, unit: .month),
-                        y: .value("Grade", point.grade)
+        // Create flat data structure for the chart
+        var chartPoints: [SimpleChartPoint] = []
+        var colors: [Color] = []
+        
+        // Prepare the data
+        for history in viewModel.gradeHistory {
+            colors.append(history.color)
+            for point in history.dataPoints {
+                chartPoints.append(
+                    SimpleChartPoint(
+                        id: UUID(),
+                        subject: history.subject,
+                        date: point.date,
+                        grade: point.grade
                     )
-                    .foregroundStyle(history.color)
-                    .interpolationMethod(.catmullRom)
-                    
-                    PointMark(
-                        x: .value("Month", point.date, unit: .month),
-                        y: .value("Grade", point.grade)
-                    )
-                    .foregroundStyle(history.color)
-                    .symbolSize(30)
-                }
+                )
             }
         }
+        
+        // Use a simpler chart configuration that avoids custom axis configuration issues
+        return Chart(chartPoints) { point in
+            LineMark(
+                x: .value("Month", point.date, unit: .month),
+                y: .value("Grade", point.grade)
+            )
+            .foregroundStyle(by: .value("Subject", point.subject))
+        }
+        .chartForegroundStyleScale(range: colors)
         .chartYScale(domain: 60...100)
-        .chartYAxis {
-            AxisMarks(position: .leading, values: .stride(by: 10)) { value in
-                AxisGridLine()
-                AxisValueLabel {
-                    if let grade = value.as(Double.self) {
-                        Text("\(Int(grade))%")
-                    }
-                }
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .stride(by: .month, count: 1)) { value in
-                AxisGridLine()
-                AxisValueLabel(format: .dateTime.month(.abbreviated))
-            }
-        }
-        .frame(height: 220)
+        // Use a standard X-axis configuration to avoid AxisContent errors
+        .chartXAxis(.automatic)
+        .frame(height: 180)
+        .padding([.top, .bottom])
+    }
+    
+    // Simple struct for the chart points
+    @available(iOS 16.0, macOS 13.0, *)
+    private struct SimpleChartPoint: Identifiable {
+        let id: UUID
+        let subject: String
+        let date: Date
+        let grade: Double
     }
     
     // MARK: - Supporting Views
@@ -1328,6 +1339,105 @@ struct StudentDetailView: View {
                 .frame(height: 12)
             }
         }
+    }
+    
+    // MARK: - Helper methods for formatting
+    
+    private func formatGradeDisplay(grade: Double, maxPoints: Double) -> (gradeText: String, percentageText: String, percentageColor: Color) {
+        // Format the grade values
+        let gradeFormatted = String(format: "%.1f", grade)
+        let maxFormatted = String(format: "%.1f", maxPoints)
+        let gradeText = "Grade: \(gradeFormatted)/\(maxFormatted)"
+        
+        // Calculate and format the percentage
+        let percentage = (grade/maxPoints) * 100
+        let percentageFormatted = String(format: "%.0f%%", percentage)
+        
+        // Get the color based on the percentage
+        let percentageColor = Self.getColorForGrade(percentage)
+        
+        return (gradeText, percentageFormatted, percentageColor)
+    }
+    
+    // Helper method to convert AssignmentData to Assignment
+    private func convertToAssignment(_ assignmentData: StudentDetailViewModel.AssignmentData) -> Assignment {
+        let assignment = Assignment()
+        assignment.id = assignmentData.id.uuidString
+        assignment.title = assignmentData.title
+        assignment.dueDate = assignmentData.dueDate
+        assignment.totalPoints = assignmentData.maxPoints
+        assignment.category = "Assignment" // Default value
+        assignment.assignedDate = Date().addingTimeInterval(-86400) // 1 day ago as default
+        assignment.isActive = true
+        assignment.assignmentDescription = ""
+        
+        // Convert grade to submission if available
+        if let grade = assignmentData.grade {
+            let submission = Submission()
+            submission.id = UUID().uuidString
+            submission.score = Int(grade)
+            submission.statusEnum = .graded
+            assignment.submissions.append(submission)
+        }
+        
+        return assignment
+    }
+    
+    // Helper method for displaying an assignment item to simplify assignmentsTabView
+    private func assignmentItemView(for assignment: StudentDetailViewModel.AssignmentData) -> some View {
+        // Convert AssignmentData to Assignment for the detail view
+        let realAssignment = convertToAssignment(assignment)
+        
+        return NavigationLink(destination: AssignmentDetailView(assignment: realAssignment)) {
+            VStack(alignment: .leading, spacing: 4) {
+                // Title row
+                HStack {
+                    Text(assignment.title)
+                        .font(.headline)
+                    
+                    Spacer()
+                    
+                    Text(assignment.courseName)
+                        .font(.caption)
+                        .padding(4)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(4)
+                }
+                
+                // Due date and status row
+                HStack {
+                    Label("Due: \(Self.formatDate(assignment.dueDate))", systemImage: "calendar")
+                    
+                    Spacer()
+                    
+                    DetailStatusBadge(status: assignment.status)
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+                
+                // Grade display if available
+                if let grade = assignment.grade {
+                    // Use the helper method to get all the formatted values
+                    let (gradeText, percentageText, percentageColor) = formatGradeDisplay(
+                        grade: grade, 
+                        maxPoints: assignment.maxPoints
+                    )
+                    
+                    HStack {
+                        Text(gradeText)
+                            .font(.subheadline)
+                        
+                        Text("(\(percentageText))")
+                            .font(.subheadline)
+                            .foregroundColor(percentageColor)
+                    }
+                    .padding(.top, 2)
+                }
+            }
+            .padding()
+            .background(Color(.systemBackground))
+        }
+        .buttonStyle(PlainButtonStyle()) // Prevents the link from changing the appearance
     }
 }
 

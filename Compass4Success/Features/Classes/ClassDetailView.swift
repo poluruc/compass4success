@@ -644,9 +644,12 @@ struct ClassDetailView: View {
                 } else {
                     LazyVStack(spacing: 0) {
                         ForEach(Array(schoolClass.assignments)) { assignment in
-                            AssignmentListItem(assignment: assignment)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal)
+                            NavigationLink(destination: AssignmentDetailView(assignment: assignment)) {
+                                AssignmentListItem(assignment: assignment)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                             
                             if assignment.id != schoolClass.assignments.last?.id {
                                 Divider()

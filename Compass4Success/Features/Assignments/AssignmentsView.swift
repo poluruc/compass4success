@@ -101,10 +101,10 @@ struct AssignmentsView: View {
                     ScrollView(.vertical, showsIndicators: true) {
                         LazyVStack(spacing: 16) {
                             ForEach(filteredAssignments) { assignment in
-                                AssignmentCard(assignment: assignment)
-                                    .onTapGesture {
-                                        selectedAssignment = assignment
-                                    }
+                                NavigationLink(destination: AssignmentDetailView(assignment: assignment)) {
+                                    AssignmentCard(assignment: assignment)
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                         .padding()
@@ -127,12 +127,6 @@ struct AssignmentsView: View {
         .sheet(isPresented: $showingAddAssignment) {
             NavigationView {
                 AssignmentsAddView(classes: classService.classes)
-            }
-            .platformPresentationDetent()
-        }
-        .sheet(item: $selectedAssignment) { assignment in
-            NavigationView {
-                AssignmentsDetailView(assignment: assignment)
             }
             .platformPresentationDetent()
         }
@@ -574,130 +568,6 @@ struct AssignmentsAddView: View {
                 }
             }
         }
-    }
-}
-
-// Rename to avoid duplicate declarations
-struct AssignmentsDetailView: View {
-    let assignment: Assignment
-    
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(assignment.title)
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    Text(assignment.categoryEnum.rawValue)
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                
-                // Assignment details
-                Section(header: SectionHeader(title: "Details")) {
-                    if !assignment.assignmentDescription.isEmpty {
-                        Text(assignment.assignmentDescription)
-                            .padding(.horizontal)
-                    }
-                    
-                    DetailRow(label: "Due Date", value: assignment.formattedDueDate)
-                    DetailRow(label: "Points", value: "\(assignment.totalPoints)")
-                    
-                    if !assignment.instructions.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Instructions")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            Text(assignment.instructions)
-                                .padding(.horizontal)
-                        }
-                    }
-                }
-                
-                // Submissions
-                Section(header: SectionHeader(title: "Submissions")) {
-                    if assignment.submissions.isEmpty {
-                        Text("No submissions yet")
-                            .foregroundColor(.secondary)
-                            .padding()
-                    } else {
-                        ForEach(Array(assignment.submissions)) { submission in
-                            SubmissionRow(submission: submission)
-                        }
-                    }
-                }
-            }
-            .padding(.bottom, 20)
-        }
-        .navigationTitle("Assignment Details")
-    }
-}
-
-// Rename to avoid duplicate declarations
-struct AssignmentsSectionHeader: View {
-    let title: String
-    
-    var body: some View {
-        Text(title)
-            .font(.headline)
-            .foregroundColor(.primary)
-            .padding(.horizontal)
-            .padding(.top, 10)
-            .padding(.bottom, 5)
-    }
-}
-
-struct DetailRow: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        HStack {
-            Text(label)
-                .foregroundColor(.secondary)
-                .frame(width: 120, alignment: .leading)
-            
-            Text(value)
-                .foregroundColor(.primary)
-            
-            Spacer()
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-    }
-}
-
-struct SubmissionRow: View {
-    let submission: Submission
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Student \(submission.studentId)") // This would be fetched from the student ID
-                    .font(.headline)
-                
-                Text(CoreSubmissionStatus(rawValue: submission.status)?.rawValue ?? "Unknown")
-                    .font(.caption)
-                    .padding(4)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(4)
-            }
-            
-            Spacer()
-            
-            Text("Score: \(submission.score)")
-                .font(.headline)
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(.systemGray6))
-        )
-        .padding(.horizontal)
     }
 }
 

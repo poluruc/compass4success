@@ -16,7 +16,7 @@ struct SettingsView: View {
                     HStack {
                         Image(systemName: "person.circle.fill")
                             .resizable()
-                            .frame(width: 50, height: 50)
+                            .frame(width: 50, height: 20)
                             .foregroundColor(.blue)
                         
                         VStack(alignment: .leading, spacing: 4) {

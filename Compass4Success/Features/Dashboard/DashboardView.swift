@@ -340,56 +340,59 @@ struct UpcomingAssignmentRow: View {
     let assignment: Assignment
     
     var body: some View {
-        HStack {
-            // Left side - assignment icon and colored indicator
-            VStack {
-                Image(systemName: "list.clipboard")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 40, height: 40)
-                    .background(Color.blue)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-            .padding(.trailing, 4)
-            
-            // Middle - assignment details
-            VStack(alignment: .leading, spacing: 4) {
-                Text(assignment.title)
-                    .font(.headline)
-                
-                // Use courseId instead of className since className doesn't exist
-                Text("Course \(assignment.courseId.isEmpty ? "N/A" : assignment.courseId)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            // Right side - date information with colored emphasis
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(assignment.dueDate, style: .date)
-                    .font(.subheadline)
-                    .bold()
-                    .foregroundColor(.primary)
-                
-                HStack(spacing: 2) {
-                    Image(systemName: "clock.fill")
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                    Text(assignment.dueDate, style: .time)
-                        .foregroundColor(.blue)
+        NavigationLink(destination: AssignmentDetailView(assignment: assignment)) {
+            HStack {
+                // Left side - assignment icon and colored indicator
+                VStack {
+                    Image(systemName: "list.clipboard")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Color.blue)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                .font(.caption)
+                .padding(.trailing, 4)
+                
+                // Middle - assignment details
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(assignment.title)
+                        .font(.headline)
+                    
+                    // Use courseId instead of className since className doesn't exist
+                    Text("Course \(assignment.courseId.isEmpty ? "N/A" : assignment.courseId)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                // Right side - date information with colored emphasis
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(assignment.dueDate, style: .date)
+                        .font(.subheadline)
+                        .bold()
+                        .foregroundColor(.primary)
+                    
+                    HStack(spacing: 2) {
+                        Image(systemName: "clock.fill")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                        Text(assignment.dueDate, style: .time)
+                            .foregroundColor(.blue)
+                    }
+                    .font(.caption)
+                }
             }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+            )
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.blue.opacity(0.2), lineWidth: 1)
-        )
+        .buttonStyle(PlainButtonStyle()) // This prevents the navigation link from changing the appearance
         .padding(.horizontal)
     }
 }

@@ -91,13 +91,9 @@ extension Student {
             if let submission = assignment.submissions.first(where: { $0.studentId == id }) {
                 totalPoints += Double(assignment.totalPoints)
                 
-                // Check if submission has a grade and safely unwrap it
-                if let grade = submission.grade {
-                    // Use the percentage property of the Grade object
-                    earnedPoints += grade.percentage * Double(assignment.totalPoints) / 100.0
-                } else if submission.score > 0 {
-                    // Use the score property if no Grade object is available
-                    earnedPoints += Double(submission.score) / 100.0 * Double(assignment.totalPoints)
+                // Check if submission has a score and use it directly
+                if submission.score > 0 {
+                    earnedPoints += Double(submission.score)
                 }
             }
         }

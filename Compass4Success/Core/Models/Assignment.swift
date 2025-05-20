@@ -17,6 +17,7 @@ public class Assignment: Object, Identifiable {
     @Persisted var classId: String?
     @Persisted var instructions: String = ""
     @Persisted var points: Double = 0.0  // Added for compatibility
+    @Persisted var rubricId: String?     // Reference to a rubric if one is attached
     
     // Store a list of submission IDs instead of embedding objects
     @Persisted public var submissions = RealmSwift.List<Submission>()
@@ -76,5 +77,41 @@ extension Assignment {
         let calendar = Calendar.current
         let components = calendar.dateComponents([.day], from: Date(), to: dueDate)
         return components.day ?? 0
+    }
+    
+    // Added methods for grading and submissions
+    
+    // Calculate statistics about submissions
+    var submissionCount: Int {
+        return submissions.count
+    }
+    
+    var gradedCount: Int {
+        return submissions.filter { 
+            $0.statusEnum == .graded || $0.statusEnum == .excused 
+        }.count
+    }
+    
+    var completionRate: Double {
+        // Note: In a real app, this would need the total number of students
+        return 0.0
+    }
+    
+    var averageScore: Double {
+        let scoredSubmissions = submissions.filter { $0.score > 0 }
+        guard !scoredSubmissions.isEmpty else { return 0 }
+        
+        let total = scoredSubmissions.reduce(0) { $0 + Double($1.score) }
+        return total / Double(scoredSubmissions.count)
+    }
+    
+    // Get submissions by status
+    func getSubmissionsByStatus(_ status: CoreSubmissionStatus) -> [Submission] {
+        return Array(submissions.filter { $0.statusEnum == status })
+    }
+    
+    // Get student submission
+    func getSubmissionForStudent(studentId: String) -> Submission? {
+        return submissions.first { $0.studentId == studentId }
     }
 } 
