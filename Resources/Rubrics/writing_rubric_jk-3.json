@@ -1,0 +1,35 @@
+{
+  "id": "writing_rubric_jk-3",
+  "title": "Ontario Writing Rubric (JK-3)",
+  "description": "Rubric for evaluating writing in Ontario JK-3.",
+  "applicableGrades": [0, 1, 2, 3],
+  "criteria": [
+    {
+      "name": "Ideas",
+      "levels": [
+        { "level": 1, "description": "Emerging ideas." },
+        { "level": 2, "description": "Developing ideas." },
+        { "level": 3, "description": "Clear ideas." },
+        { "level": 4, "description": "Excellent, creative ideas." }
+      ]
+    },
+    {
+      "name": "Organization",
+      "levels": [
+        { "level": 1, "description": "Hard to follow." },
+        { "level": 2, "description": "Some order." },
+        { "level": 3, "description": "Mostly organized." },
+        { "level": 4, "description": "Very well organized." }
+      ]
+    },
+    {
+      "name": "Conventions",
+      "levels": [
+        { "level": 1, "description": "Many errors." },
+        { "level": 2, "description": "Some errors." },
+        { "level": 3, "description": "Few errors." },
+        { "level": 4, "description": "Almost no errors." }
+      ]
+    }
+  ]
+} 

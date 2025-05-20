@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import Foundation
 
 struct SubmissionDetailView: View {
     @Environment(\.dismiss) var dismiss
@@ -14,8 +15,32 @@ struct SubmissionDetailView: View {
     @State private var isSubmitting = false
     @State private var showingSuccessToast = false
     @State private var successMessage = ""
-    
+    @State private var rubricSelections: [String: Int] = [:] // criterion name -> level
     let assignment: Assignment
+    private var rubric: RubricTemplate? {
+        guard let rubricId = assignment.rubricId else { return nil }
+        return RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
+    }
+    private var rubricScore: Int {
+        guard let rubric = rubric else { return 0 }
+        // For simplicity, each criterion is worth equal points
+        let totalPoints = Int(assignment.totalPoints)
+        let pointsPerCriterion = totalPoints / max(1, rubric.criteria.count)
+        var total = 0
+        for criterion in rubric.criteria {
+            if let selectedLevel = rubricSelections[criterion.name],
+               let level = criterion.levels.first(where: { $0.level == selectedLevel }) {
+                // Ontario: Level 1=50%, 2=65%, 3=80%, 4=100%
+                let percent: Double =
+                    selectedLevel == 1 ? 0.5 :
+                    selectedLevel == 2 ? 0.65 :
+                    selectedLevel == 3 ? 0.8 :
+                    selectedLevel == 4 ? 1.0 : 0.0
+                total += Int(Double(pointsPerCriterion) * percent)
+            }
+        }
+        return total
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -286,52 +311,94 @@ struct SubmissionDetailView: View {
             Text("Grading")
                 .font(.headline)
                 .padding(.horizontal)
-            
             VStack(spacing: 16) {
-                HStack {
-                    Text("Score")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .frame(width: 80, alignment: .leading)
-                    
-                    TextField("Enter score", text: $score)
-                        .keyboardType(.decimalPad)
-                        .padding(8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                    
-                    Text("/ \(Int(assignment.totalPoints))")
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Feedback")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    TextEditor(text: $feedback)
-                        .frame(minHeight: 120)
-                        .padding(8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                }
-                .padding(.horizontal)
-                
-                HStack {
-                    Button(action: { showingRubric = true }) {
-                        Label("Use Rubric", systemImage: "list.bullet.clipboard")
+                if let rubric = rubric {
+                    ForEach(rubric.criteria) { criterion in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(criterion.name)
+                                .font(.subheadline)
+                            HStack {
+                                ForEach(criterion.levels, id: \.level) { level in
+                                    Button(action: {
+                                        rubricSelections[criterion.name] = level.level
+                                    }) {
+                                        Text("Level \(level.level)")
+                                            .font(.caption)
+                                            .padding(6)
+                                            .background(rubricSelections[criterion.name] == level.level ? Color.blue.opacity(0.2) : Color(.systemGray6))
+                                            .foregroundColor(rubricSelections[criterion.name] == level.level ? .blue : .primary)
+                                            .cornerRadius(6)
+                                    }
+                                }
+                            }
+                            if let selectedLevel = rubricSelections[criterion.name],
+                               let level = criterion.levels.first(where: { $0.level == selectedLevel }) {
+                                Text(level.description)
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                    .padding(.leading, 2)
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
-                    .buttonStyle(PressableBorderedButtonStyle())
-                    
-                    Spacer()
-                    
-                    Button(action: { showingFeedbackTemplate = true }) {
-                        Label("Templates", systemImage: "text.badge.checkmark")
+                    HStack {
+                        Text("Total Rubric Score: ")
+                        Text("\(rubricScore) / \(Int(assignment.totalPoints))")
+                            .fontWeight(.bold)
+                            .foregroundColor(.blue)
                     }
-                    .buttonStyle(PressableBorderedButtonStyle())
+                    .padding(.top, 8)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Feedback")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        TextEditor(text: $feedback)
+                            .frame(minHeight: 80)
+                            .padding(8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.systemBackground))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color(.systemGray4), lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .padding(.horizontal)
+                } else {
+                    // Fallback: manual score
+                    HStack {
+                        Text("Score")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .frame(width: 80, alignment: .leading)
+                        TextField("Enter score", text: $score)
+                            .keyboardType(.decimalPad)
+                            .padding(8)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(8)
+                        Text("/ \(Int(assignment.totalPoints))")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Feedback")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        TextEditor(text: $feedback)
+                            .frame(minHeight: 120)
+                            .padding(8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(.systemBackground))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color(.systemGray4), lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
             .padding(.vertical)
             .background(Color(.systemBackground))

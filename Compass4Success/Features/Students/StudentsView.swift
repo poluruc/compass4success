@@ -6,6 +6,7 @@ struct StudentsView: View {
     @State private var isLoading = false
     @State private var showingAddStudent = false
     @EnvironmentObject private var classService: ClassService
+    @EnvironmentObject var appSettings: AppSettings
     @StateObject private var viewModel = StudentsViewModel()
     
     var filteredStudents: [Student] {
@@ -29,19 +30,46 @@ struct StudentsView: View {
                     .padding(.bottom, 10)
                 
                 if filteredStudents.isEmpty {
-                    ScrollView {
-                        EmptyStateView(
-                            icon: "person.slash",
-                            title: "No Students Found",
-                            message: searchText.isEmpty ? 
-                                "Add your first student to get started." : 
-                                "No students match your search criteria.",
-                            buttonText: "Add Student",
-                            action: { showingAddStudent = true }
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(.top, 50) // Add some padding at the top for better appearance
+                    VStack(spacing: 24) {
+                        Spacer()
+                        
+                        Image(systemName: "person.2.circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
+                            .foregroundColor(appSettings.accentColor)
+                        
+                        VStack(spacing: 12) {
+                            Text(searchText.isEmpty ? "No Students Yet" : "No Students Found")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            
+                            Text(searchText.isEmpty ? 
+                                "Start by adding your first student.\nKeep track of their progress!" :
+                                "Try adjusting your search criteria.")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
+                        
+                        Button(action: {
+                            showingAddStudent = true
+                        }) {
+                            Label("Add Student", systemImage: "plus.circle.fill")
+                                .font(.headline)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(appSettings.accentColor)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        
+                        Spacer()
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemGroupedBackground))
                 } else {
                     // Student list
                     ScrollView(.vertical, showsIndicators: true) {
@@ -103,6 +131,7 @@ struct StudentsView: View {
 
 struct StudentCard: View {
     let student: Student
+    @EnvironmentObject var appSettings: AppSettings
     
     var body: some View {
         HStack(spacing: 16) {
@@ -121,6 +150,7 @@ struct StudentCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(student.fullName)
                     .font(.headline)
+                    .foregroundColor(.primary)
                 
                 Text(student.email)
                     .font(.caption)
@@ -133,8 +163,10 @@ struct StudentCard: View {
                     
                     Text("Grade: \(student.grade)")
                         .font(.caption2)
-                        .padding(4)
-                        .background(Color.blue.opacity(0.1))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(appSettings.accentColor.opacity(0.12))
+                        .foregroundColor(.primary)
                         .cornerRadius(4)
                 }
             }
@@ -153,7 +185,8 @@ struct StudentCard: View {
                             .font(.caption)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(getColorForGrade(avgGrade).opacity(0.2))
+                            .background(getColorForGrade(avgGrade).opacity(0.10))
+                            .foregroundColor(getColorForGrade(avgGrade))
                             .cornerRadius(4)
                         
                         Text(student.letterGrade)
@@ -162,7 +195,6 @@ struct StudentCard: View {
                             .foregroundColor(getColorForGrade(avgGrade))
                     }
                 } else {
-                    // Generate a random grade since we don't want N/A
                     let randomGrade = Double.random(in: 65...95)
                     Text(String(format: "%.1f%%", randomGrade))
                         .font(.headline)
@@ -173,7 +205,8 @@ struct StudentCard: View {
                             .font(.caption)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(getColorForGrade(randomGrade).opacity(0.2))
+                            .background(getColorForGrade(randomGrade).opacity(0.10))
+                            .foregroundColor(getColorForGrade(randomGrade))
                             .cornerRadius(4)
                         
                         Text(getLetterGrade(randomGrade))
@@ -188,7 +221,7 @@ struct StudentCard: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
         )
     }
     
@@ -294,11 +327,12 @@ struct EmptyStateView: View {
 
 struct SectionHeader: View {
     let title: String
+    @EnvironmentObject var appSettings: AppSettings
     
     var body: some View {
         Text(title)
             .font(.headline)
-            .foregroundColor(.primary)
+            .foregroundColor(appSettings.accentColor)
             .padding(.horizontal)
             .padding(.top, 10)
             .padding(.bottom, 5)

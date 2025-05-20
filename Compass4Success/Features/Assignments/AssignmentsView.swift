@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AssignmentsView: View {
     @EnvironmentObject private var classService: ClassService
+    @EnvironmentObject private var appSettings: AppSettings
     @State private var searchText = ""
     @State private var selectedAssignment: Assignment? = nil
     @State private var showingAddAssignment = false
@@ -83,19 +84,44 @@ struct AssignmentsView: View {
                 .padding(.bottom, 8)
                 
                 if filteredAssignments.isEmpty {
-                    ScrollView {
-                        AssignmentsEmptyStateView(
-                            icon: "doc.text.magnifyingglass",
-                            title: "No Assignments Found",
-                            message: searchText.isEmpty ? 
-                                "No assignments match your filters." : 
-                                "No assignments match your search criteria.",
-                            buttonText: "Create Assignment",
-                            action: { showingAddAssignment = true }
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 300)
-                        .padding(.top, 40)
+                    VStack(spacing: 24) {
+                        Spacer()
+                        
+                        Image(systemName: "square.and.pencil.circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
+                            .foregroundColor(appSettings.accentColor)
+                        
+                        VStack(spacing: 12) {
+                            Text("No Assignments Yet")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            
+                            Text("Start by adding your first assignment.\nTrack progress and stay organized!")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
+                        
+                        Button(action: {
+                            showingAddAssignment = true
+                        }) {
+                            Label("Add Assignment", systemImage: "plus.circle.fill")
+                                .font(.headline)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(appSettings.accentColor)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        
+                        Spacer()
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemGroupedBackground))
                 } else {
                     // Assignment list
                     ScrollView(.vertical, showsIndicators: true) {
@@ -357,6 +383,7 @@ struct FiltersView: View {
 @available(iOS 13.0, macOS 12.0, *)
 struct AssignmentCard: View {
     let assignment: Assignment
+    @EnvironmentObject var appSettings: AppSettings
     
     // Due date formatting and status
     private var dueStatus: (text: String, color: Color) {
@@ -389,15 +416,16 @@ struct AssignmentCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(assignment.title)
                         .font(.headline)
+                        .foregroundColor(appSettings.accentColor)
                     
                     Text(assignment.categoryEnum.rawValue)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(appSettings.secondaryColor)
                 }
                 
                 Spacer()
                 
-                Text("\(assignment.totalPoints) pts")
+                Text("\(assignment.totalPoints.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(assignment.totalPoints)) : String(format: "%.2f", assignment.totalPoints))) pts")
                     .font(.subheadline)
                     .padding(6)
                     .background(Color.blue.opacity(0.1))
@@ -515,37 +543,51 @@ struct AssignmentsAddView: View {
     @State private var selectedClassId = ""
     @State private var category = AssignmentCategory.assignment
     @State private var points = "100"
-    
+    @State private var selectedRubric: RubricTemplate? = nil
+    @State private var showingRubricPicker = false
     let classes: [SchoolClass]
+    let rubrics = RubricLoader.loadAllRubrics()
     
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Assignment Details")) {
                     TextField("Title", text: $title)
-                    
                     TextField("Description", text: $description)
                         .lineLimit(4)
-                    
                     Picker("Class", selection: $selectedClassId) {
                         Text("Select a class").tag("")
                         ForEach(classes) { schoolClass in
                             Text(schoolClass.name).tag(schoolClass.id)
                         }
                     }
-                    
                     Picker("Category", selection: $category) {
                         ForEach(AssignmentCategory.allCases, id: \.self) { category in
                             Text(category.rawValue).tag(category)
                         }
                     }
-                    
                     TextField("Points", text: $points)
                         #if os(iOS)
                         .keyboardType(.numberPad)
                         #endif
-                    
                     DatePicker("Due Date", selection: $dueDate, displayedComponents: [.date, .hourAndMinute])
+                }
+                Section(header: Text("Rubric")) {
+                    if let rubric = selectedRubric {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(rubric.title)
+                                .font(.headline)
+                            Text(rubric.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Text("No rubric selected")
+                            .foregroundColor(.secondary)
+                    }
+                    Button(action: { showingRubricPicker = true }) {
+                        Text(selectedRubric == nil ? "Select Rubric" : "Change Rubric")
+                    }
                 }
             }
             .navigationTitle("Add Assignment")
@@ -554,17 +596,19 @@ struct AssignmentsAddView: View {
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
-                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        // Save the assignment
+                        // Save the assignment, including rubricId if selected
                         dismiss()
                     }
                     .disabled(title.isEmpty || selectedClassId.isEmpty)
+                }
+            }
+            .sheet(isPresented: $showingRubricPicker) {
+                RubricPickerView(rubrics: rubrics) { rubric in
+                    selectedRubric = rubric
                 }
             }
         }
@@ -576,6 +620,7 @@ struct AssignmentsView_Previews: PreviewProvider {
         NavigationView {
             AssignmentsView()
                 .environmentObject(ClassService())
+                .environmentObject(AppSettings())
         }
     }
 }

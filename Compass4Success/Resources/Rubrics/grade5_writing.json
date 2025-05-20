@@ -1,0 +1,71 @@
+{
+    "id": "grade5_writing",
+    "title": "Grade 5 Writing Assessment",
+    "description": "Comprehensive writing assessment for Grade 5 students focusing on organization, ideas, and conventions",
+    "applicableGrades": [5],
+    "criteria": [
+        {
+            "name": "Ideas & Content",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Basic ideas with limited development"
+                },
+                {
+                    "level": 2,
+                    "description": "Ideas are generally focused with some development"
+                },
+                {
+                    "level": 3,
+                    "description": "Clear, developed ideas with supporting details"
+                },
+                {
+                    "level": 4,
+                    "description": "Rich, detailed ideas with thorough development"
+                }
+            ]
+        },
+        {
+            "name": "Organization",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Limited organization and structure"
+                },
+                {
+                    "level": 2,
+                    "description": "Basic organization with some transitions"
+                },
+                {
+                    "level": 3,
+                    "description": "Clear organization with effective transitions"
+                },
+                {
+                    "level": 4,
+                    "description": "Sophisticated organization enhancing clarity"
+                }
+            ]
+        },
+        {
+            "name": "Language & Style",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Simple language with limited variety"
+                },
+                {
+                    "level": 2,
+                    "description": "Some variety in language and sentence structure"
+                },
+                {
+                    "level": 3,
+                    "description": "Effective language and varied sentence structure"
+                },
+                {
+                    "level": 4,
+                    "description": "Rich language with sophisticated style"
+                }
+            ]
+        }
+    ]
+} 

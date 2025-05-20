@@ -462,8 +462,21 @@ struct AssignmentDetailView: View {
         }
         #endif
         .sheet(isPresented: $showingEdit) {
-            // This would link to your edit assignment view
-            Text("Edit Assignment View")
+            EditAssignmentView(
+                assignment: assignment,
+                classes: classService.classes,
+                rubrics: RubricLoader.loadAllRubrics(),
+                onSave: { updatedAssignment in
+                    // Update the assignment in the classService or relevant data store
+                    if let classIndex = classService.classes.firstIndex(where: { $0.id == updatedAssignment.classId }) {
+                        if let assignmentIndex = classService.classes[classIndex].assignments.firstIndex(where: { $0.id == updatedAssignment.id }) {
+                            classService.classes[classIndex].assignments[assignmentIndex] = updatedAssignment
+                        }
+                    }
+                    showingEdit = false
+                },
+                onCancel: { showingEdit = false }
+            )
         }
         .sheet(isPresented: $showingGradeOverview) {
             GradeOverviewView(assignment: assignment)

@@ -3,9 +3,9 @@ import SwiftUI
 @available(macOS 13.0, iOS 16.0, *)
 struct GradebookView: View {
     @EnvironmentObject private var classService: ClassService
-    @State private var selectedClass: SchoolClass?
-    @State private var selectedAssignment: Assignment?
-    @State private var selectedStudent: Student?
+    @State private var selectedClass: SchoolClass? = nil
+    @State private var selectedAssignment: Assignment? = nil
+    @State private var selectedStudent: Student? = nil
     @State private var showingClassPicker = false
     @State private var showingAssignmentPicker = false
     @State private var showingGradeEditor = false
@@ -14,6 +14,9 @@ struct GradebookView: View {
     @State private var sortOrder: SortOrder = .nameAscending
     @State private var isLoading = false
     @State private var showingAddGradeSheet = false
+    @State private var showingRubricQuickView = false
+    @State private var rubricQuickViewAssignment: Assignment? = nil
+    @State private var rubricQuickViewStudent: Student? = nil
     
     enum SortOrder: String, CaseIterable {
         case nameAscending = "Name (A-Z)"
@@ -23,549 +26,177 @@ struct GradebookView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Class selector at the top
-                classSelectorView
-                
-                // Main content area - table of grades
-                if let selectedClass = selectedClass {
-                    if let selectedAssignment = selectedAssignment {
-                        // Assignment-specific view
-                        assignmentGradesView(for: selectedClass, assignment: selectedAssignment)
-                    } else {
-                        // Class overview view
-                        classGradesOverview(for: selectedClass)
+        VStack(spacing: 0) {
+            // Toolbar
+            HStack {
+                Button("Grade All") {
+                    // TODO: Implement bulk grading
+                }
+                .buttonStyle(.bordered)
+                Button("Export CSV") {
+                    // TODO: Implement export
+                }
+                .buttonStyle(.bordered)
+                Spacer()
+                Picker("Sort", selection: $sortOrder) {
+                    ForEach(SortOrder.allCases, id: \.self) { order in
+                        Text(order.rawValue).tag(order)
                     }
-                } else {
-                    // No class selected
-                    emptyStateView
+                }
+                .pickerStyle(MenuPickerStyle())
+            }
+            .padding([.horizontal, .top])
+            
+            // Main table
+            ScrollView([.vertical, .horizontal]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Header row
+                    HStack(spacing: 0) {
+                        Text("Student")
+                            .font(.headline)
+                            .frame(width: 160, alignment: .leading)
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                        ForEach(assignments, id: \.id) { assignment in
+                            HStack(spacing: 4) {
+                                Text(assignment.title)
+                                    .font(.headline)
+                                    .frame(width: 110, alignment: .center)
+                                if assignment.rubricId != nil {
+                                    Image(systemName: "list.bullet.rectangle")
+                                        .foregroundColor(.blue)
+                                        .help("Rubric-graded assignment")
+                                }
+                            }
+                            .padding(.vertical, 8)
+                            .background(Color(.systemGray6))
+                            .frame(width: 130)
+                        }
+                    }
+                    .background(Color(.systemGray6))
+                    
+                    // Student rows
+                    ForEach(students, id: \.id) { student in
+                        HStack(spacing: 0) {
+                            Text(student.fullName)
+                                .frame(width: 160, alignment: .leading)
+                                .padding(.vertical, 8)
+                                .background(Color(.systemBackground))
+                            ForEach(assignments, id: \.id) { assignment in
+                                Button(action: {
+                                    if assignment.rubricId != nil {
+                                        rubricQuickViewAssignment = assignment
+                                        rubricQuickViewStudent = student
+                                        showingRubricQuickView = true
+                                    } else {
+                                        selectedAssignment = assignment
+                                        selectedStudent = student
+                                        showingGradeEditor = true
+                                    }
+                                }) {
+                                    let (score, level, color) = mockScore(for: student, assignment: assignment)
+                                    VStack(spacing: 2) {
+                                        if let score = score {
+                                            Text("\(score)%")
+                                                .fontWeight(.medium)
+                                                .foregroundColor(color)
+                                        } else {
+                                            Text("-")
+                                                .foregroundColor(.secondary)
+                                        }
+                                        if let level = level {
+                                            Text("[L\(level)]")
+                                                .font(.caption2)
+                                                .foregroundColor(color)
+                                        }
+                                    }
+                                    .frame(width: 130, height: 44)
+                                    .background(Color(.systemGray5).opacity(0.5))
+                                    .cornerRadius(6)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .background(Color(.systemBackground))
+                    }
                 }
             }
-            .navigationTitle("Gradebook")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    toolbarContent
-                }
+        }
+        .sheet(isPresented: $showingRubricQuickView) {
+            if let assignment = rubricQuickViewAssignment, let student = rubricQuickViewStudent {
+                RubricQuickView(assignment: assignment, student: student)
             }
         }
         .sheet(isPresented: $showingGradeEditor) {
-            if let selectedStudent = selectedStudent, let selectedAssignment = selectedAssignment {
-                GradeEditorView(
-                    student: selectedStudent,
-                    assignment: selectedAssignment,
-                    classInfo: selectedClass!
-                )
-            }
-        }
-        .onAppear {
-            loadClasses()
-        }
-    }
-    
-    @ViewBuilder
-    private var toolbarContent: some View {
-        if selectedClass != nil && selectedAssignment != nil {
-            Menu {
-                Button(action: {
-                    isAddingGrade = true
-                    showingGradeEditor = true
-                }) {
-                    Label("Add Grade", systemImage: "plus")
-                }
-                
-                Button(action: {
-                    // Implement CSV export
-                }) {
-                    Label("Export Grades", systemImage: "square.and.arrow.up")
-                }
-                
-                Button(action: {
-                    // Implement grade analysis
-                }) {
-                    Label("Grade Analysis", systemImage: "chart.bar")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-            }
-        } else if selectedClass != nil {
-            Button(action: {
-                showingAssignmentPicker = true
-            }) {
-                Label("Select Assignment", systemImage: "doc.text.magnifyingglass")
-            }
-        } else {
-            // Empty view for when no class is selected
-            EmptyView()
-        }
-    }
-    
-    private var classSelectorView: some View {
-        VStack {
-            Picker("Select Class", selection: $selectedClass) {
-                Text("Select a Class").tag(nil as SchoolClass?)
-                ForEach(classService.classes) { classItem in
-                    Text(classItem.name).tag(classItem as SchoolClass?)
-                }
-            }
-            .pickerStyle(MenuPickerStyle())
-            .compatibleOnChange(of: selectedClass) { newValue in
-                // Reset the selected assignment when class changes
-                selectedAssignment = nil
-            }
-            .padding()
-            
-            if selectedClass != nil {
-                VStack(alignment: .leading) {
-                    HStack {
-                        if let assignment = selectedAssignment {
-                            VStack(alignment: .leading) {
-                                Text("Assignment")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                
-                                Text(assignment.title)
-                                    .font(.headline)
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                selectedAssignment = nil
-                            }) {
-                                Label("Clear", systemImage: "xmark.circle.fill")
-                                    .labelStyle(.iconOnly)
-                            }
-                            .buttonStyle(.borderless)
-                        } else {
-                            VStack(alignment: .leading) {
-                                Text("All Assignments")
-                                    .font(.headline)
-                                
-                                Text(selectedClass?.name ?? "")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                showingAssignmentPicker = true
-                            }) {
-                                Label("Select Assignment", systemImage: "doc.text.magnifyingglass")
-                                    .font(.subheadline)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
+            if let assignment = selectedAssignment, let student = selectedStudent, let classObj = selectedClass {
+                GradeEditorView(student: student, assignment: assignment, classInfo: classObj)
             }
         }
     }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            Image(systemName: "book.closed")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            
-            Text("No Class Selected")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Select a class to view and manage grades")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-            
-            Button(action: {
-                showingClassPicker = true
-            }) {
-                Text("Select Class")
-                    .fontWeight(.semibold)
-            }
-            .buttonStyle(.bordered)
-            .padding(.top)
-            
-            Spacer()
-        }
-        .padding()
-    }
-    
-    private func classGradesOverview(for classItem: SchoolClass) -> some View {
-        VStack {
-            SearchBar(text: $searchText, placeholder: "Search students...")
-            
-            List {
-                Section(header: Text("Students")) {
-                    ForEach(getMockStudents()) { student in
-                        NavigationLink(destination: StudentGradeDetailView(student: student, classItem: classItem)) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "person.circle")
-                                    .font(.title2)
-                                    .foregroundColor(.secondary)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(student.name)
-                                        .font(.headline)
-                                    
-                                    HStack {
-                                        Text("Current Grade: \(mockCurrentGrade(for: student))")
-                                            .font(.subheadline)
-                                        
-                                        if mockGradeDirection(for: student) == "up" {
-                                            Image(systemName: "arrow.up")
-                                                .foregroundColor(.green)
-                                        } else if mockGradeDirection(for: student) == "down" {
-                                            Image(systemName: "arrow.down")
-                                                .foregroundColor(.red)
-                                        }
-                                    }
-                                    .foregroundColor(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Text(String(format: "%.1f%%", mockAverageGrade(for: student)))
-                                    .font(.title3)
-                                    .bold()
-                                    .foregroundColor(gradeColor(for: mockAverageGrade(for: student)))
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                }
-                #if os(iOS)
-                .listStyle(InsetGroupedListStyle())
-                #else
-                .listStyle(DefaultListStyle())
-                #endif
-            }
+    // Mock data for now
+    var students: [Student] {
+        // Replace with real data
+        (1...8).map { i in
+            let s = Student()
+            s.id = "s\(i)"
+            s.firstName = ["Emma", "Liam", "Olivia", "Noah", "Sophia", "Jackson", "Ava", "Lucas"][i-1]
+            s.lastName = ["Johnson", "Jones", "Brown", "Smith", "Davis", "Lee", "Garcia", "Martinez"][i-1]
+            return s
         }
     }
-    
-    private func assignmentGradesView(for classItem: SchoolClass, assignment: Assignment) -> some View {
-        VStack {
-            SearchBar(text: $searchText, placeholder: "Search students...")
-            
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Due: \(formattedDate(assignment.dueDate))")
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                    
-                    Text("Total Points: \(Int(assignment.totalPoints))")
-                        .foregroundColor(.secondary)
-                }
-                
-                Divider()
-            }
-            .padding(.horizontal)
-            
-            List {
-                Section(header: Text("Student Grades")) {
-                    ForEach(filteredStudents(in: classItem, for: assignment)) { student in
-                        Button(action: {
-                            selectedStudent = student
-                            isAddingGrade = false
-                            showingGradeEditor = true
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: "person.circle")
-                                    .font(.title2)
-                                    .foregroundColor(.secondary)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(student.name)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    
-                                    if let studentGrade = getScoreForStudent(student, assignment: assignment) {
-                                        Text("Submitted: \(formattedDate(Date().addingTimeInterval(-Double.random(in: 0...86400))))")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    } else {
-                                        Text("Not submitted")
-                                            .font(.subheadline)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                
-                                Spacer()
-                                
-                                if let studentGrade = getScoreForStudent(student, assignment: assignment) {
-                                    Text("\(Int(studentGrade))/\(Int(assignment.totalPoints))")
-                                        .font(.title3)
-                                        .bold()
-                                        .foregroundColor(gradeColor(for: (studentGrade / assignment.totalPoints) * 100))
-                                } else {
-                                    Text("—")
-                                        .font(.title3)
-                                        .bold()
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                #if os(iOS)
-                .listStyle(InsetGroupedListStyle())
-                #else
-                .listStyle(DefaultListStyle())
-                #endif
-            }
-        }
+    var assignments: [Assignment] {
+        // Replace with real data
+        let a1 = Assignment()
+        a1.id = "a1"; a1.title = "Essay 1"; a1.totalPoints = 100; a1.rubricId = "essay_rubric_gr9-10"
+        let a2 = Assignment()
+        a2.id = "a2"; a2.title = "Lab Report"; a2.totalPoints = 100; a2.rubricId = "lab_report_rubric_gr9-12"
+        let a3 = Assignment()
+        a3.id = "a3"; a3.title = "Presentation"; a3.totalPoints = 100; a3.rubricId = "presentation_rubric_gr11-12"
+        return [a1, a2, a3]
     }
-    
-    // MARK: - Helper Functions
-    
-    // Mock data and helpers
-    private func getMockStudents() -> [Student] {
-        let studentNames = [
-            "Emma Thompson", "Liam Johnson", "Olivia Davis", "Noah Wilson", 
-            "Ava Martinez", "Ethan Anderson", "Sophia Taylor", "Mason Thomas",
-            "Isabella Brown", "Logan White", "Mia Harris", "James Martin"
-        ]
-        
-        return studentNames.enumerated().map { index, name in
-            let student = Student()
-            student.id = "s\(index + 1)"
-            student.firstName = name.split(separator: " ").first?.description ?? ""
-            student.lastName = name.split(separator: " ").last?.description ?? ""
-            return student
-        }
-    }
-    
-    private func mockAverageGrade(for student: Student) -> Double {
-        // Generate a random but somewhat consistent grade based on student ID
-        let idHash = student.id.hash
-        return Double.random(in: 60.0...99.0)
-    }
-    
-    private func mockCurrentGrade(for student: Student) -> String {
-        let grade = mockAverageGrade(for: student)
-        if grade >= 90 {
-            return "A"
-        } else if grade >= 80 {
-            return "B"
-        } else if grade >= 70 {
-            return "C"
-        } else if grade >= 60 {
-            return "D"
-        } else {
-            return "F"
-        }
-    }
-    
-    private func mockGradeDirection(for student: Student) -> String {
-        let options = ["up", "down", "none"]
-        return options.randomElement() ?? "none"
-    }
-    
-    private func mockGradeForAssignment(student: Student, assignment: Assignment) -> Double? {
-        // 20% chance of no submission
-        if Double.random(in: 0...1) < 0.2 {
-            return nil
-        }
-        
-        // Otherwise generate a grade
-        return Double.random(in: 60...assignment.totalPoints)
-    }
-    
-    private func gradeColor(for grade: Double) -> Color {
-        if grade >= 90 {
-            return .green
-        } else if grade >= 80 {
-            return .blue
-        } else if grade >= 70 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
-    
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
-    }
-    
-    private func loadClasses() {
-        isLoading = true
-        // In a real app, this would fetch classes from a service
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.isLoading = false
-        }
-    }
-    
-    private func filteredStudents(in schoolClass: SchoolClass, for assignment: Assignment) -> [Student] {
-        var students = Array(schoolClass.students)
-        
-        // Apply search filter
-        if !searchText.isEmpty {
-            students = students.filter { student in
-                student.name.lowercased().contains(searchText.lowercased())
-            }
-        }
-        
-        // Apply sorting
-        switch sortOrder {
-        case .nameAscending:
-            students.sort { $0.name < $1.name }
-        case .nameDescending:
-            students.sort { $0.name > $1.name }
-        case .gradeAscending:
-            students.sort {
-                let score1 = getScoreForStudent($0, assignment: assignment) ?? -1
-                let score2 = getScoreForStudent($1, assignment: assignment) ?? -1
-                return score1 < score2
-            }
-        case .gradeDescending:
-            students.sort {
-                let score1 = getScoreForStudent($0, assignment: assignment) ?? -1
-                let score2 = getScoreForStudent($1, assignment: assignment) ?? -1
-                return score1 > score2
-            }
-        }
-        
-        return students
-    }
-    
-    private func getScoreForStudent(_ student: Student, assignment: Assignment) -> Double? {
-        if let submission = assignment.submissions.first(where: { $0.studentId == student.id }) {
-            return Double(submission.score ?? 0)
-        }
-        return nil
+    func mockScore(for student: Student, assignment: Assignment) -> (Int?, Int?, Color) {
+        // Mock: random score and level
+        let score = Int.random(in: 60...100)
+        let level = [1,2,3,4].randomElement()!
+        let color: Color =
+            score >= 90 ? .green :
+            score >= 80 ? .blue :
+            score >= 70 ? .yellow :
+            score >= 60 ? .orange : .red
+        return (score, level, color)
     }
 }
 
-struct StudentGradeDetailView: View {
+struct RubricQuickView: View {
+    let assignment: Assignment
     let student: Student
-    let classItem: SchoolClass
-    
+    // For now, show mock rubric breakdown
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Student header
-                HStack {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.blue)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(student.name)
-                            .font(.title2)
-                            .bold()
-                        
-                        Text(classItem.name)
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        
-                        Text("Current Grade: A-")
-                            .font(.subheadline)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
-                
-                // Grade breakdown
-                Text("Grade Breakdown")
-                    .font(.title3)
-                    .bold()
-                    .padding(.top)
-                
-                ForEach(mockAssignments()) { assignment in
-                    assignmentGradeRow(assignment)
-                }
-            }
-            .padding()
-        }
-        .navigationTitle(student.name)
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-    }
-    
-    private func assignmentGradeRow(_ assignment: Assignment) -> some View {
-        VStack(alignment: .leading) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(assignment.title)
-                        .font(.headline)
-                    
-                    Text("Due: \(mockDueDate(for: assignment))")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("\(Int(mockScore(for: assignment)))/ \(Int(assignment.totalPoints))")
-                        .font(.headline)
-                    
-                    Text("\(Int(mockPercentage(for: assignment)))%")
-                        .font(.subheadline)
-                        .foregroundColor(mockColor(for: assignment))
-                }
-            }
-            
+        VStack(spacing: 16) {
+            Text("\(student.fullName) - \(assignment.title)")
+                .font(.headline)
             Divider()
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Knowledge/Understanding: Level 3 (Considerable understanding)")
+                Text("Thinking/Inquiry: Level 2 (Some use of critical thinking)")
+                Text("Communication: Level 3 (Clear and logical)")
+                Text("Application: Level 3 (Considerable application)")
+            }
+            .font(.subheadline)
+            Divider()
+            Text("Total: 78/100   [L3]")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.blue)
+            Text("Feedback: Great effort! Well organized essay.")
+                .font(.body)
+                .padding(.top, 8)
+            Spacer()
+            Button("Close") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+                .buttonStyle(.bordered)
         }
-        .padding(.vertical, 4)
-    }
-    
-    // Mock data
-    private func mockAssignments() -> [Assignment] {
-        return (0..<6).map { i in
-            let assignment = Assignment()
-            assignment.id = "a\(i)"
-            assignment.title = ["Homework \(i+1)", "Quiz \(i+1)", "Project Phase \(i+1)", "Lab Exercise \(i+1)"].randomElement() ?? "Assignment \(i+1)"
-            assignment.totalPoints = [10.0, 20.0, 50.0, 100.0].randomElement() ?? 10.0
-            return assignment
-        }
-    }
-    
-    private func mockDueDate(for assignment: Assignment) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: Date().addingTimeInterval(Double.random(in: -30...30) * 86400))
-    }
-    
-    private func mockScore(for assignment: Assignment) -> Double {
-        return Double.random(in: assignment.totalPoints * 0.6...assignment.totalPoints)
-    }
-    
-    private func mockPercentage(for assignment: Assignment) -> Double {
-        let score = mockScore(for: assignment)
-        return (score / assignment.totalPoints) * 100.0
-    }
-    
-    private func mockColor(for assignment: Assignment) -> Color {
-        let percentage = mockPercentage(for: assignment)
-        if percentage >= 90 {
-            return .green
-        } else if percentage >= 80 {
-            return .blue
-        } else if percentage >= 70 {
-            return .orange
-        } else {
-            return .red
-        }
+        .padding()
+        .presentationDetents([.medium, .large])
     }
 }
 

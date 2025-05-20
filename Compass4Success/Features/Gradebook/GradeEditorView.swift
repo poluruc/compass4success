@@ -13,10 +13,11 @@ struct GradeEditorView: View {
     @State private var isSubmitting = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    // Rubric scoring
+    @State private var rubric: RubricTemplate? = nil
+    @State private var selectedLevels: [String: Int] = [:] // criterion name -> level
     
-    // Get existing submission if it exists
     private var existingSubmission: AssignmentSubmission? {
-        // Convert from CoreSubmission to AssignmentSubmission if found
         if let coreSubmission = assignment.submissions.first(where: { $0.studentId == student.id }) {
             let submission = AssignmentSubmission()
             submission.id = coreSubmission.id
@@ -42,32 +43,82 @@ struct GradeEditorView: View {
                     studentInfoRow(label: "Total Points", value: "\(assignment.totalPoints)")
                 }
                 
-                Section(header: Text("Grade")) {
-                    #if os(iOS)
-                    TextField("Score", text: $score)
-                        .keyboardType(.numberPad)
-                    #else
-                    TextField("Score", text: $score)
-                    #endif
-                    
-                    HStack {
-                        Text("Status")
-                        Spacer()
-                        Picker("Status", selection: $status) {
-                            ForEach(AssignmentSubmission.SubmissionStatus.allCases, id: \.self) { status in
-                                Text(status.rawValue).tag(status)
+                if let rubric = rubric {
+                    Section(header: HStack {
+                        Image(systemName: "list.bullet.rectangle")
+                            .foregroundColor(.blue)
+                        Text("Rubric Scoring")
+                    }) {
+                        ForEach(rubric.criteria) { criterion in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(criterion.name)
+                                    .font(.headline)
+                                HStack {
+                                    ForEach(criterion.levels, id: \ .level) { level in
+                                        Button(action: {
+                                            selectedLevels[criterion.name] = level.level
+                                        }) {
+                                            VStack {
+                                                Text("L\(level.level)")
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(selectedLevels[criterion.name] == level.level ? .white : .primary)
+                                                Text(level.description)
+                                                    .font(.caption2)
+                                                    .foregroundColor(selectedLevels[criterion.name] == level.level ? .white : .secondary)
+                                                    .multilineTextAlignment(.center)
+                                                    .frame(width: 80)
+                                            }
+                                            .padding(8)
+                                            .background(selectedLevels[criterion.name] == level.level ? Color.blue : Color(.systemGray5))
+                                            .cornerRadius(8)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(selectedLevels[criterion.name] == level.level ? Color.blue : Color(.systemGray4), lineWidth: 1)
+                                            )
+                                        }
+                                    }
+                                }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .pickerStyle(MenuPickerStyle())
-                    }
-                    
-                    if let existingSubmission = existingSubmission, 
-                       let existingScore = existingSubmission.score {
+                        Divider()
                         HStack {
-                            Text("Current Grade")
+                            Text("Auto-calculated Score:")
                             Spacer()
-                            Text("\(existingScore)/\(assignment.totalPoints)")
-                                .fontWeight(.medium)
+                            Text("\(autoCalculatedScore, specifier: "%.0f") / \(assignment.totalPoints, specifier: "%.0f")")
+                                .fontWeight(.bold)
+                                .foregroundColor(.blue)
+                        }
+                        .padding(.top, 4)
+                    }
+                } else {
+                    Section(header: Text("Grade")) {
+                        #if os(iOS)
+                        TextField("Score", text: $score)
+                            .keyboardType(.numberPad)
+                        #else
+                        TextField("Score", text: $score)
+                        #endif
+                        
+                        HStack {
+                            Text("Status")
+                            Spacer()
+                            Picker("Status", selection: $status) {
+                                ForEach(AssignmentSubmission.SubmissionStatus.allCases, id: \.self) { status in
+                                    Text(status.rawValue).tag(status)
+                                }
+                            }
+                            .pickerStyle(MenuPickerStyle())
+                        }
+                        
+                        if let existingSubmission = existingSubmission, 
+                           let existingScore = existingSubmission.score {
+                            HStack {
+                                Text("Current Grade")
+                                Spacer()
+                                Text("\(existingScore)/\(assignment.totalPoints)")
+                                    .fontWeight(.medium)
+                            }
                         }
                     }
                 }
@@ -75,11 +126,27 @@ struct GradeEditorView: View {
                 Section(header: Text("Feedback")) {
                     TextEditor(text: $feedback)
                         .frame(minHeight: 100)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
+                        )
+                        .padding(.vertical, 4)
+                    Text("Tip: Give specific, actionable feedback to help the student improve.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 
                 Section(header: Text("Notes (Private)")) {
                     TextEditor(text: $notes)
                         .frame(minHeight: 80)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
+                        )
                 }
                 
                 Section {
@@ -105,7 +172,8 @@ struct GradeEditorView: View {
                 }
             }
             .navigationTitle("Grade Assignment")
-            .platformSpecificTitleDisplayMode()            .toolbar {
+            .platformSpecificTitleDisplayMode()
+            .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
@@ -115,6 +183,7 @@ struct GradeEditorView: View {
             }
             .onAppear {
                 loadExistingSubmission()
+                loadRubricIfNeeded()
             }
             .alert(alertMessage, isPresented: $showingAlert) {
                 Button("OK", role: .cancel) {
@@ -148,7 +217,36 @@ struct GradeEditorView: View {
         }
     }
     
+    private func loadRubricIfNeeded() {
+        if let rubricId = assignment.rubricId {
+            rubric = RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
+            // Preselect levels if needed
+            if let rubric = rubric {
+                for criterion in rubric.criteria {
+                    selectedLevels[criterion.name] = criterion.levels.first?.level
+                }
+            }
+        }
+    }
+    
+    private var autoCalculatedScore: Double {
+        guard let rubric = rubric else { return 0 }
+        let totalLevels = rubric.criteria.count
+        guard totalLevels > 0 else { return 0 }
+        let maxLevel = rubric.criteria.first?.levels.last?.level ?? 4
+        let sum = rubric.criteria.reduce(0) { acc, criterion in
+            acc + (selectedLevels[criterion.name] ?? 1)
+        }
+        // Score is proportional to selected levels
+        let percent = Double(sum) / Double(totalLevels * maxLevel)
+        return percent * assignment.totalPoints
+    }
+    
     private func saveGrade() {
+        if rubric != nil {
+            // Use auto-calculated score
+            score = String(Int(autoCalculatedScore))
+        }
         // Validate score input
         guard status != .graded || !score.isEmpty else {
             alertMessage = "Please enter a score for the graded submission."

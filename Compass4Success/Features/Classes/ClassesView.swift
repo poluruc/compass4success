@@ -4,6 +4,7 @@ import Charts
 @available(macOS 13.0, iOS 16.0, *)
 struct ClassesView: View {
     @EnvironmentObject private var classService: ClassService
+    @EnvironmentObject var appSettings: AppSettings
     @State private var showAddClassSheet = false
     @State private var selectedClass: SchoolClass?
     @State private var showingAlert = false
@@ -12,6 +13,7 @@ struct ClassesView: View {
     @State private var searchText = ""
     @State private var filterGrade: String? = nil
     @State private var sortOption: SortOption = .nameAsc
+    @State private var activeNavigation: String? = nil
     
     enum SortOption: String, CaseIterable, Identifiable {
         case nameAsc = "Name (A-Z)"
@@ -75,11 +77,13 @@ struct ClassesView: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(PressableButtonStyle())
+                .foregroundColor(appSettings.accentColor)
                 
                 Spacer()
                 
                 Text("Classes")
                     .font(.headline)
+                    .foregroundColor(appSettings.accentColor)
                 
                 Spacer()
                 
@@ -87,6 +91,7 @@ struct ClassesView: View {
                     showAddClassSheet = true
                 }) {
                     Label("Add", systemImage: "plus")
+                        .foregroundColor(appSettings.accentColor)
                 }
                 .buttonStyle(PressableButtonStyle())
             }
@@ -152,57 +157,76 @@ struct ClassesView: View {
             
             ZStack {
                 if classService.classes.isEmpty {
-                    // Empty state view
-                    ScrollView {
-                        VStack {
-                            Image(systemName: "book.closed")
-                                .font(.largeTitle)
-                                .padding()
+                    VStack(spacing: 24) {
+                        Spacer()
+                        
+                        Image(systemName: "book.circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
+                            .foregroundColor(appSettings.accentColor)
+                        
+                        VStack(spacing: 12) {
+                            Text("No Classes Yet")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
                             
-                            Text("No Classes")
-                                .font(.headline)
-                            
-                            Text("You don't have any classes yet. Tap the + button to add your first class.")
-                                .font(.subheadline)
-                                .multilineTextAlignment(.center)
+                            Text("Start by adding your first class.\nOrganize your teaching schedule!")
+                                .font(.body)
                                 .foregroundColor(.secondary)
-                                .padding()
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding()
-                    }
-                } else if filteredClasses.isEmpty {
-                    // No search results view
-                    VStack {
-                        Image(systemName: "magnifyingglass")
-                            .font(.largeTitle)
-                            .padding()
                         
-                        Text("No Results")
-                            .font(.headline)
+                        Button(action: {
+                            showAddClassSheet = true
+                        }) {
+                            Label("Add Class", systemImage: "plus.circle.fill")
+                                .font(.headline)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(appSettings.accentColor)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
                         
-                        Text("Try adjusting your search or filters.")
-                            .font(.subheadline)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.secondary)
-                            .padding()
+                        Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding()
+                    .background(Color(.systemGroupedBackground))
+                } else if filteredClasses.isEmpty {
+                    VStack(spacing: 24) {
+                        Spacer()
+                        
+                        Image(systemName: "magnifyingglass.circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
+                            .foregroundColor(appSettings.accentColor)
+                        
+                        VStack(spacing: 12) {
+                            Text("No Classes Found")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            
+                            Text("Try adjusting your search or filters.")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        }
+                        
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemGroupedBackground))
                 } else {
                     // Class cards grid/list
                     ScrollView {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 400), spacing: 16)], spacing: 16) {
-                            ForEach(filteredClasses) { schoolClass in
-                                ClassCard(schoolClass: schoolClass)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        selectedClass = schoolClass
-                                    }
-                                    .pressableCard()
-                            }
-                        }
-                        .padding()
+                        classCardsGrid
+                        NavigationLinks
                     }
                 }
                 
@@ -258,10 +282,77 @@ struct ClassesView: View {
         classService.loadClasses()
         isLoading = false
     }
+    
+    private var classCardsGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 320, maximum: 400), spacing: 16)], spacing: 16) {
+            ForEach(filteredClasses) { schoolClass in
+                ClassCard(
+                    schoolClass: schoolClass,
+                    onStudentsTapped: { activeNavigation = "students:\(schoolClass.id)" },
+                    onGradebookTapped: { activeNavigation = "gradebook:\(schoolClass.id)" }
+                )
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectedClass = schoolClass
+                }
+                .pressableCard()
+            }
+        }
+        .padding()
+    }
+    
+    private var NavigationLinks: some View {
+        Group {
+            ForEach(filteredClasses, id: \.id) { schoolClass in
+                studentsNavigationLink(for: schoolClass)
+                gradebookNavigationLink(for: schoolClass)
+            }
+        }
+    }
+    
+    private func studentsNavigationLink(for schoolClass: SchoolClass) -> some View {
+        NavigationLink(
+            destination: studentsDestination(for: schoolClass),
+            tag: "students:\(schoolClass.id)",
+            selection: $activeNavigation,
+            label: { EmptyView() }
+        )
+    }
+    
+    private func gradebookNavigationLink(for schoolClass: SchoolClass) -> some View {
+        NavigationLink(
+            destination: gradebookDestination(for: schoolClass),
+            tag: "gradebook:\(schoolClass.id)",
+            selection: $activeNavigation,
+            label: { EmptyView() }
+        )
+    }
+    
+    private func studentsDestination(for schoolClass: SchoolClass) -> AnyView {
+        if let active = activeNavigation, active == "students:\(schoolClass.id)" {
+            return AnyView(ClassDetailView(schoolClass: schoolClass))
+        } else if let active = activeNavigation, active == "gradebook:\(schoolClass.id)" {
+            return AnyView(ClassDetailView(schoolClass: schoolClass))
+        } else {
+            return AnyView(EmptyView())
+        }
+    }
+    
+    private func gradebookDestination(for schoolClass: SchoolClass) -> AnyView {
+        if let active = activeNavigation, active == "gradebook:\(schoolClass.id)" {
+            return AnyView(ClassDetailView(schoolClass: schoolClass))
+        } else if let active = activeNavigation, active == "students:\(schoolClass.id)" {
+            return AnyView(ClassDetailView(schoolClass: schoolClass))
+        } else {
+            return AnyView(EmptyView())
+        }
+    }
 }
 
 struct ClassCard: View {
     let schoolClass: SchoolClass
+    var onStudentsTapped: (() -> Void)? = nil
+    var onGradebookTapped: (() -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -359,7 +450,7 @@ struct ClassCard: View {
             
             // Action buttons
             HStack {
-                Button(action: {}) {
+                Button(action: { onStudentsTapped?() }) {
                     Label("Students", systemImage: "person.3")
                         .font(.caption)
                 }
@@ -368,7 +459,7 @@ struct ClassCard: View {
                 
                 Spacer()
                 
-                Button(action: {}) {
+                Button(action: { onGradebookTapped?() }) {
                     Label("Gradebook", systemImage: "list.clipboard")
                         .font(.caption)
                 }
@@ -380,6 +471,10 @@ struct ClassCard: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.systemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(.systemGray4), lineWidth: 1)
+                )
                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         )
     }

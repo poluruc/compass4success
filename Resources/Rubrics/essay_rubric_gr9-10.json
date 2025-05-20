@@ -1,0 +1,44 @@
+{
+  "id": "essay_rubric_gr9-10",
+  "title": "Ontario Essay Rubric (Grades 9-10)",
+  "description": "Standard rubric for evaluating essays in Ontario Grades 9-10.",
+  "applicableGrades": [9, 10],
+  "criteria": [
+    {
+      "name": "Knowledge/Understanding",
+      "levels": [
+        { "level": 1, "description": "Limited understanding of content." },
+        { "level": 2, "description": "Some understanding of content." },
+        { "level": 3, "description": "Considerable understanding of content." },
+        { "level": 4, "description": "Thorough understanding of content." }
+      ]
+    },
+    {
+      "name": "Thinking/Inquiry",
+      "levels": [
+        { "level": 1, "description": "Limited use of critical thinking skills." },
+        { "level": 2, "description": "Some use of critical thinking skills." },
+        { "level": 3, "description": "Considerable use of critical thinking skills." },
+        { "level": 4, "description": "Highly effective use of critical thinking skills." }
+      ]
+    },
+    {
+      "name": "Communication",
+      "levels": [
+        { "level": 1, "description": "Limited clarity and organization." },
+        { "level": 2, "description": "Some clarity and organization." },
+        { "level": 3, "description": "Clear and logical organization." },
+        { "level": 4, "description": "Highly effective and engaging communication." }
+      ]
+    },
+    {
+      "name": "Application",
+      "levels": [
+        { "level": 1, "description": "Limited application of concepts." },
+        { "level": 2, "description": "Some application of concepts." },
+        { "level": 3, "description": "Considerable application of concepts." },
+        { "level": 4, "description": "Highly effective application of concepts." }
+      ]
+    }
+  ]
+} 

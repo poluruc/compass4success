@@ -6,6 +6,7 @@ struct Compass4SuccessApp: App {
     // Create instances of services to be injected into the environment
     @StateObject private var authService = AuthenticationService()
     @StateObject private var classService = ClassService()
+    @StateObject private var appSettings = AppSettings()
     
     // Create a singleton dashboard view model to share across app
     @StateObject private var dashboardViewModel = DashboardViewModel()
@@ -24,6 +25,8 @@ struct Compass4SuccessApp: App {
                 MainContentView()
                     .environmentObject(authService)
                     .environmentObject(classService)
+                    .environmentObject(appSettings)
+                    .preferredColorScheme(appSettings.colorScheme)
             } else {
                 // Fallback for older OS versions
                 Text("This app requires macOS 13.0/iOS 16.0 or later")
@@ -38,6 +41,7 @@ struct Compass4SuccessApp: App {
 struct MainContentView: View {
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var classService: ClassService
+    @EnvironmentObject var appSettings: AppSettings
     @State private var selectedTab = 0
     
     var body: some View {
@@ -46,6 +50,7 @@ struct MainContentView: View {
                 TabView(selection: $selectedTab) {
                     NavigationView {
                         DashboardView(viewModel: DashboardViewModel())
+                            .environmentObject(appSettings)
                             .onAppear {
                                 // Refresh dashboard data when tab is selected
                                 selectedTab = 0
@@ -111,7 +116,7 @@ struct MainContentView: View {
                         Label("Settings", systemImage: "gear")
                     }
                 }
-                .accentColor(.blue)
+                .accentColor(appSettings.accentColor)
                 #if os(iOS)
                 .edgesIgnoringSafeArea(.top)
                 #endif

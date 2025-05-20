@@ -4,6 +4,7 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject var authService: AuthenticationService
     @EnvironmentObject var classService: ClassService
+    @EnvironmentObject var appSettings: AppSettings
     @ObservedObject var viewModel: DashboardViewModel
     @State private var selectedTimeRange: TimeRange = .week
     @State private var showFeedback = false
@@ -30,9 +31,10 @@ struct DashboardView: View {
                         Text("Welcome, \(getUserFirstName())")
                             .font(.largeTitle)
                             .bold()
+                            .foregroundColor(appSettings.accentColor)
                         
                         Text("What would you like to do today?")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(appSettings.secondaryColor)
                     }
                     Spacer()
                 }
@@ -42,6 +44,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading) {
                     Text("Quick Stats")
                         .font(.headline)
+                        .foregroundColor(appSettings.accentColor)
                         .padding(.horizontal)
                     
                     LazyVGrid(columns: [
@@ -63,6 +66,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading) {
                     Text("Recent Activity")
                         .font(.headline)
+                        .foregroundColor(appSettings.accentColor)
                         .padding(.horizontal)
                     
                     ForEach(viewModel.recentActivities) { activity in
@@ -76,6 +80,7 @@ struct DashboardView: View {
                 VStack(alignment: .leading) {
                     Text("Upcoming Assignments")
                         .font(.headline)
+                        .foregroundColor(appSettings.accentColor)
                         .padding(.horizontal)
                     
                     if viewModel.upcomingAssignments.isEmpty {
@@ -99,11 +104,12 @@ struct DashboardView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Image(systemName: "megaphone.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(appSettings.accentColor)
                             .font(.headline)
                         
                         Text("Announcements")
                             .font(.headline)
+                            .foregroundColor(appSettings.accentColor)
                         
                         Spacer()
                         

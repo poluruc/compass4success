@@ -1,0 +1,35 @@
+{
+  "id": "writing_rubric_4-6",
+  "title": "Ontario Writing Rubric (Grades 4-6)",
+  "description": "Rubric for evaluating writing in Ontario Grades 4-6.",
+  "applicableGrades": [4, 5, 6],
+  "criteria": [
+    {
+      "name": "Ideas & Content",
+      "levels": [
+        { "level": 1, "description": "Limited main idea and details." },
+        { "level": 2, "description": "Some main idea and details." },
+        { "level": 3, "description": "Clear main idea and supporting details." },
+        { "level": 4, "description": "Strong, focused main idea with rich details." }
+      ]
+    },
+    {
+      "name": "Organization",
+      "levels": [
+        { "level": 1, "description": "Difficult to follow." },
+        { "level": 2, "description": "Somewhat organized." },
+        { "level": 3, "description": "Well organized." },
+        { "level": 4, "description": "Excellent flow and structure." }
+      ]
+    },
+    {
+      "name": "Conventions",
+      "levels": [
+        { "level": 1, "description": "Many errors in spelling/grammar." },
+        { "level": 2, "description": "Some errors in spelling/grammar." },
+        { "level": 3, "description": "Few errors in spelling/grammar." },
+        { "level": 4, "description": "Almost no errors in spelling/grammar." }
+      ]
+    }
+  ]
+} 

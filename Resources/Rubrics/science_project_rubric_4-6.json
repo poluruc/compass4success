@@ -1,0 +1,35 @@
+{
+  "id": "science_project_rubric_4-6",
+  "title": "Ontario Science Project Rubric (Grades 4-6)",
+  "description": "Rubric for evaluating science projects in Ontario Grades 4-6.",
+  "applicableGrades": [4, 5, 6],
+  "criteria": [
+    {
+      "name": "Research & Question",
+      "levels": [
+        { "level": 1, "description": "Limited research/question unclear." },
+        { "level": 2, "description": "Some research/question somewhat clear." },
+        { "level": 3, "description": "Good research/clear question." },
+        { "level": 4, "description": "Excellent research/very clear question." }
+      ]
+    },
+    {
+      "name": "Experiment & Data",
+      "levels": [
+        { "level": 1, "description": "Limited experiment/data." },
+        { "level": 2, "description": "Some experiment/data." },
+        { "level": 3, "description": "Good experiment/data." },
+        { "level": 4, "description": "Excellent experiment/data." }
+      ]
+    },
+    {
+      "name": "Presentation",
+      "levels": [
+        { "level": 1, "description": "Difficult to understand." },
+        { "level": 2, "description": "Somewhat clear." },
+        { "level": 3, "description": "Clear and organized." },
+        { "level": 4, "description": "Very clear and engaging." }
+      ]
+    }
+  ]
+} 

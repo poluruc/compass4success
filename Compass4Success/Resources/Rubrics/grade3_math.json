@@ -1,0 +1,71 @@
+{
+    "id": "grade3_math",
+    "title": "Grade 3 Math Problem Solving",
+    "description": "Evaluates mathematical problem-solving skills for Grade 3 students",
+    "applicableGrades": [3],
+    "criteria": [
+        {
+            "name": "Understanding",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Shows limited understanding of the problem"
+                },
+                {
+                    "level": 2,
+                    "description": "Shows some understanding of the problem"
+                },
+                {
+                    "level": 3,
+                    "description": "Shows good understanding of the problem"
+                },
+                {
+                    "level": 4,
+                    "description": "Shows thorough understanding of the problem"
+                }
+            ]
+        },
+        {
+            "name": "Strategy & Procedures",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Uses limited or inappropriate strategies"
+                },
+                {
+                    "level": 2,
+                    "description": "Uses some appropriate strategies"
+                },
+                {
+                    "level": 3,
+                    "description": "Uses appropriate and effective strategies"
+                },
+                {
+                    "level": 4,
+                    "description": "Uses innovative and highly effective strategies"
+                }
+            ]
+        },
+        {
+            "name": "Communication",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Explains thinking with limited clarity"
+                },
+                {
+                    "level": 2,
+                    "description": "Explains thinking with some clarity"
+                },
+                {
+                    "level": 3,
+                    "description": "Explains thinking clearly and completely"
+                },
+                {
+                    "level": 4,
+                    "description": "Explains thinking with exceptional clarity and detail"
+                }
+            ]
+        }
+    ]
+} 

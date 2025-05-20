@@ -1,0 +1,50 @@
+{
+    "id": "jk_writing",
+    "title": "JK Writing Skills",
+    "description": "Evaluates early writing and mark-making skills for Junior Kindergarten students",
+    "applicableGrades": [0],
+    "criteria": [
+        {
+            "name": "Mark Making",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Makes random marks on paper"
+                },
+                {
+                    "level": 2,
+                    "description": "Makes controlled marks and basic shapes"
+                },
+                {
+                    "level": 3,
+                    "description": "Creates recognizable shapes and letters"
+                },
+                {
+                    "level": 4,
+                    "description": "Forms clear letters and shapes with good control"
+                }
+            ]
+        },
+        {
+            "name": "Name Writing",
+            "levels": [
+                {
+                    "level": 1,
+                    "description": "Attempts to write name with support"
+                },
+                {
+                    "level": 2,
+                    "description": "Writes some letters of name independently"
+                },
+                {
+                    "level": 3,
+                    "description": "Writes full name with few errors"
+                },
+                {
+                    "level": 4,
+                    "description": "Writes name clearly and consistently"
+                }
+            ]
+        }
+    ]
+} 
