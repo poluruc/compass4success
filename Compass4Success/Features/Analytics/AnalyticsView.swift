@@ -61,6 +61,7 @@ struct AnalyticsView: View {
                     VStack(spacing: 20) {
                         // Analytics type selector
                         analyticTypeTabPicker
+                            .padding(.vertical, 8)
                         
                         // Time frame selector
                         timeFramePicker
@@ -144,53 +145,67 @@ struct AnalyticsView: View {
         }
     }
     
-    // Tab-style analytics type picker
+    // Analytics type picker styled like QuickStats in a 2-column grid
     private var analyticTypeTabPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
-                ForEach(AnalyticsViewType.allCases, id: \.self) { type in
-                    VStack(spacing: 8) {
+        let columns = [
+            GridItem(.flexible(), spacing: 16),
+            GridItem(.flexible(), spacing: 16)
+        ]
+        
+        return LazyVGrid(columns: columns, spacing: 16) {
+            ForEach(AnalyticsViewType.allCases, id: \.self) { type in
+                VStack(alignment: .leading) {
+                    HStack {
                         Image(systemName: type.icon)
-                            .font(.system(size: 18))
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(colorForAnalyticType(type))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         
-                        Text(type.rawValue)
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .frame(height: 30)
-                    }
-                    .frame(width: 90, height: 80)
-                    .padding(.horizontal, 5)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(selectedAnalytic == type ? Color.blue.opacity(0.1) : Color.clear)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(selectedAnalytic == type ? Color.blue : Color.clear, lineWidth: 2)
-                    )
-                    .foregroundColor(selectedAnalytic == type ? .blue : .primary)
-                    .onTapGesture {
-                        withAnimation {
-                            selectedAnalytic = type
-                            isLoading = true
-                            loadAnalyticsData()
+                        VStack(alignment: .leading) {
+                            Text(type.rawValue)
+                                .font(.headline)
+                                .lineLimit(1)
                         }
+                        
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.bottom, 2)
+                    
+                    // Description based on analytic type
+                    Text(descriptionForAnalyticType(type))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Spacer(minLength: 0)
+                }
+                .padding()
+                .frame(height: 100) // Fixed height for consistency
+                .background(Color(.systemBackground))
+                .cornerRadius(10)
+                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(selectedAnalytic == type ? colorForAnalyticType(type) : Color.clear, lineWidth: 2)
+                )
+                .onTapGesture {
+                    withAnimation {
+                        selectedAnalytic = type
+                        isLoading = true
+                        loadAnalyticsData()
                     }
                 }
             }
-            .padding(5)
         }
+        .padding(.horizontal)
     }
     
     // Time frame selector
     private var timeFramePicker: some View {
         HStack(spacing: 10) {
-            Text("Time Period:")
-                .font(.callout)
-                .foregroundColor(.secondary)
-                .frame(width: 85, alignment: .leading)
-            
             ForEach(AnalyticsTimeFrame.allCases, id: \.self) { timeFrame in
                 Button(action: {
                     selectedTimeFrame = timeFrame
@@ -499,6 +514,36 @@ struct AnalyticsView: View {
         }
     }
     
+    private func colorForAnalyticType(_ type: AnalyticsViewType) -> Color {
+        switch type {
+        case .gradeDistribution:
+            return .blue
+        case .assignmentCompletion:
+            return .green
+        case .gradeOverTime:
+            return .orange
+        case .studentPerformance:
+            return .purple
+        case .attendanceVsGrades:
+            return .red
+        }
+    }
+    
+    private func descriptionForAnalyticType(_ type: AnalyticsViewType) -> String {
+        switch type {
+        case .gradeDistribution:
+            return "View how grades are distributed across your class"
+        case .assignmentCompletion:
+            return "Track assignment completion rates and status"
+        case .gradeOverTime:
+            return "Analyze grade trends over selected time period"
+        case .studentPerformance:
+            return "Compare individual student performance metrics"
+        case .attendanceVsGrades:
+            return "Correlate attendance patterns with academic performance"
+        }
+    }
+    
     // Mock data for previews
     private var mockStudents: [Student] {
         let students: [Student] = [
@@ -592,6 +637,8 @@ struct ExportOptionsView: View {
                     Toggle("Include Student Names", isOn: .constant(true))
                     Toggle("Show Detailed Metrics", isOn: .constant(true))
                     Toggle("Include Visualizations", isOn: .constant(true))
+                    Toggle("Grade Breakdown", isOn: .constant(true))
+                    Toggle("Teacher Notes", isOn: .constant(true))
                 }
             }
             .listStyle(InsetGroupedListStyle())

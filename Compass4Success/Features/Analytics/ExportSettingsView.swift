@@ -1,5 +1,4 @@
 import SwiftUI
-import Compass4Success
 
 struct ExportSettingsView: View {
     @Environment(\.dismiss) private var dismiss
