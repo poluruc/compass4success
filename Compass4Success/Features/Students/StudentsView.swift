@@ -34,24 +34,29 @@ struct StudentsView: View {
     
     var body: some View {
         ZStack {
-            VStack {
+            VStack(spacing: 0) {
                 // Search bar
                 SearchBar(text: $searchText, placeholder: "Search students...")
                     .padding(.horizontal)
+                    .padding(.bottom, 10)
                 
                 if filteredStudents.isEmpty {
-                    EmptyStateView(
-                        icon: "person.slash",
-                        title: "No Students Found",
-                        message: searchText.isEmpty ? 
-                            "Add your first student to get started." : 
-                            "No students match your search criteria.",
-                        buttonText: "Add Student",
-                        action: { showingAddStudent = true }
-                    )
+                    ScrollView {
+                        EmptyStateView(
+                            icon: "person.slash",
+                            title: "No Students Found",
+                            message: searchText.isEmpty ? 
+                                "Add your first student to get started." : 
+                                "No students match your search criteria.",
+                            buttonText: "Add Student",
+                            action: { showingAddStudent = true }
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.top, 50) // Add some padding at the top for better appearance
+                    }
                 } else {
                     // Student list
-                    ScrollView {
+                    ScrollView(.vertical, showsIndicators: true) {
                         LazyVStack(spacing: 12) {
                             ForEach(filteredStudents) { student in
                                 StudentCard(student: student)
@@ -64,6 +69,8 @@ struct StudentsView: View {
                     }
                 }
             }
+            .background(Color(.systemGroupedBackground))
+            .edgesIgnoringSafeArea(.bottom)
             
             if isLoading {
                 LoadingOverlay()

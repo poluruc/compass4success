@@ -70,7 +70,7 @@ struct AssignmentsView: View {
     
     var body: some View {
         ZStack {
-            VStack {
+            VStack(spacing: 0) {
                 // Search and filter section
                 SearchFilterBar(
                     searchText: $searchText,
@@ -80,20 +80,25 @@ struct AssignmentsView: View {
                     classes: classService.classes
                 )
                 .padding(.horizontal)
+                .padding(.bottom, 8)
                 
                 if filteredAssignments.isEmpty {
-                    AssignmentsEmptyStateView(
-                        icon: "doc.text.magnifyingglass",
-                        title: "No Assignments Found",
-                        message: searchText.isEmpty ? 
-                            "No assignments match your filters." : 
-                            "No assignments match your search criteria.",
-                        buttonText: "Create Assignment",
-                        action: { showingAddAssignment = true }
-                    )
+                    ScrollView {
+                        AssignmentsEmptyStateView(
+                            icon: "doc.text.magnifyingglass",
+                            title: "No Assignments Found",
+                            message: searchText.isEmpty ? 
+                                "No assignments match your filters." : 
+                                "No assignments match your search criteria.",
+                            buttonText: "Create Assignment",
+                            action: { showingAddAssignment = true }
+                        )
+                        .frame(maxWidth: .infinity, minHeight: 300)
+                        .padding(.top, 40)
+                    }
                 } else {
                     // Assignment list
-                    ScrollView {
+                    ScrollView(.vertical, showsIndicators: true) {
                         LazyVStack(spacing: 16) {
                             ForEach(filteredAssignments) { assignment in
                                 AssignmentCard(assignment: assignment)
@@ -106,6 +111,8 @@ struct AssignmentsView: View {
                     }
                 }
             }
+            .background(Color(.systemGroupedBackground))
+            .edgesIgnoringSafeArea(.bottom)
             
             if isLoading {
                 AssignmentsLoadingOverlay()

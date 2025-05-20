@@ -10,7 +10,7 @@ struct ClassesView: View {
     @State private var isLoading = false
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             // Custom toolbar
             HStack {
                 Button(action: refreshClasses) {
@@ -35,35 +35,38 @@ struct ClassesView: View {
             ZStack {
                 if classService.classes.isEmpty {
                     // Use EmptyView for compatibility
-                    VStack {
-                        Image(systemName: "book.closed")
-                            .font(.largeTitle)
-                            .padding()
-                        
-                        Text("No Classes")
-                            .font(.headline)
-                        
-                        Text("You don't have any classes yet. Tap the + button to add your first class.")
-                            .font(.subheadline)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.secondary)
-                            .padding()
-                    }
-                    .padding()
-                } else {
-                    List {
-                        ForEach(classService.classes) { schoolClass in
-                            ClassListItem(schoolClass: schoolClass)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedClass = schoolClass
-                                }
+                    ScrollView {
+                        VStack {
+                            Image(systemName: "book.closed")
+                                .font(.largeTitle)
+                                .padding()
+                            
+                            Text("No Classes")
+                                .font(.headline)
+                            
+                            Text("You don't have any classes yet. Tap the + button to add your first class.")
+                                .font(.subheadline)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.secondary)
+                                .padding()
                         }
-                        .onDelete(perform: deleteClass)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
                     }
-                    #if os(iOS)
-                    .listStyle(InsetGroupedListStyle())
-                    #endif
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(classService.classes) { schoolClass in
+                                ClassListItem(schoolClass: schoolClass)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedClass = schoolClass
+                                    }
+                                    .padding(.horizontal)
+                            }
+                        }
+                        .padding(.vertical)
+                    }
                 }
                 
                 if isLoading {
@@ -75,6 +78,8 @@ struct ClassesView: View {
                 }
             }
         }
+        .background(Color(.systemGroupedBackground))
+        .edgesIgnoringSafeArea(.bottom)
         .sheet(isPresented: $showAddClassSheet) {
             // This would be implemented as a form to add a new class
             Text("Add Class Form")

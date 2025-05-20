@@ -307,4 +307,111 @@ class AnalyticsService {
             )
         ]
     }
+    
+    // Generate mock data for grade over time chart
+    func getGradesOverTimeData(classId: String?, timeFrame: AnalyticsTimeFrame) -> [TimeSeriesData] {
+        // Create some sample students
+        let studentNames = ["Average", "Top Students", "Struggling Students"]
+        var result: [TimeSeriesData] = []
+        
+        // Generate dates based on the time frame
+        let dates = generateDatesForTimeFrame(timeFrame)
+        
+        // Create a time series for each student
+        for studentName in studentNames {
+            // Base value and variation
+            let baseValue: Double = {
+                switch studentName {
+                case "Top Students": return 90
+                case "Struggling Students": return 65
+                default: return 80
+                }
+            }()
+            
+            let variation: Double = {
+                switch studentName {
+                case "Top Students": return 5
+                case "Struggling Students": return 10
+                default: return 7
+                }
+            }()
+            
+            // Create points with some randomness but general trends
+            var points: [TimeSeriesPoint] = []
+            for (index, date) in dates.enumerated() {
+                // Add some trend over time
+                let trendFactor = Double(index) / Double(dates.count) * 5.0
+                
+                // Different trends for different groups
+                let trend: Double = {
+                    switch studentName {
+                    case "Top Students": return trendFactor
+                    case "Struggling Students": return trendFactor * 1.5
+                    default: return trendFactor * 0.8
+                    }
+                }()
+                
+                // Calculate final value with some randomness
+                let value = min(max(baseValue + trend + Double.random(in: -variation...variation), 0), 100)
+                
+                points.append(TimeSeriesPoint(date: date, value: value))
+            }
+            
+            result.append(TimeSeriesData(name: studentName, points: points))
+        }
+        
+        return result
+    }
+    
+    // Helper to generate dates for the time frame
+    private func generateDatesForTimeFrame(_ timeFrame: AnalyticsTimeFrame) -> [Date] {
+        let calendar = Calendar.current
+        let now = Date()
+        var dates: [Date] = []
+        
+        let numberOfPoints: Int
+        let interval: Calendar.Component
+        let intervalAmount: Int
+        
+        switch timeFrame {
+        case .month:
+            numberOfPoints = 30
+            interval = .day
+            intervalAmount = -1
+        case .semester:
+            numberOfPoints = 6
+            interval = .month
+            intervalAmount = -1
+        case .year:
+            numberOfPoints = 12
+            interval = .month
+            intervalAmount = -1
+        case .all:
+            numberOfPoints = 8
+            interval = .month
+            intervalAmount = -3
+        }
+        
+        var currentDate = now
+        
+        for _ in 0..<numberOfPoints {
+            dates.append(currentDate)
+            currentDate = calendar.date(byAdding: interval, value: intervalAmount, to: currentDate)!
+        }
+        
+        return dates.reversed()
+    }
+}
+
+// Time series data structures
+struct TimeSeriesData: Identifiable {
+    let id = UUID()
+    let name: String
+    let points: [TimeSeriesPoint]
+}
+
+struct TimeSeriesPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let value: Double
 }

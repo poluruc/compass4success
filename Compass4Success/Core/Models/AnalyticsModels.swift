@@ -55,12 +55,3 @@ struct AnalyticsInsight: Identifiable {
         self.color = color
     }
 }
-
-// Export Models
-struct ExportOptions {
-    var format: ExportFormat
-    var includeCharts: Bool
-    var includeStudentNames: Bool
-    var includeGradeBreakdown: Bool
-    var includeNotes: Bool
-}

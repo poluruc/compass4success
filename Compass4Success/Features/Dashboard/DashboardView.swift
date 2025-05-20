@@ -22,7 +22,7 @@ struct DashboardView: View {
     }
     
     var body: some View {
-        ScrollView {
+        let content = ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
                 // Welcome section
                 HStack {
@@ -44,16 +44,18 @@ struct DashboardView: View {
                         .font(.headline)
                         .padding(.horizontal)
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 15) {
-                            ForEach(viewModel.quickStats) { stat in
-                                NavigationLink(destination: destinationView(for: stat)) {
-                                    QuickStatCard(stat: stat)
-                                }
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 16),
+                        GridItem(.flexible(), spacing: 16)
+                    ], spacing: 16) {
+                        ForEach(viewModel.quickStats) { stat in
+                            NavigationLink(destination: destinationView(for: stat)) {
+                                QuickStatCard(stat: stat)
                             }
                         }
-                        .padding(.horizontal)
                     }
+                    .padding(.horizontal)
+                    .padding(.bottom, 5)
                 }
                 
                 // Recent activity section
@@ -66,6 +68,7 @@ struct DashboardView: View {
                         RecentActivityRow(activity: activity)
                     }
                 }
+                .padding(.bottom, 5)
                 
                 // Upcoming assignments section
                 VStack(alignment: .leading) {
@@ -87,19 +90,79 @@ struct DashboardView: View {
                         }
                     }
                 }
+                .padding(.bottom, 5)
                 
                 // Announcements section
                 VStack(alignment: .leading) {
-                    Text("Announcements")
-                        .font(.headline)
+                    HStack {
+                        Image(systemName: "megaphone.fill")
+                            .foregroundColor(.blue)
+                            .font(.headline)
+                        
+                        Text("Announcements")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        Text("\(viewModel.announcements.count)")
+                            .font(.caption)
+                            .padding(6)
+                            .background(Color.blue.opacity(0.1))
+                            .foregroundColor(.blue)
+                            .clipShape(Circle())
+                    }
+                    .padding(.horizontal)
+                    
+                    // High Priority Badge - only show if there are high priority announcements
+                    if viewModel.announcements.contains(where: { $0.priority == .high || $0.priority == .urgent }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            
+                            Text("Important announcements require your attention")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .background(Color.orange.gradient)
+                        .cornerRadius(8)
                         .padding(.horizontal)
+                        .padding(.bottom, 8)
+                    }
                     
                     if viewModel.announcements.isEmpty {
                         HStack {
                             Spacer()
-                            Text("No announcements at this time")
-                                .foregroundColor(.secondary)
-                                .padding()
+                            VStack(spacing: 12) {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.1))
+                                    .frame(width: 80, height: 80)
+                                    .overlay(
+                                        Image(systemName: "bell.slash")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.gray)
+                                    )
+                                    .padding(.bottom, 8)
+                                
+                                Text("No Announcements")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                
+                                Text("You're all caught up!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .padding(24)
+                            .frame(maxWidth: .infinity)
+                            .background(Color(.systemBackground))
+                            .cornerRadius(12)
+                            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                            .padding(.horizontal)
                             Spacer()
                         }
                     } else {
@@ -108,47 +171,51 @@ struct DashboardView: View {
                         }
                     }
                 }
+                .padding(.bottom, 20)
             }
             .padding(.top)
+            .frame(maxWidth: .infinity)
         }
+        .scrollIndicators(.visible)
+        .background(Color(.systemGroupedBackground))
+        .edgesIgnoringSafeArea(.bottom)
+        .padding(.bottom, 20)
         .navigationTitle("Dashboard")
-        .toolbar {
-            #if os(iOS)
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: refreshDashboard) {
-                    Image(systemName: "arrow.clockwise")
-                }
-            }
-            
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    authService.logout()
-                }) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                }
-            }
-            #else
-            ToolbarItem {
-                Button(action: refreshDashboard) {
-                    Image(systemName: "arrow.clockwise")
-                }
-            }
-            
-            ToolbarItem {
-                Button(action: {
-                    authService.logout()
-                }) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                }
-            }
-            #endif
-        }
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
         .onAppear {
             viewModel.loadDashboardData()
         }
+
+        // Apply platform-specific modifiers outside the main view
+        #if os(iOS)
+        return content
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(
+                leading: Button(action: {
+                    authService.logout()
+                }) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                },
+                trailing: Button(action: refreshDashboard) {
+                    Image(systemName: "arrow.clockwise")
+                }
+            )
+        #else
+        return content
+            .toolbar {
+                ToolbarItem {
+                    Button(action: refreshDashboard) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
+                ToolbarItem {
+                    Button(action: {
+                        authService.logout()
+                    }) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                    }
+                }
+            }
+        #endif
     }
     
     private func refreshDashboard() {
@@ -211,6 +278,8 @@ struct QuickStatCard: View {
                         .font(.title2)
                         .bold()
                 }
+                
+                Spacer(minLength: 0)
             }
             .padding(.bottom, 2)
             
@@ -219,9 +288,12 @@ struct QuickStatCard: View {
                 .foregroundColor(.secondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer(minLength: 0)
         }
         .padding()
-        .frame(width: 200)
+        .frame(height: 120) // Fixed height for consistency
+        .frame(maxWidth: .infinity)
         .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
@@ -269,6 +341,18 @@ struct UpcomingAssignmentRow: View {
     
     var body: some View {
         HStack {
+            // Left side - assignment icon and colored indicator
+            VStack {
+                Image(systemName: "list.clipboard")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .padding(.trailing, 4)
+            
+            // Middle - assignment details
             VStack(alignment: .leading, spacing: 4) {
                 Text(assignment.title)
                     .font(.headline)
@@ -281,22 +365,31 @@ struct UpcomingAssignmentRow: View {
             
             Spacer()
             
+            // Right side - date information with colored emphasis
             VStack(alignment: .trailing, spacing: 4) {
                 Text(assignment.dueDate, style: .date)
                     .font(.subheadline)
+                    .bold()
+                    .foregroundColor(.primary)
                 
-                HStack {
-                    Image(systemName: "clock")
+                HStack(spacing: 2) {
+                    Image(systemName: "clock.fill")
+                        .font(.caption)
+                        .foregroundColor(.blue)
                     Text(assignment.dueDate, style: .time)
+                        .foregroundColor(.blue)
                 }
                 .font(.caption)
-                .foregroundColor(.secondary)
             }
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+        )
         .padding(.horizontal)
     }
 }
@@ -304,32 +397,156 @@ struct UpcomingAssignmentRow: View {
 @available(macOS 13.0, iOS 16.0, *)
 struct AnnouncementCard: View {
     let announcement: Announcement
+    @State private var isExpanded = false
+    
+    // Get appropriate icon based on priority
+    private var priorityIcon: String {
+        switch announcement.priority {
+        case .low:
+            return "info.circle"
+        case .normal:
+            return "bell"
+        case .high:
+            return "exclamationmark.triangle"
+        case .urgent:
+            return "exclamationmark.3"
+        }
+    }
+    
+    // Time ago formatting
+    private var timeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: announcement.date, relativeTo: Date())
+    }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(announcement.title)
-                .font(.headline)
-            
-            Text(announcement.content)
-                .font(.body)
-                .lineLimit(3)
-            
-            HStack {
-                Text("Posted by \(announcement.author)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header with priority indicator
+            HStack(alignment: .top) {
+                // Priority indicator and icon
+                ZStack {
+                    Circle()
+                        .fill(announcement.priority.color.opacity(0.2))
+                        .frame(width: 44, height: 44)
+                    
+                    Image(systemName: priorityIcon)
+                        .font(.system(size: 20))
+                        .foregroundColor(announcement.priority.color)
+                }
                 
-                Spacer()
+                VStack(alignment: .leading, spacing: 4) {
+                    // Title with badge
+                    HStack {
+                        Text(announcement.title)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        
+                        if announcement.priority == .high || announcement.priority == .urgent {
+                            Text(announcement.priority.rawValue)
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(announcement.priority.color.opacity(0.2))
+                                .foregroundColor(announcement.priority.color)
+                                .cornerRadius(4)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                isExpanded.toggle()
+                            }
+                        }) {
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    
+                    // Author and date
+                    HStack {
+                        Image(systemName: "person.crop.circle")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text(announcement.author)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "clock")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text(timeAgo)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+            
+            // Content - only visible when expanded or if content is short
+            if isExpanded || announcement.content.count < 80 {
+                Text(announcement.content)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    .padding(.top, 8)
+            } else {
+                Text(announcement.content)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    .padding(.top, 8)
+            }
+            
+            // Conditional footer for actions
+            if isExpanded {
+                Divider()
+                    .padding(.horizontal, 16)
                 
-                Text(announcement.date, style: .date)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                HStack {
+                    Button(action: {
+                        // Action for responding to announcement
+                    }) {
+                        Label("Respond", systemImage: "arrowshape.turn.up.right")
+                            .font(.caption)
+                            .foregroundColor(announcement.priority.color)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        // Action for marking as read
+                    }) {
+                        Label("Mark as Read", systemImage: "checkmark.circle")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             }
         }
-        .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(announcement.priority.color.opacity(0.3), lineWidth: 1)
+        )
         .padding(.horizontal)
     }
 }

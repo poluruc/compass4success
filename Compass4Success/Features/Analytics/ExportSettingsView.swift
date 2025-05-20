@@ -1,4 +1,5 @@
 import SwiftUI
+import Compass4Success
 
 struct ExportSettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -12,23 +13,6 @@ struct ExportSettingsView: View {
     @State private var includeNotes = false
     @State private var isExporting = false
     @State private var showingSuccessAlert = false
-    
-    enum ExportFormat: String, CaseIterable {
-        case pdf = "PDF"
-        case csv = "CSV"
-        case excel = "Excel"
-        
-        var icon: String {
-            switch self {
-            case .pdf:
-                return "doc.fill"
-            case .csv:
-                return "tablecells"
-            case .excel:
-                return "chart.bar.doc.horizontal"
-            }
-        }
-    }
     
     var body: some View {
         NavigationView {

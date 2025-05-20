@@ -4,46 +4,6 @@ import Charts
 // This file contains shared models and utilities for chart components
 // Note: Use the canonical types from AnalyticsChartModels for data structures
 
-// Export formats supported by the analytics system
-enum ExportFormat: String, CaseIterable {
-    case pdf = "PDF"
-    case csv = "CSV"
-    case excel = "Excel"
-    
-    var icon: String {
-        switch self {
-        case .pdf:
-            return "doc.viewfinder"
-        case .csv:
-            return "tablecells"
-        case .excel:
-            return "tablecells.badge.ellipsis"
-        }
-    }
-    
-    var fileExtension: String {
-        switch self {
-        case .pdf:
-            return "pdf"
-        case .csv:
-            return "csv"
-        case .excel:
-            return "xlsx"
-        }
-    }
-    
-    var mimeType: String {
-        switch self {
-        case .pdf:
-            return "application/pdf"
-        case .csv:
-            return "text/csv"
-        case .excel:
-            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        }
-    }
-}
-
 // Chart utilities and helper functions
 struct ChartUtilities {
     // Generate gradient colors based on values
