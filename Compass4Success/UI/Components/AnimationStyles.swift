@@ -73,6 +73,18 @@ public struct PressableCardStyle: ViewModifier {
     }
 }
 
+// Card Button Style (for use with NavigationLink and Button)
+public struct PressableCardButtonStyle: ButtonStyle {
+    public init() {}
+    
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+    }
+}
+
 // Extension to easily apply the card animation to any view
 public extension View {
     func pressableCard() -> some View {

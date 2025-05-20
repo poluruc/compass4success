@@ -1,6 +1,9 @@
 import SwiftUI
 import Combine
 import Charts
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct StudentDetailView: View {
     let student: Student
@@ -8,6 +11,9 @@ struct StudentDetailView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = StudentDetailViewModel()
     @State private var selectedTab = 0
+    @State private var selectedCourse: String? = nil
+    @State private var selectedStatus: String? = nil
+    @State private var selectedAssignment: StudentDetailViewModel.AssignmentData? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -26,6 +32,10 @@ struct StudentDetailView: View {
         .background(Color(.systemGroupedBackground))
         .onAppear {
             viewModel.loadStudentData(for: student)
+        }
+        .navigationDestination(for: StudentDetailViewModel.AssignmentData.self) { assignment in
+            AssignmentDetailView(assignment: convertToAssignment(assignment))
+                .navigationBarTitleDisplayMode(.inline)
         }
     }
     
@@ -64,6 +74,7 @@ struct StudentDetailView: View {
                 }
             }
             .padding(.horizontal)
+            .padding(.top, 20)
             
             // Student details
             VStack(spacing: 4) {
@@ -265,8 +276,15 @@ struct StudentDetailView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                
+                // Add chevron to indicate it's navigable
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .padding(.leading, 4)
             }
             .padding(.vertical, 8)
+            .contentShape(Rectangle()) // Ensure the entire row is tappable
         }
     }
     
@@ -405,7 +423,10 @@ struct StudentDetailView: View {
                 
                 VStack(spacing: 0) {
                     ForEach(viewModel.recentAssignments.prefix(2)) { assignment in
-                        AssignmentRow(assignment: assignment)
+                        NavigationLink(value: assignment) {
+                            AssignmentRow(assignment: assignment)
+                        }
+                        .buttonStyle(PressableButtonStyle())
                         
                         if assignment.id != viewModel.recentAssignments.prefix(2).last?.id {
                             Divider()
@@ -602,16 +623,20 @@ struct StudentDetailView: View {
             // Filter options
             HStack {
                 Menu {
-                    Button("All Courses", action: {})
+                    Button("All Courses", action: {
+                        selectedCourse = nil
+                    })
                     
                     Divider()
                     
                     ForEach(viewModel.courseGrades) { course in
-                        Button(course.courseName, action: {})
+                        Button(course.courseName, action: {
+                            selectedCourse = course.courseName
+                        })
                     }
                 } label: {
                     HStack {
-                        Text("Course: All")
+                        Text(selectedCourse == nil ? "Course: All" : "Course: \(selectedCourse!)")
                         Image(systemName: "chevron.down")
                     }
                     .padding(8)
@@ -622,14 +647,24 @@ struct StudentDetailView: View {
                 Spacer()
                 
                 Menu {
-                    Button("All", action: {})
-                    Button("Completed", action: {})
-                    Button("In Progress", action: {})
-                    Button("Not Started", action: {})
-                    Button("Late", action: {})
+                    Button("All", action: {
+                        selectedStatus = nil
+                    })
+                    Button("Completed", action: {
+                        selectedStatus = "Completed"
+                    })
+                    Button("In Progress", action: {
+                        selectedStatus = "In Progress"
+                    })
+                    Button("Not Started", action: {
+                        selectedStatus = "Not Started"
+                    })
+                    Button("Late", action: {
+                        selectedStatus = "Late"
+                    })
                 } label: {
                     HStack {
-                        Text("Status: All")
+                        Text(selectedStatus == nil ? "Status: All" : "Status: \(selectedStatus!)")
                         Image(systemName: "chevron.down")
                     }
                     .padding(8)
@@ -639,50 +674,68 @@ struct StudentDetailView: View {
             }
             .padding(.horizontal, 4)
             
-            // Assignment completion stats
+            // Assignment completion stats - now using the filtered assignments for calculations
             HStack(spacing: 12) {
+                // Get filtered assignments for stats
+                let filteredAssignments = filteredAssignmentsList
+                
                 // Break down complex expression for completed assignments
-                let completedAssignments = viewModel.recentAssignments.filter { $0.status == "Completed" }
+                let completedAssignments = filteredAssignments.filter { $0.status == "Completed" }
                 let completedCount = completedAssignments.count
                 
                 DetailCompletionStatCard(
                     title: "Completed",
                     count: completedCount,
-                    total: viewModel.recentAssignments.count,
+                    total: filteredAssignments.count,
                     color: .green
                 )
                 
                 // Break down complex expression for in progress assignments
-                let inProgressAssignments = viewModel.recentAssignments.filter { $0.status == "In Progress" }
+                let inProgressAssignments = filteredAssignments.filter { $0.status == "In Progress" }
                 let inProgressCount = inProgressAssignments.count
                 
                 DetailCompletionStatCard(
                     title: "In Progress",
                     count: inProgressCount,
-                    total: viewModel.recentAssignments.count,
+                    total: filteredAssignments.count,
                     color: .blue
                 )
                 
                 // Break down complex expression for not started assignments
-                let notStartedAssignments = viewModel.recentAssignments.filter { $0.status == "Not Started" }
+                let notStartedAssignments = filteredAssignments.filter { $0.status == "Not Started" }
                 let notStartedCount = notStartedAssignments.count
                 
                 DetailCompletionStatCard(
                     title: "Not Started",
                     count: notStartedCount,
-                    total: viewModel.recentAssignments.count,
+                    total: filteredAssignments.count,
                     color: .orange
                 )
             }
             
-            // Assignments list
+            // Assignments list - now using filtered assignments
             VStack(alignment: .leading, spacing: 12) {
-                Text("All Assignments")
-                    .font(.headline)
-                    .padding(.horizontal)
+                HStack {
+                    Text("All Assignments")
+                        .font(.headline)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        // Reset filters to show all assignments
+                        selectedCourse = nil
+                        selectedStatus = nil
+                    }) {
+                        Label("Show All", systemImage: "arrow.clockwise")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+                .padding(.horizontal)
                 
-                if viewModel.recentAssignments.isEmpty {
-                    Text("No assignments found")
+                if filteredAssignmentsList.isEmpty {
+                    Text("No assignments found matching filters")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity, minHeight: 100)
@@ -690,11 +743,11 @@ struct StudentDetailView: View {
                         .cornerRadius(12)
                 } else {
                     VStack(spacing: 0) {
-                        ForEach(viewModel.recentAssignments) { assignment in
+                        ForEach(filteredAssignmentsList) { assignment in
                             // Helper method for assignment items
                             assignmentItemView(for: assignment)
                             
-                            if assignment.id != viewModel.recentAssignments.last?.id {
+                            if assignment.id != filteredAssignmentsList.last?.id {
                                 Divider()
                                     .padding(.horizontal)
                             }
@@ -706,6 +759,20 @@ struct StudentDetailView: View {
                     )
                 }
             }
+        }
+    }
+    
+    // Computed property to filter assignments based on selected filters
+    private var filteredAssignmentsList: [StudentDetailViewModel.AssignmentData] {
+        viewModel.recentAssignments.filter { assignment in
+            // First check course filter
+            let courseMatches = selectedCourse == nil || assignment.courseName == selectedCourse
+            
+            // Then check status filter
+            let statusMatches = selectedStatus == nil || assignment.status == selectedStatus
+            
+            // Assignment is included only if both filters match
+            return courseMatches && statusMatches
         }
     }
     
@@ -899,7 +966,7 @@ struct StudentDetailView: View {
             let trend: Double
         }
         
-        struct AssignmentData: Identifiable {
+        struct AssignmentData: Identifiable, Hashable {
             let id = UUID()
             let title: String
             let courseName: String
@@ -907,6 +974,16 @@ struct StudentDetailView: View {
             let status: String
             let grade: Double?
             let maxPoints: Double
+            
+            // Implement hash(into:) to make AssignmentData hashable
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(id)
+            }
+            
+            // Implement == for Equatable conformance (required for Hashable)
+            static func == (lhs: AssignmentData, rhs: AssignmentData) -> Bool {
+                lhs.id == rhs.id
+            }
         }
         
         struct AttendanceRecord: Identifiable {
@@ -1385,10 +1462,7 @@ struct StudentDetailView: View {
     
     // Helper method for displaying an assignment item to simplify assignmentsTabView
     private func assignmentItemView(for assignment: StudentDetailViewModel.AssignmentData) -> some View {
-        // Convert AssignmentData to Assignment for the detail view
-        let realAssignment = convertToAssignment(assignment)
-        
-        return NavigationLink(destination: AssignmentDetailView(assignment: realAssignment)) {
+        NavigationLink(value: assignment) {
             VStack(alignment: .leading, spacing: 4) {
                 // Title row
                 HStack {
@@ -1430,14 +1504,34 @@ struct StudentDetailView: View {
                         Text("(\(percentageText))")
                             .font(.subheadline)
                             .foregroundColor(percentageColor)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
                     }
                     .padding(.top, 2)
+                } else {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.top, 2)
+                    }
                 }
             }
             .padding()
             .background(Color(.systemBackground))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+            )
+            .shadow(color: Color.blue.opacity(0.1), radius: 2, x: 0, y: 1)
         }
-        .buttonStyle(PlainButtonStyle()) // Prevents the link from changing the appearance
+        .buttonStyle(PressableCardButtonStyle()) // Use card button style to make it visually clickable
     }
 }
 

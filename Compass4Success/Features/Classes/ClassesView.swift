@@ -230,13 +230,15 @@ struct ClassesView: View {
         .sheet(item: $selectedClass) { schoolClass in
             // Navigate to detailed class view
             if #available(iOS 16.0, macOS 13.0, *) {
-                ClassDetailView(schoolClass: schoolClass)
-                    #if os(iOS)
-                    .presentationDetents([.large, .fraction(0.95)])
-                    .presentationDragIndicator(.visible)
-                    #elseif os(macOS)
-                    .modifier(MacOSPresentationDetentsModifier(detents: [.large, .fraction(0.95)]))
-                    #endif
+                NavigationStack {
+                    ClassDetailView(schoolClass: schoolClass)
+                }
+                #if os(iOS)
+                .presentationDetents([.large, .fraction(0.95)])
+                .presentationDragIndicator(.visible)
+                #elseif os(macOS)
+                .modifier(MacOSPresentationDetentsModifier(detents: [.large, .fraction(0.95)]))
+                #endif
             } else {
                 // Fallback for older OS versions
                 Text("Detailed class view requires iOS 16.0/macOS 13.0 or newer")

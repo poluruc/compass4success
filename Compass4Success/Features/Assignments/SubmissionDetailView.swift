@@ -47,7 +47,15 @@ struct SubmissionDetailView: View {
         .navigationBarHidden(true)
         .onAppear {
             viewModel.loadSubmissions(for: assignment)
-            if !viewModel.submissions.isEmpty {
+            // Ensure we have a small delay to allow data to be processed
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if !viewModel.submissions.isEmpty {
+                    loadCurrentSubmission()
+                }
+            }
+        }
+        .onChange(of: viewModel.submissions) { newSubmissions in
+            if !newSubmissions.isEmpty {
                 loadCurrentSubmission()
             }
         }
@@ -398,8 +406,13 @@ struct SubmissionDetailView: View {
     
     private func loadCurrentSubmission() {
         guard let submission = currentSubmission else { return }
-        score = "\(submission.score)"
+        score = submission.score > 0 ? "\(submission.score)" : ""
         feedback = submission.comments
+        
+        // Ensure student data is loaded
+        if viewModel.students[submission.studentId] == nil {
+            viewModel.loadStudentInfo(studentId: submission.studentId)
+        }
     }
     
     private func saveAndStay() {
@@ -755,36 +768,56 @@ class SubmissionDetailViewModel: ObservableObject {
     func loadSubmissions(for assignment: Assignment) {
         // In a real app, this would filter submissions for the specific assignment
         // and sort them appropriately
-        submissions = Array(assignment.submissions)
+        let submissionsToLoad = Array(assignment.submissions)
         
-        // Add sample attachments to submissions for UI testing
-        for i in 0..<submissions.count {
-            // Add variety of attachment types
-            submissions[i].attachmentUrls.append("https://example.com/homework_\(i).pdf")
-            submissions[i].attachmentUrls.append("https://example.com/image_\(i).jpg")
+        // Process on a background thread, then update UI on main thread
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
             
-            if i % 2 == 0 {
-                submissions[i].attachmentUrls.append("https://example.com/document_\(i).docx")
+            var processedSubmissions = submissionsToLoad
+            
+            // Add sample attachments to submissions for UI testing
+            for i in 0..<processedSubmissions.count {
+                // Add variety of attachment types
+                processedSubmissions[i].attachmentUrls.append("https://example.com/homework_\(i).pdf")
+                processedSubmissions[i].attachmentUrls.append("https://example.com/image_\(i).jpg")
+                
+                if i % 2 == 0 {
+                    processedSubmissions[i].attachmentUrls.append("https://example.com/document_\(i).docx")
+                }
+                
+                if i % 3 == 0 {
+                    processedSubmissions[i].attachmentUrls.append("https://example.com/presentation_\(i).pptx")
+                }
             }
             
-            if i % 3 == 0 {
-                submissions[i].attachmentUrls.append("https://example.com/presentation_\(i).pptx")
+            // Update on main thread
+            DispatchQueue.main.async {
+                self.submissions = processedSubmissions
+                
+                // Load student information for each submission
+                for submission in self.submissions {
+                    self.loadStudentInfo(studentId: submission.studentId)
+                }
             }
-        }
-        
-        // Load student information for each submission
-        for submission in submissions {
-            loadStudentInfo(studentId: submission.studentId)
         }
     }
     
     func loadStudentInfo(studentId: String) {
         // In a real app, this would fetch from a database
-        // For now, create a mock student
+        // For now, create a mock student with proper names
         let student = Student()
         student.id = studentId
-        student.firstName = "Student"
-        student.lastName = "\(Int.random(in: 100...999))"
+        
+        // Use proper names instead of generic "Student" names
+        let firstNames = ["Emma", "Liam", "Olivia", "Noah", "Sophia", "Jackson", "Ava", "Lucas", "Isabella", "Ethan"]
+        let lastNames = ["Johnson", "Smith", "Davis", "Wilson", "Martinez", "Brown", "Garcia", "Rodriguez", "Lopez", "Lee"]
+        
+        // Use consistent naming based on the student ID to ensure the same student always has the same name
+        let nameIndex = abs(studentId.hashValue) % firstNames.count
+        student.firstName = firstNames[nameIndex]
+        student.lastName = lastNames[(nameIndex + 2) % lastNames.count]
+        
         student.studentNumber = "\(Int.random(in: 10000...99999))"
         student.grade = "\(Int.random(in: 9...12))"
         

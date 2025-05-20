@@ -108,6 +108,7 @@ struct ClassDetailView: View {
                     }
                 }
                 .padding(.horizontal)
+                .padding(.top, 20)
                 
                 Text(schoolClass.subject)
                     .font(.title3)
@@ -569,15 +570,13 @@ struct ClassDetailView: View {
             // Student list
             VStack(spacing: 0) {
                 ForEach(filteredStudents) { student in
-                    Button(action: {
-                        // Navigate to student detail view
-                    }) {
+                    NavigationLink(destination: StudentDetailView(student: student)) {
                         StudentListItem(student: student)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 12)
                             .background(Color(.systemBackground))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(PressableCardButtonStyle())
                     
                     if student.id != filteredStudents.last?.id {
                         Divider()
@@ -649,7 +648,7 @@ struct ClassDetailView: View {
                                     .padding(.vertical, 12)
                                     .padding(.horizontal)
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .buttonStyle(PressableCardButtonStyle())
                             
                             if assignment.id != schoolClass.assignments.last?.id {
                                 Divider()
@@ -1270,16 +1269,16 @@ class ClassDetailViewModel: ObservableObject {
         
         // Generate attendance-performance correlation data
         attendancePerformanceData = [
-            AttendancePerformanceDataPoint(student: "Student 1", attendancePercentage: 98.5, averageGrade: 92.3),
-            AttendancePerformanceDataPoint(student: "Student 2", attendancePercentage: 95.0, averageGrade: 88.7),
-            AttendancePerformanceDataPoint(student: "Student 3", attendancePercentage: 87.2, averageGrade: 82.1),
-            AttendancePerformanceDataPoint(student: "Student 4", attendancePercentage: 92.8, averageGrade: 90.5),
-            AttendancePerformanceDataPoint(student: "Student 5", attendancePercentage: 78.5, averageGrade: 72.8),
-            AttendancePerformanceDataPoint(student: "Student 6", attendancePercentage: 65.3, averageGrade: 61.2),
-            AttendancePerformanceDataPoint(student: "Student 7", attendancePercentage: 72.1, averageGrade: 68.9),
-            AttendancePerformanceDataPoint(student: "Student 8", attendancePercentage: 88.9, averageGrade: 85.4),
-            AttendancePerformanceDataPoint(student: "Student 9", attendancePercentage: 93.7, averageGrade: 91.2),
-            AttendancePerformanceDataPoint(student: "Student 10", attendancePercentage: 81.4, averageGrade: 76.3)
+            AttendancePerformanceDataPoint(student: "Emma Johnson", attendancePercentage: 98.5, averageGrade: 92.3),
+            AttendancePerformanceDataPoint(student: "Liam Smith", attendancePercentage: 95.0, averageGrade: 88.7),
+            AttendancePerformanceDataPoint(student: "Olivia Davis", attendancePercentage: 87.2, averageGrade: 82.1),
+            AttendancePerformanceDataPoint(student: "Noah Wilson", attendancePercentage: 92.8, averageGrade: 90.5),
+            AttendancePerformanceDataPoint(student: "Sophia Martinez", attendancePercentage: 78.5, averageGrade: 72.8),
+            AttendancePerformanceDataPoint(student: "Jackson Brown", attendancePercentage: 65.3, averageGrade: 61.2),
+            AttendancePerformanceDataPoint(student: "Ava Garcia", attendancePercentage: 72.1, averageGrade: 68.9),
+            AttendancePerformanceDataPoint(student: "Lucas Rodriguez", attendancePercentage: 88.9, averageGrade: 85.4),
+            AttendancePerformanceDataPoint(student: "Isabella Lopez", attendancePercentage: 93.7, averageGrade: 91.2),
+            AttendancePerformanceDataPoint(student: "Ethan Lee", attendancePercentage: 81.4, averageGrade: 76.3)
         ]
         
         // Generate trend line data for attendance-performance correlation

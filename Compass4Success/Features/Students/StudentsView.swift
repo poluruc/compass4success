@@ -87,11 +87,13 @@ struct StudentsView: View {
                 #endif
         }
         .sheet(item: $selectedStudent) { student in
-            StudentDetailView(student: student)
-                #if os(iOS)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                #endif
+            NavigationStack {
+                StudentDetailView(student: student)
+            }
+            #if os(iOS)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            #endif
         }
         .onAppear {
             viewModel.loadStudents()
