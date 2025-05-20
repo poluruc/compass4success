@@ -8,6 +8,8 @@ class AppSettings: ObservableObject {
         }
     }
     @Published private(set) var secondaryColor: Color = AppSettings.secondaryColor(for: .blue)
+    @Published var fontSize: CGFloat = 1.0
+    @Published var fontName: String = "System"
     
     static func secondaryColor(for primary: Color) -> Color {
         switch primary {

@@ -101,6 +101,12 @@ struct SettingsView: View {
                         .foregroundColor(.red)
                 }
             }
+
+            Section(header: Text("Rubric Templates")) {
+                NavigationLink(destination: RubricTemplatesView()) {
+                    Label("Manage Rubric Templates", systemImage: "list.bullet.rectangle.portrait")
+                }
+            }
             
             Section(header: Text("Help & Support")) {
                 ForEach(SettingsSupportOption.allOptions) { option in
@@ -472,9 +478,74 @@ struct FontSettingsView: View {
 
 // Placeholder views for other navigation destinations
 struct NotificationSettingsView: View {
+    @AppStorage("pushNotificationsEnabled") private var pushNotificationsEnabled = true
+    @AppStorage("emailNotificationsEnabled") private var emailNotificationsEnabled = false
+    @AppStorage("notificationSound") private var notificationSound = "Default"
+    @AppStorage("doNotDisturbStart") private var doNotDisturbStart = 22
+    @AppStorage("doNotDisturbEnd") private var doNotDisturbEnd = 7
+    @AppStorage("assignmentRemindersEnabled") private var assignmentRemindersEnabled = true
+    @AppStorage("assignmentReminderTime") private var assignmentReminderTime = 30 // minutes before
+    @AppStorage("classAnnouncementsEnabled") private var classAnnouncementsEnabled = true
+    @AppStorage("studentActivityAlertsEnabled") private var studentActivityAlertsEnabled = true
+    
+    private let sounds = ["Default", "Chime", "Alert", "Bell", "Silent"]
+    private let reminderTimes = [5, 10, 15, 30, 60, 120]
+    
     var body: some View {
-        Text("Notification Settings")
-            .navigationTitle("Notifications")
+        Form {
+            Section(header: Text("Notification Types")) {
+                Toggle("Push Notifications", isOn: $pushNotificationsEnabled)
+                Toggle("Email Notifications", isOn: $emailNotificationsEnabled)
+            }
+            
+            Section(header: Text("Notification Sound")) {
+                Picker("Sound", selection: $notificationSound) {
+                    ForEach(sounds, id: \.self) { sound in
+                        Text(sound)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+            }
+            
+            Section(header: Text("Do Not Disturb"), footer: Text("Notifications will be muted during this time range.")) {
+                HStack {
+                    Text("From")
+                    Spacer()
+                    Picker("Start", selection: $doNotDisturbStart) {
+                        ForEach(0..<24) { hour in
+                            Text(String(format: "%02d:00", hour)).tag(hour)
+                        }
+                    }
+                    .labelsHidden()
+                    Text("to")
+                    Picker("End", selection: $doNotDisturbEnd) {
+                        ForEach(0..<24) { hour in
+                            Text(String(format: "%02d:00", hour)).tag(hour)
+                        }
+                    }
+                    .labelsHidden()
+                }
+            }
+            
+            Section(header: Text("Assignment Reminders")) {
+                Toggle("Enable Assignment Reminders", isOn: $assignmentRemindersEnabled)
+                if assignmentRemindersEnabled {
+                    Picker("Remind me before", selection: $assignmentReminderTime) {
+                        ForEach(reminderTimes, id: \.self) { minutes in
+                            Text("\(minutes) minutes").tag(minutes)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                }
+            }
+            
+            Section(header: Text("Other Notifications")) {
+                Toggle("Class Announcements", isOn: $classAnnouncementsEnabled)
+                Toggle("Student Activity Alerts", isOn: $studentActivityAlertsEnabled)
+            }
+        }
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -712,10 +783,8 @@ struct FAQView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
-                
                 TextField("Search FAQs", text: $searchText)
                     .foregroundColor(.primary)
-                
                 if !searchText.isEmpty {
                     Button(action: {
                         searchText = ""
@@ -730,33 +799,15 @@ struct FAQView: View {
             .cornerRadius(10)
             .padding(.horizontal)
             .padding(.top)
-            
-            // Hero header
-            ZStack(alignment: .center) {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.cyan.opacity(0.4)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(height: 120)
-                
-                VStack(spacing: 8) {
-                    Text("Frequently Asked Questions")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    Text("Find answers to common questions")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top)
-            
+            .cornerRadius(15)
+
+            // Modern rounded header
+            RoundedHeaderCard(
+                title: "Frequently Asked Questions",
+                subtitle: "Find answers to common questions",
+                icon: "questionmark.circle.fill"
+            )
+
             // FAQ list
             ScrollView {
                 VStack(spacing: 12) {
@@ -878,44 +929,12 @@ struct ContactSupportView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Hero header
-                ZStack(alignment: .bottom) {
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.blue.opacity(0.7), Color.green.opacity(0.5)]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(height: 160)
-                    
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Contact Support")
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Text("We're here to help with any questions")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-                        .padding(.bottom, 20)
-                        .padding(.leading, 20)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "bubble.left.and.bubble.right.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white.opacity(0.9))
-                            .padding(.bottom, 20)
-                            .padding(.trailing, 20)
-                    }
-                }
-                .padding(.horizontal)
+                // Modern rounded header
+                RoundedHeaderCard(
+                    title: "Contact Support",
+                    subtitle: "We're here to help with any questions",
+                    icon: "envelope.fill"
+                )
                 
                 VStack(spacing: 24) {
                     // Support options cards
@@ -1132,44 +1151,12 @@ struct ReportIssueView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Hero header
-                ZStack(alignment: .bottom) {
-                    Rectangle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [Color.orange.opacity(0.7), Color.red.opacity(0.5)]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(height: 160)
-                    
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Report an Issue")
-                                .font(.title)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            
-                            Text("Help us improve by reporting problems")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.9))
-                        }
-                        .padding(.bottom, 20)
-                        .padding(.leading, 20)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(.white.opacity(0.9))
-                            .padding(.bottom, 20)
-                            .padding(.trailing, 20)
-                    }
-                }
-                .padding(.horizontal)
+                // Modern rounded header
+                RoundedHeaderCard(
+                    title: "Report an Issue",
+                    subtitle: "Help us improve by reporting problems",
+                    icon: "exclamationmark.triangle.fill"
+                )
                 
                 VStack(spacing: 20) {
                     // Issue reporting instructions

@@ -93,6 +93,41 @@ public class Rubric: Object, Identifiable {
     public var maxScore: Int {
         return Int(totalPoints)
     }
+    
+    static var empty: Rubric {
+        let rubric = Rubric()
+        rubric.name = ""
+        rubric.rubricdDscription = ""
+        rubric.totalPoints = 100.0
+        return rubric
+    }
+    
+    public func toJSONString() -> String {
+        var dict: [String: Any] = [
+            "name": self.name,
+            "description": self.rubricdDscription,
+            "totalPoints": self.totalPoints,
+            "criteria": self.criteria.map { criterion in
+                [
+                    "name": criterion.name,
+                    "description": criterion.rubricdDscription,
+                    "points": criterion.points,
+                    "levels": criterion.levels.map { level in
+                        [
+                            "level": level.level,
+                            "description": level.rubricLevelDescription,
+                            "percentage": level.percentage
+                        ]
+                    }
+                ]
+            }
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted),
+           let json = String(data: data, encoding: .utf8) {
+            return json
+        }
+        return "{}"
+    }
 }
 
 // Model for a rubric criterion

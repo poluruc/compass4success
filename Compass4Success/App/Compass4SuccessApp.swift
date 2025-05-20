@@ -1,8 +1,18 @@
 import SwiftUI
-import SwiftData
+import RealmSwift
 
 @main
-struct Compass4SuccessApp: App {
+struct Compass4SuccessApp: SwiftUI.App {
+    init() {
+        let config = Realm.Configuration(
+            schemaVersion: 2, // Increment this if you change Realm models again
+            migrationBlock: { migration, oldSchemaVersion in
+                // For most property adds/removes, this can be empty.
+                // Add custom migration logic here if needed.
+            }
+        )
+        Realm.Configuration.defaultConfiguration = config
+    }
     // Create instances of services to be injected into the environment
     @StateObject private var authService = AuthenticationService()
     @StateObject private var classService = ClassService()
