@@ -364,7 +364,7 @@ struct UpcomingAssignmentRow: View {
     let assignment: Assignment
     
     var body: some View {
-        NavigationLink(destination: AssignmentDetailView(assignment: assignment)) {
+        NavigationLink(destination: AssignmentDetailView(viewModel: AssignmentViewModel(assignment: assignment), assignment: assignment)) {
             HStack {
                 // Left side - assignment icon and colored indicator
                 VStack {

@@ -1,0 +1,44 @@
+{
+  "id": "science_rubric_gr9-12",
+  "title": "Ontario Science Assessment Rubric (Grades 9-12)",
+  "description": "Comprehensive rubric for evaluating science in Ontario Grades 9-12.",
+  "applicableGrades": [9, 10, 11, 12],
+  "criteria": [
+    {
+      "name": "Scientific Knowledge & Understanding",
+      "levels": [
+        { "level": 1, "description": "Limited understanding of scientific concepts, theories, and principles." },
+        { "level": 2, "description": "Some understanding of scientific concepts, theories, and principles." },
+        { "level": 3, "description": "Good understanding of scientific concepts, theories, and principles." },
+        { "level": 4, "description": "Thorough understanding of scientific concepts, theories, and principles." }
+      ]
+    },
+    {
+      "name": "Scientific Investigation & Analysis",
+      "levels": [
+        { "level": 1, "description": "Limited ability to conduct and analyze scientific investigations." },
+        { "level": 2, "description": "Some ability to conduct and analyze scientific investigations." },
+        { "level": 3, "description": "Good ability to conduct and analyze scientific investigations." },
+        { "level": 4, "description": "Excellent ability to conduct and analyze scientific investigations." }
+      ]
+    },
+    {
+      "name": "Scientific Communication",
+      "levels": [
+        { "level": 1, "description": "Limited ability to communicate scientific ideas, processes, and findings." },
+        { "level": 2, "description": "Some ability to communicate scientific ideas, processes, and findings." },
+        { "level": 3, "description": "Good ability to communicate scientific ideas, processes, and findings." },
+        { "level": 4, "description": "Excellent ability to communicate scientific ideas, processes, and findings." }
+      ]
+    },
+    {
+      "name": "Application of Science",
+      "levels": [
+        { "level": 1, "description": "Limited ability to apply scientific knowledge to real-world and theoretical contexts." },
+        { "level": 2, "description": "Some ability to apply scientific knowledge to real-world and theoretical contexts." },
+        { "level": 3, "description": "Good ability to apply scientific knowledge to real-world and theoretical contexts." },
+        { "level": 4, "description": "Excellent ability to apply scientific knowledge to real-world and theoretical contexts." }
+      ]
+    }
+  ]
+} 

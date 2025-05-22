@@ -1,0 +1,44 @@
+{
+  "id": "math_rubric_gr6-8",
+  "title": "Ontario Math Assessment Rubric (Grades 6-8)",
+  "description": "Comprehensive rubric for evaluating mathematics in Ontario Grades 6-8.",
+  "applicableGrades": [6, 7, 8],
+  "criteria": [
+    {
+      "name": "Mathematical Understanding",
+      "levels": [
+        { "level": 1, "description": "Limited understanding of mathematical concepts and relationships." },
+        { "level": 2, "description": "Some understanding of mathematical concepts and relationships." },
+        { "level": 3, "description": "Good understanding of mathematical concepts and relationships." },
+        { "level": 4, "description": "Thorough understanding of mathematical concepts and relationships." }
+      ]
+    },
+    {
+      "name": "Problem Solving",
+      "levels": [
+        { "level": 1, "description": "Limited ability to solve problems using appropriate strategies." },
+        { "level": 2, "description": "Some ability to solve problems using appropriate strategies." },
+        { "level": 3, "description": "Good ability to solve problems using appropriate strategies." },
+        { "level": 4, "description": "Excellent ability to solve problems using appropriate strategies." }
+      ]
+    },
+    {
+      "name": "Mathematical Communication",
+      "levels": [
+        { "level": 1, "description": "Limited ability to communicate mathematical thinking." },
+        { "level": 2, "description": "Some ability to communicate mathematical thinking." },
+        { "level": 3, "description": "Good ability to communicate mathematical thinking." },
+        { "level": 4, "description": "Excellent ability to communicate mathematical thinking." }
+      ]
+    },
+    {
+      "name": "Application of Mathematics",
+      "levels": [
+        { "level": 1, "description": "Limited ability to apply mathematics in real-world contexts." },
+        { "level": 2, "description": "Some ability to apply mathematics in real-world contexts." },
+        { "level": 3, "description": "Good ability to apply mathematics in real-world contexts." },
+        { "level": 4, "description": "Excellent ability to apply mathematics in real-world contexts." }
+      ]
+    }
+  ]
+} 

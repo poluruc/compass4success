@@ -18,6 +18,8 @@ public class Assignment: Object, Identifiable {
     @Persisted var instructions: String = ""
     @Persisted var points: Double = 0.0  // Added for compatibility
     @Persisted var rubricId: String?     // Reference to a rubric if one is attached
+    @Persisted var gradeLevels = List<String>()     // List of applicable grade levels
+
     
     // Store a list of submission IDs instead of embedding objects
     @Persisted public var submissions = RealmSwift.List<Submission>()
@@ -113,5 +115,62 @@ extension Assignment {
     // Get student submission
     func getSubmissionForStudent(studentId: String) -> Submission? {
         return submissions.first { $0.studentId == studentId }
+    }
+    
+    /// Creates a deep copy of the assignment with a new ID
+    public func makeCopy() -> Assignment {
+        let copy = Assignment()
+        copy.id = UUID().uuidString
+        copy.title = self.title
+        copy.assignmentDescription = self.assignmentDescription
+        copy.dueDate = self.dueDate
+        copy.assignedDate = self.assignedDate
+        copy.category = self.category
+        copy.totalPoints = self.totalPoints
+        copy.weight = self.weight
+        copy.isActive = self.isActive
+        copy.courseId = self.courseId
+        copy.classId = self.classId
+        copy.instructions = self.instructions
+        copy.points = self.points
+        copy.rubricId = self.rubricId
+        
+        // Copy grade levels
+        let gradeLevelsList = List<String>()
+        for level in self.gradeLevels {
+            gradeLevelsList.append(level)
+        }
+        copy.gradeLevels = gradeLevelsList
+        
+        // Copy submissions
+        let submissionsList = List<Submission>()
+        for submission in self.submissions {
+            let submissionCopy = Submission()
+            submissionCopy.id = UUID().uuidString
+            submissionCopy.assignmentId = copy.id
+            submissionCopy.studentId = submission.studentId
+            submissionCopy.submittedDate = submission.submittedDate
+            submissionCopy.status = submission.status
+            submissionCopy.comments = submission.comments
+            submissionCopy.score = submission.score
+            submissionCopy.attempts = submission.attempts
+            submissionCopy.rubricScoreId = submission.rubricScoreId
+            submissionCopy.feedback = submission.feedback
+            submissionCopy.graderNotes = submission.graderNotes
+            submissionCopy.gradedDate = submission.gradedDate
+            submissionCopy.gradedBy = submission.gradedBy
+            
+            // Copy attachment URLs
+            let attachmentUrlsList = List<String>()
+            for url in submission.attachmentUrls {
+                attachmentUrlsList.append(url)
+            }
+            submissionCopy.attachmentUrls = attachmentUrlsList
+            
+            submissionsList.append(submissionCopy)
+        }
+        copy.submissions = submissionsList
+        
+        return copy
     }
 } 

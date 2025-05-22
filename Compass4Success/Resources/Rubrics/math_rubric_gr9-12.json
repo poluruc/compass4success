@@ -1,0 +1,44 @@
+{
+  "id": "math_rubric_gr9-12",
+  "title": "Ontario Math Assessment Rubric (Grades 9-12)",
+  "description": "Comprehensive rubric for evaluating mathematics in Ontario Grades 9-12.",
+  "applicableGrades": [9, 10, 11, 12],
+  "criteria": [
+    {
+      "name": "Mathematical Knowledge & Understanding",
+      "levels": [
+        { "level": 1, "description": "Limited understanding of mathematical concepts, procedures, and relationships." },
+        { "level": 2, "description": "Some understanding of mathematical concepts, procedures, and relationships." },
+        { "level": 3, "description": "Good understanding of mathematical concepts, procedures, and relationships." },
+        { "level": 4, "description": "Thorough understanding of mathematical concepts, procedures, and relationships." }
+      ]
+    },
+    {
+      "name": "Mathematical Thinking & Problem Solving",
+      "levels": [
+        { "level": 1, "description": "Limited ability to think critically and solve complex problems." },
+        { "level": 2, "description": "Some ability to think critically and solve complex problems." },
+        { "level": 3, "description": "Good ability to think critically and solve complex problems." },
+        { "level": 4, "description": "Excellent ability to think critically and solve complex problems." }
+      ]
+    },
+    {
+      "name": "Mathematical Communication",
+      "levels": [
+        { "level": 1, "description": "Limited ability to communicate mathematical thinking and reasoning." },
+        { "level": 2, "description": "Some ability to communicate mathematical thinking and reasoning." },
+        { "level": 3, "description": "Good ability to communicate mathematical thinking and reasoning." },
+        { "level": 4, "description": "Excellent ability to communicate mathematical thinking and reasoning." }
+      ]
+    },
+    {
+      "name": "Application of Mathematics",
+      "levels": [
+        { "level": 1, "description": "Limited ability to apply mathematics in real-world and theoretical contexts." },
+        { "level": 2, "description": "Some ability to apply mathematics in real-world and theoretical contexts." },
+        { "level": 3, "description": "Good ability to apply mathematics in real-world and theoretical contexts." },
+        { "level": 4, "description": "Excellent ability to apply mathematics in real-world and theoretical contexts." }
+      ]
+    }
+  ]
+} 

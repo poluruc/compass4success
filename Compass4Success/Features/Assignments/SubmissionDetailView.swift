@@ -4,8 +4,8 @@ import Foundation
 
 struct SubmissionDetailView: View {
     @Environment(\.dismiss) var dismiss
-    @StateObject private var viewModel = SubmissionDetailViewModel()
-    @State private var currentSubmissionIndex = 0
+    @ObservedObject var viewModel: AssignmentViewModel
+    @State private var currentSubmissionIndex: Int
     @State private var score: String = ""
     @State private var feedback: String = ""
     @State private var showingAttachmentViewer = false
@@ -16,15 +16,17 @@ struct SubmissionDetailView: View {
     @State private var showingSuccessToast = false
     @State private var successMessage = ""
     @State private var rubricSelections: [String: Int] = [:] // criterion name -> level
-    let assignment: Assignment
+    @State private var didSetInitialIndex = false
+    let initialSubmissionIndex: Int
+    let onSubmissionUpdated: ((Submission) -> Void)?
     private var rubric: RubricTemplate? {
-        guard let rubricId = assignment.rubricId else { return nil }
+        guard let rubricId = viewModel.assignment.rubricId else { return nil }
         return RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
     }
     private var rubricScore: Int {
         guard let rubric = rubric else { return 0 }
         // For simplicity, each criterion is worth equal points
-        let totalPoints = Int(assignment.totalPoints)
+        let totalPoints = Int(viewModel.assignment.totalPoints)
         let pointsPerCriterion = totalPoints / max(1, rubric.criteria.count)
         var total = 0
         for criterion in rubric.criteria {
@@ -42,84 +44,103 @@ struct SubmissionDetailView: View {
         return total
     }
     
+    init(viewModel: AssignmentViewModel, initialSubmissionIndex: Int, onSubmissionUpdated: ((Submission) -> Void)?) {
+        self.viewModel = viewModel
+        self.initialSubmissionIndex = initialSubmissionIndex
+        _currentSubmissionIndex = State(initialValue: initialSubmissionIndex)
+        self.onSubmissionUpdated = onSubmissionUpdated
+    }
+    
+    @ViewBuilder
     var body: some View {
-        VStack(spacing: 0) {
-            // Top control bar - navigation and quick actions
-            topControlBar
-            
-            // Main content area
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Student info card
-                    studentInfoCard
-                    
-                    // Submission details
-                    submissionDetailsCard
-                    
-                    // Submission attachments
-                    attachmentsSection
-                    
-                    // Grading section
-                    gradingSection
+        if viewModel.submissions.isEmpty || currentSubmission == nil {
+            ProgressView("Loading submission...")
+                .onAppear {
+                    // Load student info for current submission
+                    if let submission = currentSubmission {
+                        viewModel.loadStudentInfo(studentId: submission.studentId)
+                    }
                 }
-                .padding()
+        } else {
+            VStack(spacing: 0) {
+                // Top control bar - navigation and quick actions
+                topControlBar
+                
+                // Main content area
+                ScrollView {
+                    VStack(spacing: 16) {
+                        // Student info card
+                        studentInfoCard
+                        
+                        // Submission details
+                        submissionDetailsCard
+                        
+                        // Submission attachments
+                        attachmentsSection
+                        
+                        // Grading section
+                        gradingSection
+                    }
+                    .padding()
+                }
+                
+                // Bottom bar with save, next, previous
+                bottomControlBar
             }
-            
-            // Bottom bar with save, next, previous
-            bottomControlBar
-        }
-        .background(Color(.systemGroupedBackground))
-        .navigationBarHidden(true)
-        .onAppear {
-            viewModel.loadSubmissions(for: assignment)
-            // Ensure we have a small delay to allow data to be processed
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if !viewModel.submissions.isEmpty {
+            .background(Color(.systemGroupedBackground))
+            .navigationBarHidden(true)
+            .onAppear {
+                // Load student info for current submission
+                if let submission = currentSubmission {
+                    viewModel.loadStudentInfo(studentId: submission.studentId)
+                }
+            }
+            .onChange(of: viewModel.submissions) { newSubmissions in
+                if !newSubmissions.isEmpty {
+                    if !didSetInitialIndex, newSubmissions.indices.contains(initialSubmissionIndex) {
+                        currentSubmissionIndex = initialSubmissionIndex
+                        didSetInitialIndex = true
+                    }
                     loadCurrentSubmission()
                 }
             }
-        }
-        .onChange(of: viewModel.submissions) { newSubmissions in
-            if !newSubmissions.isEmpty {
-                loadCurrentSubmission()
+            .sheet(isPresented: $showingAttachmentViewer) {
+                AttachmentViewer(url: selectedAttachmentURL)
             }
-        }
-        .sheet(isPresented: $showingAttachmentViewer) {
-            AttachmentViewer(url: selectedAttachmentURL)
-        }
-        .sheet(isPresented: $showingRubric) {
-            RubricScoringView(
-                rubricId: assignment.rubricId ?? "",
-                onScoreSelected: { score in
-                    self.score = "\(score)"
-                    self.showingRubric = false
+            .sheet(isPresented: $showingRubric) {
+                RubricScoringView(
+                    rubricId: viewModel.assignment.rubricId ?? "",
+                    onScoreSelected: { score in
+                        self.score = "\(score)"
+                        self.showingRubric = false
+                    }
+                )
+            }
+            .sheet(isPresented: $showingFeedbackTemplate) {
+                FeedbackTemplateSelector(onTemplateSelected: { template in
+                    self.feedback = template
+                    self.showingFeedbackTemplate = false
+                })
+            }
+            .overlay(
+                // Success toast
+                Group {
+                    if showingSuccessToast {
+                        VStack {
+                            Spacer()
+                            Text(successMessage)
+                                .padding()
+                                .background(Color.green.opacity(0.9))
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                                .padding(.bottom, 20)
+                        }
+                        .transition(.move(edge: .bottom))
+                        .animation(.easeInOut, value: showingSuccessToast)
+                    }
                 }
             )
         }
-        .sheet(isPresented: $showingFeedbackTemplate) {
-            FeedbackTemplateSelector(onTemplateSelected: { template in
-                self.feedback = template
-                self.showingFeedbackTemplate = false
-            })
-        }
-        .overlay(
-            // Success toast
-            Group {
-                if showingSuccessToast {
-                    VStack {
-                        Spacer()
-                        Text(successMessage)
-                            .padding()
-                            .background(Color.green.opacity(0.9))
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .padding(.bottom, 20)
-                    }
-                    .transition(.move(edge: .bottom))
-                    .animation(.easeInOut, value: showingSuccessToast)
-                }
-            }
-        )
     }
     
     private var topControlBar: some View {
@@ -133,15 +154,25 @@ struct SubmissionDetailView: View {
             
             Spacer()
             
-            Text("Submission Details")
-                .font(.headline)
-                .fontWeight(.semibold)
+            if let student = currentStudent {
+                Text("Submission - \(viewModel.assignment.title) by \(student.fullName)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } else {
+                Text("Submission Details")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
             
             Spacer()
             
             Menu {
-                Button(action: { showingRubric = true }) {
-                    Label("Use Rubric", systemImage: "list.bullet.clipboard")
+                if rubric != nil {
+                    Button(action: { showingRubric = true }) {
+                        Label("Use Rubric", systemImage: "list.bullet.clipboard")
+                    }
                 }
                 
                 Button(action: { showingFeedbackTemplate = true }) {
@@ -311,98 +342,239 @@ struct SubmissionDetailView: View {
             Text("Grading")
                 .font(.headline)
                 .padding(.horizontal)
+            
             VStack(spacing: 16) {
-                if let rubric = rubric {
-                    ForEach(rubric.criteria) { criterion in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(criterion.name)
-                                .font(.subheadline)
-                            HStack {
-                                ForEach(criterion.levels, id: \.level) { level in
-                                    Button(action: {
-                                        rubricSelections[criterion.name] = level.level
-                                    }) {
-                                        Text("Level \(level.level)")
-                                            .font(.caption)
-                                            .padding(6)
-                                            .background(rubricSelections[criterion.name] == level.level ? Color.blue.opacity(0.2) : Color(.systemGray6))
-                                            .foregroundColor(rubricSelections[criterion.name] == level.level ? .blue : .primary)
-                                            .cornerRadius(6)
-                                    }
-                                }
-                            }
-                            if let selectedLevel = rubricSelections[criterion.name],
-                               let level = criterion.levels.first(where: { $0.level == selectedLevel }) {
-                                Text(level.description)
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                                    .padding(.leading, 2)
-                            }
+                // Current grade indicator
+                if let currentScore = Int(score), currentScore > 0 {
+                    HStack {
+                        Text("Current Grade:")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Text("\(currentScore) / \(Int(viewModel.assignment.totalPoints))")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("(\(Int(Double(currentScore) / viewModel.assignment.totalPoints * 100))%)")
+                            .font(.subheadline)
+                            .foregroundColor(getGradeColor(Double(currentScore) / viewModel.assignment.totalPoints * 100))
+                        
+                        Spacer()
+                        
+                        // Grade history button
+                        Button(action: { viewModel.showingGradeHistory.toggle() }) {
+                            Label("History", systemImage: "clock.arrow.circlepath")
+                                .font(.caption)
                         }
-                        .padding(.vertical, 4)
-                    }
-                    HStack {
-                        Text("Total Rubric Score: ")
-                        Text("\(rubricScore) / \(Int(assignment.totalPoints))")
-                            .fontWeight(.bold)
-                            .foregroundColor(.blue)
-                    }
-                    .padding(.top, 8)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Feedback")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        TextEditor(text: $feedback)
-                            .frame(minHeight: 80)
-                            .padding(8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(.systemBackground))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color(.systemGray4), lineWidth: 1)
-                                    )
-                            )
-                    }
-                    .padding(.horizontal)
-                } else {
-                    // Fallback: manual score
-                    HStack {
-                        Text("Score")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .frame(width: 80, alignment: .leading)
-                        TextField("Enter score", text: $score)
-                            .keyboardType(.decimalPad)
-                            .padding(8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                        Text("/ \(Int(assignment.totalPoints))")
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Feedback")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        TextEditor(text: $feedback)
-                            .frame(minHeight: 120)
-                            .padding(8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(.systemBackground))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color(.systemGray4), lineWidth: 1)
-                                    )
-                            )
+                        .buttonStyle(.bordered)
+                        .tint(.blue)
                     }
                     .padding(.horizontal)
                 }
+                
+                // Scoring method selector with visual feedback
+                if rubric != nil {
+                    VStack(spacing: 8) {
+                        Picker("Scoring Method", selection: $viewModel.selectedScoringMethod) {
+                            Text("Direct Score").tag(ScoringMethod.direct)
+                            Text("Rubric").tag(ScoringMethod.rubric)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal)
+                        
+                        // Visual indicator for current method
+                        HStack {
+                            Image(systemName: viewModel.selectedScoringMethod == .direct ? "pencil.circle.fill" : "list.bullet.clipboard.fill")
+                                .foregroundColor(.blue)
+                            Text(viewModel.selectedScoringMethod == .direct ? "Enter score directly" : "Score using rubric criteria")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+                
+                if viewModel.selectedScoringMethod == .rubric, let rubric = rubric {
+                    // Rubric-based scoring
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(rubric.criteria) { criterion in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text(criterion.name)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        
+                                        Spacer()
+                                        
+                                        // Points indicator
+                                        if let selectedLevel = rubricSelections[criterion.name],
+                                           let level = criterion.levels.first(where: { $0.level == selectedLevel }) {
+                                            let points = calculatePointsForLevel(level.level, totalPoints: Int(viewModel.assignment.totalPoints), criteriaCount: rubric.criteria.count)
+                                            Text("\(points) pts")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    
+                                    // Level selection buttons
+                                    HStack(spacing: 12) {
+                                        ForEach(criterion.levels, id: \.level) { level in
+                                            Button(action: {
+                                                withAnimation {
+                                                    rubricSelections[criterion.name] = level.level
+                                                    score = "\(rubricScore)"
+                                                }
+                                            }) {
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text("Level \(level.level)")
+                                                        .font(.caption)
+                                                        .fontWeight(.medium)
+                                                    
+                                                    Text(level.description)
+                                                        .font(.caption2)
+                                                        .foregroundColor(.secondary)
+                                                        .lineLimit(2)
+                                                        .multilineTextAlignment(.leading)
+                                                }
+                                                .frame(maxWidth: .infinity)
+                                                .padding(8)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(rubricSelections[criterion.name] == level.level ? 
+                                                              Color.blue.opacity(0.2) : Color(.systemGray6))
+                                                )
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .stroke(rubricSelections[criterion.name] == level.level ? 
+                                                               Color.blue : Color(.systemGray4), lineWidth: 1)
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(maxHeight: 400)
+                    
+                    // Total score summary
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Total Rubric Score:")
+                                .font(.subheadline)
+                            Text("\(rubricScore) / \(Int(viewModel.assignment.totalPoints))")
+                                .font(.headline)
+                                .foregroundColor(.blue)
+                            
+                            Text("(\(Int(Double(rubricScore) / viewModel.assignment.totalPoints * 100))%)")
+                                .font(.subheadline)
+                                .foregroundColor(getGradeColor(Double(rubricScore) / viewModel.assignment.totalPoints * 100))
+                        }
+                        
+                        // Progress bar
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                Rectangle()
+                                    .fill(Color(.systemGray5))
+                                    .frame(height: 8)
+                                    .cornerRadius(4)
+                                
+                                Rectangle()
+                                    .fill(getGradeColor(Double(rubricScore) / viewModel.assignment.totalPoints * 100))
+                                    .frame(width: geometry.size.width * CGFloat(rubricScore) / CGFloat(viewModel.assignment.totalPoints), height: 8)
+                                    .cornerRadius(4)
+                            }
+                        }
+                        .frame(height: 8)
+                    }
+                    .padding(.horizontal)
+                } else {
+                    // Direct score entry with enhanced UI
+                    VStack(spacing: 12) {
+                        HStack {
+                            Text("Score")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .frame(width: 80, alignment: .leading)
+                            
+                            TextField("Enter score", text: $score)
+                                .keyboardType(.decimalPad)
+                                .padding(8)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
+                                .onChange(of: score) { newValue in
+                                    // Validate score is within bounds
+                                    if let scoreValue = Int(newValue), scoreValue > Int(viewModel.assignment.totalPoints) {
+                                        score = "\(Int(viewModel.assignment.totalPoints))"
+                                    }
+                                }
+                            
+                            Text("/ \(Int(viewModel.assignment.totalPoints))")
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        // Quick score buttons
+                        HStack {
+                            ForEach([0, 25, 50, 75, 100], id: \.self) { percentage in
+                                Button(action: {
+                                    let points = Int(Double(viewModel.assignment.totalPoints) * Double(percentage) / 100.0)
+                                    score = "\(points)"
+                                }) {
+                                    Text("\(percentage)%")
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color(.systemGray6))
+                                        .cornerRadius(4)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Feedback section with template suggestions
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Feedback")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Button(action: { showingFeedbackTemplate = true }) {
+                            Label("Templates", systemImage: "text.badge.checkmark")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.blue)
+                    }
+                    
+                    TextEditor(text: $feedback)
+                        .frame(minHeight: 120)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemBackground))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color(.systemGray4), lineWidth: 1)
+                                )
+                        )
+                }
+                .padding(.horizontal)
             }
             .padding(.vertical)
             .background(Color(.systemBackground))
             .cornerRadius(12)
+        }
+        .sheet(isPresented: $viewModel.showingGradeHistory) {
+            GradeHistoryView(submission: currentSubmission, viewModel: viewModel)
         }
     }
     
@@ -492,23 +664,20 @@ struct SubmissionDetailView: View {
     
     private func saveGrade(moveToNext: Bool) {
         guard let submission = currentSubmission else { return }
-        
         isSubmitting = true
-        
-        // Parse score as Int
         let scoreValue = Int(score) ?? 0
-        
-        // Update submission
         viewModel.updateSubmissionGrade(
             submission: submission,
             score: scoreValue,
             feedback: feedback
         ) { success in
             isSubmitting = false
-            
             if success {
                 showSuccessToast("Grade saved successfully")
-                
+                if let updated = viewModel.submissions.first(where: { $0.id == submission.id }) {
+                    onSubmissionUpdated?(updated)
+                    viewModel.updateSubmission(updated)
+                }
                 if moveToNext && currentSubmissionIndex < viewModel.submissions.count - 1 {
                     navigateToNext()
                 }
@@ -540,6 +709,10 @@ struct SubmissionDetailView: View {
         viewModel.updateSubmissionStatus(submission: submission, status: .excused) { success in
             if success {
                 showSuccessToast("Marked as excused")
+                if let updated = viewModel.submissions.first(where: { $0.id == submission.id }) {
+                    onSubmissionUpdated?(updated)
+                    viewModel.updateSubmission(updated)
+                }
             }
         }
     }
@@ -583,6 +756,17 @@ struct SubmissionDetailView: View {
         case 60..<70: return .orange
         default: return .red
         }
+    }
+    
+    // Helper function to calculate points for a rubric level
+    private func calculatePointsForLevel(_ level: Int, totalPoints: Int, criteriaCount: Int) -> Int {
+        let pointsPerCriterion = totalPoints / max(1, criteriaCount)
+        let percentage: Double =
+            level == 1 ? 0.5 :
+            level == 2 ? 0.65 :
+            level == 3 ? 0.8 :
+            level == 4 ? 1.0 : 0.0
+        return Int(Double(pointsPerCriterion) * percentage)
     }
 }
 
@@ -831,6 +1015,9 @@ class SubmissionDetailViewModel: ObservableObject {
     @Published var submissions: [Submission] = []
     @Published var students: [String: Student] = [:]
     @Published var courseGrades: [String: Double] = [:]
+    @Published var selectedScoringMethod: ScoringMethod = .direct
+    @Published var showingGradeHistory = false
+    @Published var gradeHistory: [GradeHistoryEntry] = []
     
     func loadSubmissions(for assignment: Assignment) {
         // In a real app, this would filter submissions for the specific assignment
@@ -866,6 +1053,9 @@ class SubmissionDetailViewModel: ObservableObject {
                 for submission in self.submissions {
                     self.loadStudentInfo(studentId: submission.studentId)
                 }
+                
+                // Set initial scoring method based on whether assignment has a rubric
+                self.selectedScoringMethod = assignment.rubricId != nil ? .rubric : .direct
             }
         }
     }
@@ -931,36 +1121,116 @@ class SubmissionDetailViewModel: ObservableObject {
             completion(false)
         }
     }
+    
+    func loadGradeHistory(for submission: Submission) {
+        // In a real app, this would fetch from a database
+        // For now, create mock history
+        gradeHistory = [
+            GradeHistoryEntry(date: Date().addingTimeInterval(-86400), score: 85, feedback: "First submission"),
+            GradeHistoryEntry(date: Date().addingTimeInterval(-43200), score: 90, feedback: "Resubmission with improvements")
+        ]
+    }
 }
 
 // MARK: - Preview
 struct SubmissionDetailView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            let mockAssignment = Assignment()
-            mockAssignment.id = "1"
-            mockAssignment.title = "Math Quiz"
-            mockAssignment.totalPoints = 100
-            
-            // Create mock submissions
-            for i in 0..<5 {
-                let submission = Submission()
-                submission.id = UUID().uuidString
-                submission.studentId = "student\(i)"
-                submission.submittedDate = Date().addingTimeInterval(Double(-i) * 3600)
-                submission.score = Int.random(in: 60...100)
-                submission.statusEnum = i % 3 == 0 ? .submitted : (i % 3 == 1 ? .late : .graded)
-                
-                // Add mock attachments
-                if i % 2 == 0 {
-                    submission.attachmentUrls.append("https://example.com/test.pdf")
-                    submission.attachmentUrls.append("https://example.com/image.jpg")
+            let mockAssignment: Assignment = {
+                let assignment = Assignment()
+                assignment.id = "1"
+                assignment.title = "Math Quiz"
+                assignment.totalPoints = 100
+                for i in 0..<5 {
+                    let submission = Submission()
+                    submission.id = UUID().uuidString
+                    submission.studentId = "student\(i)"
+                    submission.submittedDate = Date().addingTimeInterval(Double(-i) * 3600)
+                    submission.score = Int.random(in: 60...100)
+                    submission.statusEnum = i % 3 == 0 ? .submitted : (i % 3 == 1 ? .late : .graded)
+                    if i % 2 == 0 {
+                        submission.attachmentUrls.append("https://example.com/test.pdf")
+                        submission.attachmentUrls.append("https://example.com/image.jpg")
+                    }
+                    assignment.submissions.append(submission)
                 }
-                
-                mockAssignment.submissions.append(submission)
-            }
-            
-            return SubmissionDetailView(assignment: mockAssignment)
+                return assignment
+            }()
+            SubmissionDetailView(
+                viewModel: AssignmentViewModel(assignment: mockAssignment),
+                initialSubmissionIndex: 0,
+                onSubmissionUpdated: nil
+            )
         }
+    }
+}
+
+enum ScoringMethod {
+    case direct
+    case rubric
+}
+
+struct GradeHistoryEntry: Identifiable {
+    let id = UUID()
+    let date: Date
+    let score: Int
+    let feedback: String
+}
+
+struct GradeHistoryView: View {
+    let submission: Submission?
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var viewModel: AssignmentViewModel
+    
+    var body: some View {
+        NavigationView {
+            List {
+                if let submission = submission {
+                    ForEach(viewModel.gradeHistory) { entry in
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text(formatDate(entry.date))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                Spacer()
+                                
+                                Text("\(entry.score) points")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            
+                            Text(entry.feedback)
+                                .font(.subheadline)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                } else {
+                    Text("No grade history available")
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("Grade History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                if let submission = submission {
+                    viewModel.loadGradeHistory(for: submission)
+                }
+            }
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 } 

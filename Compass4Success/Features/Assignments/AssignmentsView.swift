@@ -28,8 +28,66 @@ struct AssignmentsView: View {
     // All assignments from all classes
     private var allAssignments: [Assignment] {
         var assignments: [Assignment] = []
-        for schoolClass in classService.classes {
-            assignments.append(contentsOf: Array(schoolClass.assignments))
+        // MOCK DATA: Add assignments with grades and classes
+        if classService.classes.isEmpty {
+            // Create mock classes
+            let mathClass = SchoolClass(id: "1", name: "Math 9A", clazzCode: "M9A", courseCode: "MTH9A", gradeLevel: "9")
+            let scienceClass = SchoolClass(id: "2", name: "Science 10B", clazzCode: "S10B", courseCode: "SCI10B", gradeLevel: "10")
+            let englishClass = SchoolClass(id: "3", name: "English 11C", clazzCode: "E11C", courseCode: "ENG11C", gradeLevel: "11")
+            
+            // Load rubrics
+            let rubrics = RubricLoader.loadAllRubrics()
+            let mathRubric = rubrics.first { $0.id.contains("math") && $0.applicableGrades.contains(9) }
+            let scienceRubric = rubrics.first { $0.id.contains("science") && $0.applicableGrades.contains(10) }
+            let essayRubric = rubrics.first { $0.id.contains("essay") || $0.title.lowercased().contains("essay") }
+            
+            // Create mock assignments
+            let assignment1 = Assignment()
+            assignment1.id = "a1"
+            assignment1.title = "Algebra Quiz"
+            assignment1.assignmentDescription = "Quiz on algebraic expressions"
+            assignment1.dueDate = Date().addingTimeInterval(86400 * 2)
+            assignment1.classId = mathClass.id
+            assignment1.category = AssignmentCategory.quiz.rawValue
+            assignment1.totalPoints = 30
+            assignment1.gradeLevels.append("9")
+            assignment1.isActive = true
+            assignment1.rubricId = mathRubric?.id
+            
+            let assignment2 = Assignment()
+            assignment2.id = "a2"
+            assignment2.title = "Lab Report: Acids & Bases"
+            assignment2.assignmentDescription = "Lab report for acids and bases experiment"
+            assignment2.dueDate = Date().addingTimeInterval(86400 * 5)
+            assignment2.classId = scienceClass.id
+            assignment2.category = AssignmentCategory.lab.rawValue
+            assignment2.totalPoints = 40
+            assignment2.gradeLevels.append("10")
+            assignment2.isActive = true
+            assignment2.rubricId = scienceRubric?.id
+            
+            let assignment3 = Assignment()
+            assignment3.id = "a3"
+            assignment3.title = "Essay: Shakespeare"
+            assignment3.assignmentDescription = "Essay on Shakespeare's works"
+            assignment3.dueDate = Date().addingTimeInterval(86400 * 7)
+            assignment3.classId = englishClass.id
+            assignment3.category = AssignmentCategory.essay.rawValue
+            assignment3.totalPoints = 50
+            assignment3.gradeLevels.append("11")
+            assignment3.isActive = true
+            assignment3.rubricId = essayRubric?.id
+            
+            // Add to mock classes
+            mathClass.assignments.append(assignment1)
+            scienceClass.assignments.append(assignment2)
+            englishClass.assignments.append(assignment3)
+            
+            assignments.append(contentsOf: [assignment1, assignment2, assignment3])
+        } else {
+            for schoolClass in classService.classes {
+                assignments.append(contentsOf: Array(schoolClass.assignments))
+            }
         }
         return assignments
     }
@@ -138,7 +196,11 @@ struct AssignmentsView: View {
                     ScrollView(.vertical, showsIndicators: true) {
                         LazyVStack(spacing: 16) {
                             ForEach(filteredAssignments) { assignment in
-                                NavigationLink(destination: AssignmentDetailView(assignment: assignment)) {
+                                let detailView = AssignmentDetailView(
+                                    viewModel: AssignmentViewModel(assignment: assignment),
+                                    assignment: assignment
+                                )
+                                NavigationLink(destination: detailView) {
                                     AssignmentCard(assignment: assignment)
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -443,6 +505,39 @@ struct AssignmentCard: View {
                     .cornerRadius(6)
             }
             
+            // Grades, Classes, and Rubric as color-coded pills
+            HStack(spacing: 6) {
+                if !assignment.gradeLevels.isEmpty {
+                    ForEach(Array(assignment.gradeLevels), id: \.self) { grade in
+                        Text("Grade \(grade)")
+                            .font(.caption2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.green.opacity(0.15))
+                            .foregroundColor(.green)
+                            .cornerRadius(8)
+                    }
+                }
+                if let classId = assignment.classId, !classId.isEmpty {
+                    Text(className(for: classId))
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.purple.opacity(0.15))
+                        .foregroundColor(.purple)
+                        .cornerRadius(8)
+                }
+                if let rubricId = assignment.rubricId, !rubricId.isEmpty {
+                    Text("Rubric")
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.15))
+                        .foregroundColor(.orange)
+                        .cornerRadius(8)
+                }
+            }
+            
             // Description (if exists)
             if !assignment.assignmentDescription.isEmpty {
                 Text(assignment.assignmentDescription)
@@ -483,6 +578,16 @@ struct AssignmentCard: View {
                 .fill(Color(.systemBackground))
                 .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         )
+    }
+    
+    // Helper to get class name from id (for mock data)
+    private func className(for classId: String) -> String {
+        switch classId {
+        case "1": return "Math 9A"
+        case "2": return "Science 10B"
+        case "3": return "English 11C"
+        default: return "Class \(classId)"
+        }
     }
 }
 

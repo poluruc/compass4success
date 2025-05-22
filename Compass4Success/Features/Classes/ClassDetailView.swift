@@ -636,7 +636,11 @@ struct ClassDetailView: View {
                 } else {
                     LazyVStack(spacing: 0) {
                         ForEach(Array(schoolClass.assignments)) { assignment in
-                            NavigationLink(destination: AssignmentDetailView(assignment: assignment)) {
+                            let detailView = AssignmentDetailView(
+                                viewModel: AssignmentViewModel(assignment: assignment),
+                                assignment: assignment
+                            )
+                            NavigationLink(destination: detailView) {
                                 AssignmentListItem(assignment: assignment)
                                     .padding(.vertical, 12)
                                     .padding(.horizontal)

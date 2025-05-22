@@ -3,26 +3,52 @@ import Foundation
 class RubricLoader {
     static func loadAllRubrics() -> [RubricTemplate] {
         print("🔍 Starting to load rubrics...")
-        
-        // Get the document directory path
-        guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            print("❌ Could not access documents directory")
-            return []
+        var templates: [RubricTemplate] = []
+        let decoder = JSONDecoder()
+        var seenIds = Set<String>()
+        let fileManager = FileManager.default
+
+        // 1. Load from app bundle Resources/Rubrics
+        if let bundleJsonFiles = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: nil) {
+            print("📦 Found \(bundleJsonFiles.count) bundle rubric JSON files")
+            for file in bundleJsonFiles {
+                do {
+                    let data = try Data(contentsOf: file)
+                    let template = try decoder.decode(RubricTemplate.self, from: data)
+                    if !seenIds.contains(template.id) {
+                        templates.append(template)
+                        seenIds.insert(template.id)
+                    }
+                } catch {
+                    print("❌ Error decoding bundle rubric \(file.lastPathComponent): \(error)")
+                }
+            }
+            if let bundleRubricsURL = Bundle.main.resourceURL?.appendingPathComponent("Rubrics") {
+                print("❌ Could not find any rubric JSON files in bundle Rubrics directory. Tried path: \(bundleRubricsURL.path)")
+            }
+        } else {
+            // Try to print the directory path being searched
+            if let bundleRubricsURL = Bundle.main.resourceURL?.appendingPathComponent("Rubrics") {
+                print("❌ Could not find any rubric JSON files in bundle Rubrics directory. Tried path: \(bundleRubricsURL.path)")
+            } else {
+                print("❌ Could not construct bundle Rubrics directory path.")
+            }
         }
-        
+
+        // 2. Load from user's Documents/Rubrics
+        guard let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("❌ Could not access documents directory")
+            return templates
+        }
         let rubricsPath = documentsPath.appendingPathComponent("Rubrics")
         print("📂 Rubrics path: \(rubricsPath.path)")
-        
-        // Create Rubrics directory if it doesn't exist
         do {
-            try FileManager.default.createDirectory(at: rubricsPath, withIntermediateDirectories: true)
+            try fileManager.createDirectory(at: rubricsPath, withIntermediateDirectories: true)
         } catch {
             print("❌ Error creating Rubrics directory: \(error)")
-            return []
+            return templates
         }
-        
         // Check if we need to copy default rubrics
-        let fileManager = FileManager.default
         do {
             let existingFiles = try fileManager.contentsOfDirectory(at: rubricsPath, includingPropertiesForKeys: nil)
             if existingFiles.isEmpty {
@@ -31,38 +57,30 @@ class RubricLoader {
             }
         } catch {
             print("❌ Error checking rubrics directory: \(error)")
-            return []
+            return templates
         }
-        
-        // Load all rubrics
+        // Load all rubrics from Documents
         do {
             let files = try fileManager.contentsOfDirectory(at: rubricsPath, includingPropertiesForKeys: nil)
             let jsonFiles = files.filter { $0.pathExtension == "json" }
-            
-            print("📄 Found \(jsonFiles.count) JSON files")
-            
-            var templates: [RubricTemplate] = []
-            let decoder = JSONDecoder()
-            
+            print("📄 Found \(jsonFiles.count) user rubric JSON files")
             for file in jsonFiles {
-                print("📝 Processing file: \(file.lastPathComponent)")
                 do {
                     let data = try Data(contentsOf: file)
                     let template = try decoder.decode(RubricTemplate.self, from: data)
-                    templates.append(template)
-                    print("✅ Successfully loaded rubric: \(template.title)")
+                    if !seenIds.contains(template.id) {
+                        templates.append(template)
+                        seenIds.insert(template.id)
+                    }
                 } catch {
-                    print("❌ Error decoding \(file.lastPathComponent): \(error)")
+                    print("❌ Error decoding user rubric \(file.lastPathComponent): \(error)")
                 }
             }
-            
-            print("✨ Finished loading \(templates.count) rubrics")
-            return templates
-            
         } catch {
-            print("❌ Error loading rubrics: \(error)")
-            return []
+            print("❌ Error loading user rubrics: \(error)")
         }
+        print("✨ Finished loading \(templates.count) unique rubrics")
+        return templates
     }
     
     private static func createDefaultRubrics(in directory: URL) throws {
@@ -419,4 +437,4 @@ class RubricLoader {
             print("✅ Created default rubric: \(filename)")
         }
     }
-} 
+}

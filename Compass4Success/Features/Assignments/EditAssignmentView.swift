@@ -92,7 +92,7 @@ struct EditAssignmentView: View {
                     Button("Save") {
                         saveAssignment()
                     }
-                    .disabled(title.isEmpty || selectedClassId.isEmpty)
+                    .disabled(!isValid)
                 }
             }
             .sheet(isPresented: $showingRubricPicker) {
@@ -101,6 +101,21 @@ struct EditAssignmentView: View {
                 }
             }
         }
+    }
+
+    private var isValid: Bool {
+        // Basic validation
+        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasClass = !selectedClassId.isEmpty
+        let hasValidPoints = Double(points) != nil
+        
+        // If a rubric is selected, we don't need to validate points
+        if selectedRubric != nil {
+            return hasTitle && hasClass
+        }
+        
+        // If no rubric, we need valid points
+        return hasTitle && hasClass && hasValidPoints
     }
 
     private func saveAssignment() {

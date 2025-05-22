@@ -17,6 +17,7 @@ struct AssignmentDetailView: View {
     @State private var selectedSubmission: Submission?
     @State private var showingSubmissionDetail = false
     @State private var showingGradeOverview = false
+    @StateObject var viewModel: AssignmentViewModel
     
     enum FeedbackType {
         case success, error
@@ -62,17 +63,17 @@ struct AssignmentDetailView: View {
     
     // Compute submission statistics
     private var submissionCount: Int {
-        return assignment.submissions.count
+        return viewModel.submissions.count
     }
     
     private var gradedCount: Int {
-        return assignment.submissions.filter { 
+        return viewModel.submissions.filter { 
             $0.statusEnum == .graded || $0.statusEnum == .excused 
         }.count
     }
     
     private var lateCount: Int {
-        return assignment.submissions.filter { $0.statusEnum == .late }.count
+        return viewModel.submissions.filter { $0.statusEnum == .late }.count
     }
     
     private var completionRate: Double {
@@ -83,11 +84,41 @@ struct AssignmentDetailView: View {
     }
     
     private var averageScore: Double {
-        let scoredSubmissions = assignment.submissions.filter { $0.score > 0 }
+        let scoredSubmissions = viewModel.submissions.filter { $0.score > 0 }
         guard !scoredSubmissions.isEmpty else { return 0 }
         
         let total = scoredSubmissions.reduce(0) { $0 + Double($1.score) }
         return total / Double(scoredSubmissions.count)
+    }
+    
+    private var inProgressCount: Int {
+        return viewModel.submissions.filter { $0.statusEnum == .submitted || $0.statusEnum == .late }.count - lateCount
+    }
+    
+    private var missingCount: Int {
+        if let classDetails = classDetails, classDetails.studentCount > 0 {
+            return max(0, classDetails.studentCount - submissionCount)
+        }
+        return 0
+    }
+    
+    // Add this computed property to provide mock graded submissions for demo
+    private var assignmentWithMockGrades: Assignment {
+        if assignment.submissions.isEmpty {
+            let mock = (assignment as Assignment).makeCopy()
+            for i in 0..<5 {
+                let submission = Submission()
+                submission.id = UUID().uuidString
+                submission.studentId = "student\(i+1)"
+                submission.assignmentId = mock.id
+                submission.statusEnum = .graded
+                submission.score = [95, 88, 76, 67, 54][i]
+                submission.submittedDate = Date().addingTimeInterval(-Double(i) * 3600)
+                mock.submissions.append(submission)
+            }
+            return mock
+        }
+        return assignment
     }
     
     var body: some View {
@@ -115,6 +146,31 @@ struct AssignmentDetailView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Details")
                         .font(.headline)
+                    
+                    // Show rubric if attached
+                    if let rubricId = assignment.rubricId, !rubricId.isEmpty,
+                       let rubric = RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId }) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "list.bullet.clipboard")
+                                    .foregroundColor(.orange)
+                                Text("Rubric Attached")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.orange)
+                            }
+                            Text(rubric.title)
+                                .font(.headline)
+                            if !rubric.description.isEmpty {
+                                Text(rubric.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(10)
+                        .background(Color.orange.opacity(0.08))
+                        .cornerRadius(10)
+                    }
                     
                     // Enhanced assignment details with icons
                     VStack(spacing: 16) {
@@ -249,7 +305,7 @@ struct AssignmentDetailView: View {
                         
                         Spacer()
                         
-                        if assignment.submissions.count > 0 {
+                        if viewModel.submissions.count > 0 {
                             Button {
                                 showingGradeOverview = true
                             } label: {
@@ -261,68 +317,48 @@ struct AssignmentDetailView: View {
                         }
                     }
                     
-                    HStack(spacing: 20) {
-                        statView(
-                            value: "\(submissionCount)",
-                            label: "Submitted",
-                            icon: "checkmark.circle.fill",
-                            color: .blue
-                        )
-                        
-                        if let classDetails = classDetails, classDetails.studentCount > 0 {
-                            let remaining = max(0, classDetails.studentCount - submissionCount)
-                            statView(
-                                value: "\(remaining)",
-                                label: "Missing",
-                                icon: "exclamationmark.circle.fill",
-                                color: .orange
-                            )
-                            
-                            statView(
-                                value: String(format: "%.0f%%", completionRate),
-                                label: "Completion",
-                                icon: "percent",
-                                color: .green
-                            )
-                        }
-                    }
-                    .padding(.bottom, 8)
-                    
-                    if gradedCount > 0 {
-                        Divider()
-                        
-                        HStack(spacing: 20) {
-                            statView(
-                                value: "\(gradedCount)",
-                                label: "Graded",
-                                icon: "star.fill",
-                                color: .green
-                            )
-                            
-                            statView(
-                                value: "\(lateCount)",
-                                label: "Late",
-                                icon: "clock",
-                                color: .orange
-                            )
-                            
-                            statView(
-                                value: String(format: "%.1f", averageScore),
-                                label: "Avg. Score",
-                                icon: "number",
+                    // Enhanced stats row with horizontal scroll
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 18) {
+                            submissionStatView(
+                                icon: "checkmark.circle.fill",
+                                label: "Submitted",
+                                value: submissionCount,
                                 color: .blue
                             )
+                            submissionStatView(
+                                icon: "star.fill",
+                                label: "Graded",
+                                value: gradedCount,
+                                color: .green
+                            )
+                            submissionStatView(
+                                icon: "clock.fill",
+                                label: "Late",
+                                value: lateCount,
+                                color: .orange
+                            )
+                            submissionStatView(
+                                icon: "ellipsis.circle.fill",
+                                label: "In Progress",
+                                value: inProgressCount,
+                                color: .gray
+                            )
+                            submissionStatView(
+                                icon: "exclamationmark.circle.fill",
+                                label: "Missing",
+                                value: missingCount,
+                                color: .red
+                            )
+                            submissionStatView(
+                                icon: "percent",
+                                label: "Completion",
+                                value: Int(completionRate),
+                                color: .purple,
+                                suffix: "%"
+                            )
                         }
-                        
-                        if !assignment.submissions.isEmpty {
-                            Text("Grade Distribution")
-                                .font(.subheadline.bold())
-                                .padding(.top, 4)
-                            
-                            ScoreDistributionChart(submissions: Array(assignment.submissions))
-                                .frame(height: 120)
-                                .padding(.top, 4)
-                        }
+                        .padding(.vertical, 4)
                     }
                 }
                 .padding()
@@ -331,7 +367,7 @@ struct AssignmentDetailView: View {
                 .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
                 
                 // Submissions list
-                if !assignment.submissions.isEmpty {
+                if !viewModel.submissions.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Student Submissions")
                             .font(.headline)
@@ -341,7 +377,7 @@ struct AssignmentDetailView: View {
                             HStack {
                                 Button {
                                     // Grade all submissions
-                                    if let firstSubmission = assignment.submissions.first {
+                                    if let firstSubmission = viewModel.submissions.first {
                                         selectedSubmission = firstSubmission
                                         showingSubmissionDetail = true
                                     }
@@ -350,7 +386,7 @@ struct AssignmentDetailView: View {
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .disabled(assignment.submissions.isEmpty)
+                                .disabled(viewModel.submissions.isEmpty)
                                 
                                 Button {
                                     // Download submissions archive
@@ -359,11 +395,11 @@ struct AssignmentDetailView: View {
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.bordered)
-                                .disabled(assignment.submissions.isEmpty)
+                                .disabled(viewModel.submissions.isEmpty)
                             }
                             
                             // List of student submissions
-                            ForEach(Array(assignment.submissions)) { submission in
+                            ForEach(Array(viewModel.submissions)) { submission in
                                 SubmissionListRow(submission: submission, onTap: {
                                     selectedSubmission = submission
                                     showingSubmissionDetail = true
@@ -414,7 +450,7 @@ struct AssignmentDetailView: View {
                 PerformanceComparisonChart(assignment: assignment)
                 
                 // Completion trend chart
-                CompletionTrendChart(submissions: Array(assignment.submissions))
+                CompletionTrendChart(submissions: Array(viewModel.submissions))
                 
                 // Student engagement metrics
                 StudentEngagementChart()
@@ -479,12 +515,19 @@ struct AssignmentDetailView: View {
             )
         }
         .sheet(isPresented: $showingGradeOverview) {
-            GradeOverviewView(assignment: assignment)
+            GradeOverviewView(assignment: assignmentWithMockGrades)
         }
         .sheet(isPresented: $showingSubmissionDetail) {
-            if let submission = selectedSubmission {
+            if let submission = selectedSubmission,
+               let index = viewModel.submissions.firstIndex(where: { $0.id == submission.id }) {
                 NavigationView {
-                    SubmissionDetailView(assignment: assignment)
+                    SubmissionDetailView(
+                        viewModel: viewModel,
+                        initialSubmissionIndex: index,
+                        onSubmissionUpdated: { updatedSubmission in
+                            viewModel.updateSubmission(updatedSubmission)
+                        }
+                    )
                 }
             }
         }
@@ -599,7 +642,7 @@ struct AssignmentDetailView: View {
             self.isLoading = false
             
             // Force UI refresh by recreating the assignment object
-            if self.assignment.submissions.isEmpty {
+            if self.viewModel.submissions.isEmpty {
                 print("Debugging: No submissions found, adding mock submissions")
                 
                 // Add 3 mock submissions
@@ -612,12 +655,12 @@ struct AssignmentDetailView: View {
                     submission.statusEnum = .submitted
                     
                     // Add submission to the assignment
-                    self.assignment.submissions.append(submission)
+                    self.viewModel.submissions.append(submission)
                 }
                 
-                print("Debugging: Added \(self.assignment.submissions.count) submissions")
+                print("Debugging: Added \(self.viewModel.submissions.count) submissions")
             } else {
-                print("Debugging: Found \(self.assignment.submissions.count) submissions")
+                print("Debugging: Found \(self.viewModel.submissions.count) submissions")
             }
         }
     }
@@ -695,6 +738,25 @@ struct AssignmentDetailView: View {
         .padding(.horizontal, 8)
         .background(Color(.systemGray6))
         .cornerRadius(8)
+    }
+    
+    private func submissionStatView(icon: String, label: String, value: Int, color: Color, suffix: String = "") -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.system(size: 18, weight: .bold))
+                Text("\(value)\(suffix)")
+                    .font(.title3.bold())
+                    .foregroundColor(.primary)
+            }
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(10)
+        .background(color.opacity(0.08))
+        .cornerRadius(10)
     }
 }
 
@@ -887,6 +949,8 @@ struct GradeOverviewView: View {
     let assignment: Assignment
     @Environment(\.dismiss) var dismiss
     
+    @State private var selectedBarIndex: Int? = nil
+    
     private var gradedSubmissions: [Submission] {
         return assignment.submissions.filter { 
             $0.statusEnum == .graded || $0.statusEnum == .excused 
@@ -905,11 +969,11 @@ struct GradeOverviewView: View {
                         
                         VStack(spacing: 12) {
                             statRow(label: "Submissions", value: "\(assignment.submissions.count)")
-                            statRow(label: "Graded", value: "\(gradedSubmissions.count)")
-                            statRow(label: "Average Score", value: String(format: "%.1f", calculateAverageScore()))
-                            statRow(label: "Median Score", value: String(format: "%.1f", calculateMedianScore()))
-                            statRow(label: "Highest Score", value: String(format: "%.1f", calculateHighestScore()))
-                            statRow(label: "Lowest Score", value: String(format: "%.1f", calculateLowestScore()))
+                            statRow(label: "Graded", value: "\(gradedSubmissions.count)", color: .green)
+                            statRow(label: "Average Score", value: String(format: "%.1f", calculateAverageScore()), color: .blue)
+                            statRow(label: "Median Score", value: String(format: "%.1f", calculateMedianScore()), color: .purple)
+                            statRow(label: "Highest Score", value: String(format: "%.1f", calculateHighestScore()), color: .green)
+                            statRow(label: "Lowest Score", value: String(format: "%.1f", calculateLowestScore()), color: .red)
                         }
                         .padding()
                         .background(Color(.systemBackground))
@@ -922,11 +986,14 @@ struct GradeOverviewView: View {
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        ScoreDistributionChart(submissions: Array(assignment.submissions))
-                            .frame(height: 200)
-                            .padding()
-                            .background(Color(.systemBackground))
-                            .cornerRadius(12)
+                        InteractiveScoreDistributionChart(
+                            submissions: Array(assignment.submissions),
+                            selectedBarIndex: $selectedBarIndex
+                        )
+                        .frame(height: 200)
+                        .padding()
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
                     }
                 }
                 .padding()
@@ -943,17 +1010,16 @@ struct GradeOverviewView: View {
         }
     }
     
-    private func statRow(label: String, value: String) -> some View {
+    private func statRow(label: String, value: String, color: Color? = nil) -> some View {
         HStack {
             Text(label)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            
             Spacer()
-            
             Text(value)
                 .font(.subheadline)
                 .fontWeight(.semibold)
+                .foregroundColor(color ?? .primary)
         }
     }
     
@@ -1365,8 +1431,10 @@ public struct StudentEngagementChart: View {
 struct AssignmentDetailView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
+            let mockAssignment = createMockAssignment()
             AssignmentDetailView(
-                assignment: createMockAssignment(),
+                viewModel: AssignmentViewModel(assignment: mockAssignment),
+                assignment: mockAssignment,
                 onDelete: { _ in },
                 onDuplicate: { $0 }
             )
@@ -1415,5 +1483,84 @@ struct AssignmentDetailView_Previews: PreviewProvider {
         }
         
         return mockAssignment
+    }
+}
+
+// Add this interactive chart view
+import Charts
+struct InteractiveScoreDistributionChart: View {
+    let submissions: [Submission]
+    @Binding var selectedBarIndex: Int?
+    
+    private let ranges: [Range<Int>] = [
+        0..<60, 60..<70, 70..<80, 80..<90, 90..<101
+    ]
+    private let rangeLabels = ["0-59", "60-69", "70-79", "80-89", "90-100"]
+    private let rangeColors: [Color] = [
+        .red, .orange, .yellow, .blue, .green
+    ]
+    
+    private var rangeCounts: [Int] {
+        var counts = [Int](repeating: 0, count: ranges.count)
+        for submission in submissions where submission.statusEnum == .graded {
+            let score = submission.score
+            let percentage = (Double(score) / (submission.assignment?.totalPoints ?? 100)) * 100
+            for (i, range) in ranges.enumerated() {
+                if range.contains(Int(percentage)) {
+                    counts[i] += 1
+                    break
+                }
+            }
+        }
+        return counts
+    }
+    
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(alignment: .bottom, spacing: 12) {
+                ForEach(0..<ranges.count, id: \.self) { i in
+                    VStack {
+                        ZStack(alignment: .bottom) {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(selectedBarIndex == i ? rangeColors[i].opacity(0.7) : rangeColors[i].opacity(0.4))
+                                .frame(height: barHeight(for: rangeCounts[i], in: geometry.size.height))
+                                .animation(.spring(), value: selectedBarIndex)
+                                .onTapGesture {
+                                    withAnimation { selectedBarIndex = selectedBarIndex == i ? nil : i }
+                                }
+                            if selectedBarIndex == i {
+                                VStack(spacing: 4) {
+                                    Text("\(rangeLabels[i])")
+                                        .font(.caption2)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(rangeColors[i])
+                                    Text("\(rangeCounts[i]) students")
+                                        .font(.caption2)
+                                        .foregroundColor(.primary)
+                                }
+                                .padding(6)
+                                .background(Color(.systemBackground).opacity(0.95))
+                                .cornerRadius(8)
+                                .shadow(radius: 4)
+                                .offset(y: -barHeight(for: rangeCounts[i], in: geometry.size.height) - 30)
+                            }
+                        }
+                        Text(rangeLabels[i])
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 4)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+    
+    private func barHeight(for count: Int, in availableHeight: CGFloat) -> CGFloat {
+        let maxCount = rangeCounts.max() ?? 1
+        let minBarHeight: CGFloat = 12
+        let maxBarHeight = availableHeight - 40
+        if maxCount == 0 { return minBarHeight }
+        return max(minBarHeight, CGFloat(count) / CGFloat(maxCount) * maxBarHeight)
     }
 }

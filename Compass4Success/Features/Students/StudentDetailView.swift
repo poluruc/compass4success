@@ -34,8 +34,12 @@ struct StudentDetailView: View {
             viewModel.loadStudentData(for: student)
         }
         .navigationDestination(for: StudentDetailViewModel.AssignmentData.self) { assignment in
-            AssignmentDetailView(assignment: convertToAssignment(assignment))
-                .navigationBarTitleDisplayMode(.inline)
+            let assignmentObj = convertToAssignment(assignment)
+            AssignmentDetailView(
+                viewModel: AssignmentViewModel(assignment: assignmentObj),
+                assignment: assignmentObj
+            )
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
