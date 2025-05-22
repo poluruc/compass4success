@@ -8,22 +8,116 @@ struct StudentsView: View {
     @EnvironmentObject private var classService: ClassService
     @EnvironmentObject var appSettings: AppSettings
     @StateObject private var viewModel = StudentsViewModel()
+    @State private var selectedClassId: String? = nil
+    @State private var selectedGrade: String? = nil
+    @State private var selectedSort: StudentsViewModel.SortOption = .nameAsc
     
+    // Helper to get unique grades from students
+    var uniqueGrades: [String] {
+        let grades = viewModel.students.map { $0.grade }
+        return Array(Set(grades)).sorted()
+    }
+    
+    // Filtered students with all filters applied
     var filteredStudents: [Student] {
-        if searchText.isEmpty {
-            return viewModel.filteredStudents
-        } else {
-            return viewModel.filteredStudents.filter { student in
+        var result = viewModel.filteredStudents
+        if let classId = selectedClassId, !classId.isEmpty {
+            result = result.filter { student in
+                student.enrollments.contains { $0.classId == classId }
+            }
+        }
+        if let grade = selectedGrade, !grade.isEmpty {
+            result = result.filter { $0.grade == grade }
+        }
+        if !searchText.isEmpty {
+            result = result.filter { student in
                 student.fullName.lowercased().contains(searchText.lowercased()) ||
                 student.email.lowercased().contains(searchText.lowercased()) ||
                 student.studentNumber.contains(searchText)
             }
         }
+        // Sort
+        switch selectedSort {
+        case .nameAsc:
+            result.sort { $0.fullName < $1.fullName }
+        case .nameDesc:
+            result.sort { $0.fullName > $1.fullName }
+        case .gradeAsc:
+            result.sort { $0.grade < $1.grade }
+        case .gradeDesc:
+            result.sort { $0.grade > $1.grade }
+        case .idAsc:
+            result.sort { $0.studentNumber < $1.studentNumber }
+        case .idDesc:
+            result.sort { $0.studentNumber > $1.studentNumber }
+        }
+        return result
     }
     
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                // Add Gradebook button
+                NavigationLink(destination: GradebookView()) {
+                    Label("View Gradebook", systemImage: "tablecells")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(appSettings.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.vertical, 8)
+                }
+                // Filter bar
+                HStack(spacing: 12) {
+                    // Class filter
+                    Menu {
+                        Button("All Classes", action: { selectedClassId = nil })
+                        Divider()
+                        ForEach(classService.classes, id: \ .id) { schoolClass in
+                            Button(schoolClass.name, action: { selectedClassId = schoolClass.id })
+                        }
+                    } label: {
+                        HStack {
+                            Text(selectedClassId.flatMap { id in classService.classes.first(where: { $0.id == id })?.name } ?? "All Classes")
+                            Image(systemName: "chevron.down")
+                        }
+                        .frame(minWidth: 120, alignment: .leading)
+                        .foregroundColor(.primary)
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    // Grade filter
+                    Menu {
+                        Button("All Grades", action: { selectedGrade = nil })
+                        Divider()
+                        ForEach(uniqueGrades, id: \ .self) { grade in
+                            Button(grade, action: { selectedGrade = grade })
+                        }
+                    } label: {
+                        HStack {
+                            Text(selectedGrade ?? "All Grades")
+                            Image(systemName: "chevron.down")
+                        }
+                        .frame(minWidth: 100, alignment: .leading)
+                        .foregroundColor(.primary)
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                    // Sort menu
+                    Menu {
+                        ForEach(StudentsViewModel.SortOption.allCases) { option in
+                            Button(option.rawValue, action: { selectedSort = option })
+                        }
+                    } label: {
+                        HStack {
+                            Text("Sort: \(selectedSort.rawValue)")
+                            Image(systemName: "arrow.up.arrow.down")
+                        }
+                        .foregroundColor(.primary)
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 4)
                 // Search bar
                 SearchBar(text: $searchText, placeholder: "Search students...")
                     .padding(.horizontal)
@@ -54,18 +148,6 @@ struct StudentsView: View {
                                 .padding(.horizontal, 32)
                         }
                         
-                        Button(action: {
-                            showingAddStudent = true
-                        }) {
-                            Label("Add Student", systemImage: "plus.circle.fill")
-                                .font(.headline)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 12)
-                                .background(appSettings.accentColor)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                        
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -93,27 +175,7 @@ struct StudentsView: View {
             }
         }
         .navigationTitle("Students")
-        .toolbar {
-            #if os(iOS)
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddStudent = true }) {
-                    Image(systemName: "person.badge.plus")
-                }
-            }
-            #else
-            ToolbarItem {
-                Button(action: { showingAddStudent = true }) {
-                    Image(systemName: "person.badge.plus")
-                }
-            }
-            #endif
-        }
-        .sheet(isPresented: $showingAddStudent) {
-            Text("Add Student feature is not available")
-                #if os(iOS)
-                .presentationDetents([.medium])
-                #endif
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $selectedStudent) { student in
             NavigationStack {
                 StudentDetailView(student: student)

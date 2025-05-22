@@ -235,21 +235,18 @@ struct ProfileSettingsView: View {
                 GroupBox(label: Label("Personal Information", systemImage: "person.fill")) {
                     VStack(spacing: 15) {
                         TextField("First Name", text: $firstName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.horizontal, 5)
+                            .appTextFieldStyle()
+
                         
                         TextField("Last Name", text: $lastName)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.horizontal, 5)
+                           .appTextFieldStyle()
                         
                         TextField("Email", text: $email)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                           .appTextFieldStyle()
                             .keyboardType(.emailAddress)
-                            .padding(.horizontal, 5)
                         
                         TextField("Role", text: $role)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.horizontal, 5)
+                            .appTextFieldStyle()
                             .disabled(true) // Role usually can't be changed by user
                     }
                     .padding(.vertical, 10)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		514647CB2DDD38B8005C0A01 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 51EC02AD2DDBA2BE00186A06 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		51EC02AE2DDBA2BE00186A06 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 51EC02AD2DDBA2BE00186A06 /* RealmSwift */; };
 		51EC02B12DDBA2D700186A06 /* JWTDecode in Frameworks */ = {isa = PBXBuildFile; productRef = 51EC02B02DDBA2D700186A06 /* JWTDecode */; };
 		51EC02B42DDBA35A00186A06 /* DGCharts in Frameworks */ = {isa = PBXBuildFile; productRef = 51EC02B32DDBA35A00186A06 /* DGCharts */; };
@@ -32,6 +33,20 @@
 			remoteInfo = Compass4Success;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		514647CC2DDD38B8005C0A01 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				514647CB2DDD38B8005C0A01 /* RealmSwift in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		51A8007C2DDB9C6600A61BDF /* Compass4Success.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Compass4Success.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,6 +134,7 @@
 				51A800782DDB9C6600A61BDF /* Sources */,
 				51A800792DDB9C6600A61BDF /* Frameworks */,
 				51A8007A2DDB9C6600A61BDF /* Resources */,
+				514647CC2DDD38B8005C0A01 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);

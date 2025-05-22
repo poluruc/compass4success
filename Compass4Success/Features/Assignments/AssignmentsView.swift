@@ -72,6 +72,17 @@ struct AssignmentsView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                // Add Gradebook button
+                NavigationLink(destination: GradebookView()) {
+                    Label("View Gradebook", systemImage: "tablecells")
+                        .font(.headline)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(appSettings.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.top, 8)
+                }
                 // Search and filter section
                 SearchFilterBar(
                     searchText: $searchText,

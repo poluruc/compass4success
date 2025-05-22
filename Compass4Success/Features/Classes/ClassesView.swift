@@ -9,7 +9,6 @@ struct ClassesView: View {
     @State private var selectedClass: SchoolClass?
     @State private var showingAlert = false
     @State private var alertMessage = ""
-    @State private var isLoading = false
     @State private var searchText = ""
     @State private var filterGrade: String? = nil
     @State private var sortOption: SortOption = .nameAsc
@@ -96,6 +95,18 @@ struct ClassesView: View {
                 .buttonStyle(PressableButtonStyle())
             }
             .padding()
+            
+            // Add Gradebook button
+            NavigationLink(destination: GradebookView()) {
+                Label("View Gradebook", systemImage: "tablecells")
+                    .font(.headline)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(appSettings.accentColor)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+            }
             
             // Search and filter bar
             VStack(spacing: 8) {
@@ -230,7 +241,7 @@ struct ClassesView: View {
                     }
                 }
                 
-                if isLoading {
+                if classService.isLoading {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle())
                         .scaleEffect(1.5)
@@ -278,9 +289,7 @@ struct ClassesView: View {
     }
     
     private func refreshClasses() {
-        isLoading = true
         classService.loadClasses()
-        isLoading = false
     }
     
     private var classCardsGrid: some View {

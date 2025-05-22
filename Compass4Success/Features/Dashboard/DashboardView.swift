@@ -40,6 +40,18 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal)
                 
+                // Add Gradebook button
+                NavigationLink(destination: GradebookView()) {
+                    Label("View Gradebook", systemImage: "tablecells")
+                        .font(.headline)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(appSettings.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.horizontal)
+                }
+                
                 // Quick stats section
                 VStack(alignment: .leading) {
                     Text("Quick Stats")

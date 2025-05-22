@@ -279,6 +279,98 @@ class MockDataService {
         let classes = [mathClass, scienceClass, historyClass, englishClass, codingClass]
         let assignments = [mathQuiz, mathHomework, scienceProject, scienceQuiz, historyEssay, englishPaper, codingProject]
         
+        // After creating students and classes, assign overall grades by adding courses with finalGrade to each student
+
+        // Example: John Smith (student1) - strong student
+        let johnMath = SchoolClass()
+        johnMath.name = "Algebra 2"
+        johnMath.finalGrade = 95
+        let johnScience = SchoolClass()
+        johnScience.name = "Biology"
+        johnScience.finalGrade = 92
+        student1.courses.append(objectsIn: [johnMath, johnScience])
+
+        // Emily Johnson (student2) - good student
+        let emilyMath = SchoolClass()
+        emilyMath.name = "Algebra 2"
+        emilyMath.finalGrade = 88
+        let emilyScience = SchoolClass()
+        emilyScience.name = "Biology"
+        emilyScience.finalGrade = 85
+        student2.courses.append(objectsIn: [emilyMath, emilyScience])
+
+        // Michael Williams (student3) - average
+        let michaelMath = SchoolClass()
+        michaelMath.name = "Algebra 2"
+        michaelMath.finalGrade = 78
+        let michaelScience = SchoolClass()
+        michaelScience.name = "Biology"
+        michaelScience.finalGrade = 80
+        student3.courses.append(objectsIn: [michaelMath, michaelScience])
+
+        // Olivia Brown (student4) - below average
+        let oliviaMath = SchoolClass()
+        oliviaMath.name = "Algebra 2"
+        oliviaMath.finalGrade = 65
+        let oliviaScience = SchoolClass()
+        oliviaScience.name = "Biology"
+        oliviaScience.finalGrade = 70
+        student4.courses.append(objectsIn: [oliviaMath, oliviaScience])
+
+        // James Davis (student5) - strong
+        let jamesHistory = SchoolClass()
+        jamesHistory.name = "World History"
+        jamesHistory.finalGrade = 91
+        let jamesScience = SchoolClass()
+        jamesScience.name = "Biology"
+        jamesScience.finalGrade = 89
+        student5.courses.append(objectsIn: [jamesHistory, jamesScience])
+
+        // Sophia Miller (student6) - excellent
+        let sophiaEnglish = SchoolClass()
+        sophiaEnglish.name = "English Literature"
+        sophiaEnglish.finalGrade = 98
+        let sophiaScience = SchoolClass()
+        sophiaScience.name = "Biology"
+        sophiaScience.finalGrade = 94
+        student6.courses.append(objectsIn: [sophiaEnglish, sophiaScience])
+
+        // Benjamin Wilson (student7) - good
+        let benHistory = SchoolClass()
+        benHistory.name = "World History"
+        benHistory.finalGrade = 85
+        let benEnglish = SchoolClass()
+        benEnglish.name = "English Literature"
+        benEnglish.finalGrade = 87
+        student7.courses.append(objectsIn: [benHistory, benEnglish])
+
+        // Ava Moore (student8) - average
+        let avaHistory = SchoolClass()
+        avaHistory.name = "World History"
+        avaHistory.finalGrade = 75
+        let avaEnglish = SchoolClass()
+        avaEnglish.name = "English Literature"
+        avaEnglish.finalGrade = 78
+        student8.courses.append(objectsIn: [avaHistory, avaEnglish])
+
+        // Ethan Taylor (student9) - below average
+        let ethanCoding = SchoolClass()
+        ethanCoding.name = "Computer Science"
+        ethanCoding.finalGrade = 68
+        let ethanEnglish = SchoolClass()
+        ethanEnglish.name = "English Literature"
+        ethanEnglish.finalGrade = 72
+        student9.courses.append(objectsIn: [ethanCoding, ethanEnglish])
+
+        // Isabella Anderson (student10) - strong
+        let isabellaCoding = SchoolClass()
+        isabellaCoding.name = "Computer Science"
+        isabellaCoding.finalGrade = 93
+        let isabellaEnglish = SchoolClass()
+        isabellaEnglish.name = "English Literature"
+        isabellaEnglish.finalGrade = 90
+        student10.courses.append(objectsIn: [isabellaCoding, isabellaEnglish])
+        
         return MockData(students: students, classes: classes, assignments: assignments)
     }
 }
