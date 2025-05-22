@@ -70,9 +70,7 @@ struct LoginView: View {
                                 .keyboardType(UIKeyboardType.emailAddress)
                                 .autocapitalization(UITextAutocapitalizationType.none)
                                 #endif
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(10)
+                                .appTextFieldStyle()
                                 .focused($focusedField, equals: .email)
                                 #if os(iOS)
                                 .submitLabel(SubmitLabel.next)
@@ -100,6 +98,7 @@ struct LoginView: View {
                                 .submitLabel(SubmitLabel.go)
                                 #endif
                                 .onSubmit(login)
+                                .appTextFieldStyle()
                         }
                         
                         // Error message

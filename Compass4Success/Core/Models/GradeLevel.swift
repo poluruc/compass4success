@@ -2,7 +2,8 @@ import Foundation
 
 // Simplified model defining grade levels within the school system
 public enum GradeLevel: String, CaseIterable, Equatable, Identifiable, Codable {
-    case kindergarten = "Kindergarten"
+    case jk = "JK"
+    case sk = "SK"
     
     // Elementary school
     case grade1 = "Grade 1"
@@ -22,67 +23,60 @@ public enum GradeLevel: String, CaseIterable, Equatable, Identifiable, Codable {
     case grade11 = "Grade 11"
     case grade12 = "Grade 12"
     
-    // Other
-    case postsecondary = "Postsecondary"
-    case other = "Other"
     
     public var id: String { self.rawValue }
     
     // Short name representation (e.g., "K", "1", "2", etc.)
     public var shortName: String {
         switch self {
-        case .kindergarten:
-            return "K"
+        case .jk:
+            return "JK"
+        case .sk:
+            return "SK"
         case .grade1, .grade2, .grade3, .grade4, .grade5, 
              .grade6, .grade7, .grade8, .grade9:
             // Remove "Grade " prefix and return the number
             return String(rawValue.dropFirst(6))
         case .grade10, .grade11, .grade12:
             return String(rawValue.dropFirst(6))
-        case .postsecondary:
-            return "PS"
-        case .other:
-            return "O"
         }
     }
     
     // Education level grouping
     public var educationLevel: EducationLevel {
         switch self {
-        case .kindergarten, .grade1, .grade2, .grade3, .grade4, .grade5:
+        case .jk, .sk, .grade1, .grade2, .grade3, .grade4, .grade5:
             return .elementary
         case .grade6, .grade7, .grade8:
             return .middle
         case .grade9, .grade10, .grade11, .grade12:
             return .high
-        case .postsecondary:
-            return .postsecondary
-        case .other:
-            return .other
         }
     }
     
     // Simple numeric value (0 for K, 1-12 for grades)
     public var numericValue: Int {
         switch self {
-        case .kindergarten:
+        case .jk:
             return 0
-        case .grade1:
+        case .sk:
             return 1
-        case .grade2:
+        case .grade1:
             return 2
-        case .grade3:
+        case .grade2:
             return 3
-        case .grade4:
+        case .grade3:
             return 4
-        case .grade5:
+        case .grade4:
             return 5
-        case .grade6:
+        case .grade5:
             return 6
-        case .grade7:
+        case .grade6:
             return 7
-        case .grade8:
+        case .grade7:
             return 8
+        case .grade8:
+            return 9
         case .grade9:
             return 9
         case .grade10:
@@ -91,10 +85,6 @@ public enum GradeLevel: String, CaseIterable, Equatable, Identifiable, Codable {
             return 11
         case .grade12:
             return 12
-        case .postsecondary:
-            return 13
-        case .other:
-            return -1
         }
     }
     
@@ -109,8 +99,10 @@ public enum GradeLevel: String, CaseIterable, Equatable, Identifiable, Codable {
             
             // Try to match based on common patterns
             let lowercased = string.lowercased()
-            if lowercased.contains("kindergarten") || lowercased == "k" {
-                return .kindergarten
+            if lowercased.contains("jk") || lowercased == "jk" {
+                return .jk
+            } else if lowercased.contains("sk") || lowercased == "sk" {
+                return .sk
             } else if lowercased.contains("grade 1") || lowercased == "grade1" || lowercased == "1" {
                 return .grade1
             } else if lowercased.contains("grade 2") || lowercased == "grade2" || lowercased == "2" {
@@ -135,49 +127,45 @@ public enum GradeLevel: String, CaseIterable, Equatable, Identifiable, Codable {
                 return .grade11
             } else if lowercased.contains("grade 12") || lowercased == "grade12" || lowercased == "12" {
                 return .grade12
-            } else if lowercased.contains("post") && lowercased.contains("secondary") {
-                return .postsecondary
-            } else {
-                return .other
             }
             
         case let int as Int:
             switch int {
             case 0:
-                return .kindergarten
+                return .jk
             case 1:
-                return .grade1
+                return .sk
             case 2:
-                return .grade2
+                return .grade1
             case 3:
-                return .grade3
+                return .grade2
             case 4:
-                return .grade4
+                return .grade3
             case 5:
-                return .grade5
+                return .grade4
             case 6:
-                return .grade6
+                return .grade5
             case 7:
-                return .grade7
+                return .grade6
             case 8:
-                return .grade8
+                return .grade7
             case 9:
-                return .grade9
+                return .grade8
             case 10:
-                return .grade10
+                return .grade9
             case 11:
-                return .grade11
+                return .grade10
             case 12:
-                return .grade12
+                return .grade11
             case 13:
-                return .postsecondary
+                return .grade12
             default:
-                return .other
+                return .grade1
             }
-            
         default:
-            return .other
+            return .grade1
         }
+        return .grade1
     }
     
     // Education level categories for grouping grade levels
@@ -185,8 +173,6 @@ public enum GradeLevel: String, CaseIterable, Equatable, Identifiable, Codable {
         case elementary = "Elementary School"
         case middle = "Middle School"
         case high = "High School"
-        case postsecondary = "Postsecondary"
-        case other = "Other"
         
         public var id: String { self.rawValue }
         

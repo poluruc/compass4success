@@ -14,11 +14,13 @@ public class Assignment: Object, Identifiable {
     @Persisted var weight: Double = 1.0
     @Persisted var isActive: Bool = true
     @Persisted var courseId: String = ""
-    @Persisted var classId: String?
+    @Persisted var classId: String? // Deprecated, use classIds instead
+    @Persisted var classIds = List<String>() // New: supports multiple classes
     @Persisted var instructions: String = ""
     @Persisted var points: Double = 0.0  // Added for compatibility
     @Persisted var rubricId: String?     // Reference to a rubric if one is attached
     @Persisted var gradeLevels = List<String>()     // List of applicable grade levels
+    @Persisted var resourceUrls = List<String>()
 
     
     // Store a list of submission IDs instead of embedding objects
@@ -130,18 +132,18 @@ extension Assignment {
         copy.weight = self.weight
         copy.isActive = self.isActive
         copy.courseId = self.courseId
-        copy.classId = self.classId
+        // copy.classId = self.classId // Deprecated
+        // Copy all classIds
+        let classIdsList = List<String>()
+        for cid in self.classIds { classIdsList.append(cid) }
+        copy.classIds = classIdsList
         copy.instructions = self.instructions
         copy.points = self.points
         copy.rubricId = self.rubricId
-        
         // Copy grade levels
         let gradeLevelsList = List<String>()
-        for level in self.gradeLevels {
-            gradeLevelsList.append(level)
-        }
+        for level in self.gradeLevels { gradeLevelsList.append(level) }
         copy.gradeLevels = gradeLevelsList
-        
         // Copy submissions
         let submissionsList = List<Submission>()
         for submission in self.submissions {
@@ -159,18 +161,13 @@ extension Assignment {
             submissionCopy.graderNotes = submission.graderNotes
             submissionCopy.gradedDate = submission.gradedDate
             submissionCopy.gradedBy = submission.gradedBy
-            
             // Copy attachment URLs
             let attachmentUrlsList = List<String>()
-            for url in submission.attachmentUrls {
-                attachmentUrlsList.append(url)
-            }
+            for url in submission.attachmentUrls { attachmentUrlsList.append(url) }
             submissionCopy.attachmentUrls = attachmentUrlsList
-            
             submissionsList.append(submissionCopy)
         }
         copy.submissions = submissionsList
-        
         return copy
     }
 } 

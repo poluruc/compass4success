@@ -35,10 +35,12 @@ public struct SearchBar: View {
                 })
                 .keyboardType(.default)
                 .disableAutocorrection(true)
+                .appTextFieldStyle()
                 #else
                 TextField(placeholder, text: $text, onCommit: {
                     onCommit?()
                 })
+                .appTextFieldStyle()
                 #endif
                 
                 // Clear button

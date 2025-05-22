@@ -79,10 +79,12 @@ private struct TemplateInfoSection: View {
                 get: { template.name },
                 set: { newValue in updateRealm(template) { $0.name = newValue } }
             ))
+            .appTextFieldStyle()
             TextField("Description", text: Binding(
                 get: { template.rubricdDscription },
                 set: { newValue in updateRealm(template) { $0.rubricdDscription = newValue } }
             ))
+            .appTextFieldStyle()
         }
     }
 }
@@ -143,12 +145,14 @@ private struct CriterionEditor: View {
                 get: { criterion.name },
                 set: { newValue in updateRealm(criterion) { $0.name = newValue } }
             ))
+            .appTextFieldStyle()
             .font(.system(size: 17, weight: .semibold))
             
             TextField("Description", text: Binding(
                 get: { criterion.rubricdDscription },
                 set: { newValue in updateRealm(criterion) { $0.rubricdDscription = newValue } }
             ))
+            .appTextFieldStyle()
             .font(.system(size: 13))
             
             TextField("Points", value: Binding(
@@ -156,6 +160,7 @@ private struct CriterionEditor: View {
                 set: { newValue in updateRealm(criterion) { $0.points = newValue } }
             ), formatter: NumberFormatter())
             .keyboardType(.decimalPad)
+            .appTextFieldStyle()
             .font(.system(size: 13))
             
             ForEach(Array(criterion.levels), id: \.id) { level in
@@ -200,6 +205,7 @@ private struct LevelEditor: View {
                 get: { level.rubricLevelDescription },
                 set: { newValue in updateRealm(level) { $0.rubricLevelDescription = newValue } }
             ))
+            .appTextFieldStyle()
             .font(.system(size: 13))
             
             HStack {
@@ -210,6 +216,7 @@ private struct LevelEditor: View {
                     set: { newValue in updateRealm(level) { $0.percentage = newValue / 100 } }
                 ), formatter: NumberFormatter())
                 .keyboardType(.decimalPad)
+                .appTextFieldStyle()
                 .font(.system(size: 13))
                 .frame(width: 60)
                 Text("%")

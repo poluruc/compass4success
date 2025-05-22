@@ -248,6 +248,17 @@ class AssignmentsViewModel: ObservableObject {
             assignment.submissions.append(submission)
         }
         
+        ensureAssignmentDefaults(assignment)
+        
         return assignment
+    }
+    
+    private func ensureAssignmentDefaults(_ assignment: Assignment) {
+        if assignment.gradeLevels.isEmpty {
+            assignment.gradeLevels.append("9")
+        }
+        if assignment.classIds.isEmpty {
+            assignment.classIds.append("1")
+        }
     }
 }

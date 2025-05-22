@@ -781,7 +781,7 @@ struct FAQView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
                 TextField("Search FAQs", text: $searchText)
-                    .foregroundColor(.primary)
+                    .appTextFieldStyle()
                 if !searchText.isEmpty {
                     Button(action: {
                         searchText = ""
@@ -974,8 +974,7 @@ struct ContactSupportView: View {
                     GroupBox(label: Label("Send us a message", systemImage: "message.fill")) {
                         VStack(alignment: .leading, spacing: 16) {
                             TextField("Subject", text: $subject)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .padding(.top, 8)
+                                .appTextFieldStyle()
                             
                             Text("Message")
                                 .font(.caption)
@@ -996,10 +995,12 @@ struct ContactSupportView: View {
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
+                                .appTextFieldStyle()
                             
                             TextField("Phone Number (optional)", text: $phoneNumber)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.phonePad)
+                                .appTextFieldStyle()
                             
                             Picker("Preferred Contact Method", selection: $preferredContact) {
                                 ForEach(contactOptions, id: \.self) {
@@ -1235,6 +1236,7 @@ struct ReportIssueView: View {
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
+                                .appTextFieldStyle()
                             
                             // Attachments
                             Toggle("Attach Screenshot", isOn: $attachScreenshot)
@@ -1396,7 +1398,7 @@ struct UserGuideView: View {
                         .foregroundColor(.secondary)
                     
                     TextField("Search guide", text: $searchText)
-                        .foregroundColor(.primary)
+                        .appTextFieldStyle()
                     
                     if !searchText.isEmpty {
                         Button(action: {

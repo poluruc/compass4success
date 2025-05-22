@@ -1,48 +1,27 @@
 import SwiftUI
+import UniformTypeIdentifiers
+import UIKit
 
-struct EditAssignmentView: View {
+struct AssignmentsAddView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var title: String
-    @State private var description: String
-    @State private var dueDate: Date
-    @State private var selectedClassIds: Set<String>
-    @State private var selectedGradeLevels: Set<String>
-    @State private var category: AssignmentCategory
-    @State private var points: String
-    @State private var selectedRubric: RubricTemplate?
+    @State private var title = ""
+    @State private var description = ""
+    @State private var dueDate = Date().addingTimeInterval(86400 * 7)
+    @State private var selectedClassIds = Set<String>()
+    @State private var selectedGradeLevels = Set<String>()
+    @State private var category = AssignmentCategory.assignment
+    @State private var points = "100"
+    @State private var selectedRubric: RubricTemplate? = nil
     @State private var showingRubricPicker = false
     @State private var newResourceUrl: String = ""
-    @State private var resourceUrls: [String]
+    @State private var resourceUrls: [String] = []
     @State private var showingFilePicker = false
+    
     let classes: [SchoolClass]
-    let rubrics: [RubricTemplate]
-    let originalAssignment: Assignment
-    let onSave: (Assignment) -> Void
-    let onCancel: () -> Void
-
-    init(assignment: Assignment, classes: [SchoolClass], rubrics: [RubricTemplate], onSave: @escaping (Assignment) -> Void, onCancel: @escaping () -> Void) {
-        self.originalAssignment = assignment
-        self.classes = classes.isEmpty ? mockClasses : classes
-        self.rubrics = rubrics
-        self.onSave = onSave
-        self.onCancel = onCancel
-        _title = State(initialValue: assignment.title)
-        _description = State(initialValue: assignment.assignmentDescription)
-        _dueDate = State(initialValue: assignment.dueDate)
-        _selectedClassIds = State(initialValue: Set(assignment.classIds))
-        _selectedGradeLevels = State(initialValue: Set(assignment.gradeLevels))
-        _category = State(initialValue: AssignmentCategory(rawValue: assignment.category) ?? .assignment)
-        _points = State(initialValue: String(Int(assignment.totalPoints)))
-        if let rubricId = assignment.rubricId, let rubric = rubrics.first(where: { $0.id == rubricId }) {
-            _selectedRubric = State(initialValue: rubric)
-        } else {
-            _selectedRubric = State(initialValue: nil)
-        }
-        _resourceUrls = State(initialValue: Array(assignment.resourceUrls))
-    }
-
+    let rubrics = RubricLoader.loadAllRubrics()
+    
     var body: some View {
-        NavigationView {
+        // NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Group {
@@ -219,7 +198,6 @@ struct EditAssignmentView: View {
                         }
                         HStack {
                             TextField("Add file/link URL", text: $newResourceUrl)
-                            .appTextFieldStyle()
                             Button(action: {
                                 guard !newResourceUrl.isEmpty else { return }
                                 resourceUrls.append(newResourceUrl)
@@ -267,59 +245,130 @@ struct EditAssignmentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Edit Assignment")
+            .navigationTitle("Add Assignment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { onCancel(); dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        saveAssignment()
+                        // Save logic here
+                        let assignment = Assignment()
+                        assignment.title = title
+                        assignment.assignmentDescription = description
+                        assignment.dueDate = dueDate
+                        assignment.category = category.rawValue
+                        assignment.totalPoints = Double(points) ?? 100
+                        assignment.classIds.append(objectsIn: Array(selectedClassIds))
+                        assignment.gradeLevels.append(objectsIn: Array(selectedGradeLevels))
+                        assignment.resourceUrls.removeAll()
+                        assignment.resourceUrls.append(objectsIn: resourceUrls)
+                        assignment.rubricId = selectedRubric?.id
+                        // TODO: handle rubricId and pass assignment to parent if needed
+                        dismiss()
                     }
-                    .disabled(!isValid)
+                    .disabled(title.isEmpty || selectedClassIds.isEmpty)
                 }
             }
-            .sheet(isPresented: $showingRubricPicker) {
-                RubricPickerView(rubrics: rubrics) { rubric in
-                    selectedRubric = rubric
-                }
-            }
-        }
-    }
-
-    private var isValid: Bool {
-        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasClass = !selectedClassIds.isEmpty
-        let hasValidPoints = Double(points) != nil
-        if selectedRubric != nil {
-            return hasTitle && hasClass
-        }
-        return hasTitle && hasClass && hasValidPoints
-    }
-
-    private func saveAssignment() {
-        guard let totalPoints = Double(points) else { return }
-        let updated = originalAssignment
-        updated.title = title
-        updated.assignmentDescription = description
-        updated.dueDate = dueDate
-        updated.category = category.rawValue
-        updated.totalPoints = totalPoints
-        updated.rubricId = selectedRubric?.id
-        updated.classIds.removeAll()
-        updated.classIds.append(objectsIn: Array(selectedClassIds))
-        updated.gradeLevels.removeAll()
-        updated.gradeLevels.append(objectsIn: Array(selectedGradeLevels))
-        updated.resourceUrls.removeAll()
-        updated.resourceUrls.append(objectsIn: resourceUrls)
-        onSave(updated)
-        dismiss()
+        // }
     }
 }
 
-// Make sure mockClasses is available
-private let mockClasses: [SchoolClass] = [
-    SchoolClass(id: "1", name: "Math 9A", clazzCode: "M9A", courseCode: "MTH9A", gradeLevel: "9"),
-    SchoolClass(id: "2", name: "Science 10B", clazzCode: "S10B", courseCode: "SCI10B", gradeLevel: "10"),
-    SchoolClass(id: "3", name: "English 11C", clazzCode: "E11C", courseCode: "ENG11C", gradeLevel: "11"),
-    SchoolClass(id: "4", name: "History 9/10", clazzCode: "H910", courseCode: "HIST910", gradeLevel: "9,10")
-]
+struct DocumentPicker: UIViewControllerRepresentable {
+    var onPick: (URL) -> Void
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.data], asCopy: true)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: (URL) -> Void
+        init(onPick: @escaping (URL) -> Void) { self.onPick = onPick }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            if let url = urls.first { onPick(url) }
+        }
+    }
+}
+
+// Helper to detect image URLs
+func isImage(url: String) -> Bool {
+    let imageExtensions = ["jpg", "jpeg", "png", "gif", "heic", "heif", "webp"]
+    return imageExtensions.contains { url.lowercased().hasSuffix($0) }
+}
+
+// Helper to load local images
+func loadLocalImage(from urlString: String) -> UIImage? {
+    guard let url = URL(string: urlString), url.isFileURL else { return nil }
+    return UIImage(contentsOfFile: url.path)
+}
+
+// Improved WrapHStack with dynamic height measurement
+struct WrapHStack<Data: RandomAccessCollection, ID: Hashable, Content: View>: View {
+    let items: Data
+    let id: KeyPath<Data.Element, ID>
+    let content: (Data.Element) -> Content
+
+    @State private var totalHeight: CGFloat = .zero
+
+    init(items: Data, id: KeyPath<Data.Element, ID>, @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.items = items
+        self.id = id
+        self.content = content
+    }
+
+    var body: some View {
+        VStack {
+            GeometryReader { geometry in
+                self.generateContent(in: geometry)
+            }
+        }
+        .frame(height: totalHeight)
+    }
+
+    private func generateContent(in geometry: GeometryProxy) -> some View {
+        var width = CGFloat.zero
+        var height = CGFloat.zero
+
+        return ZStack(alignment: .topLeading) {
+            ForEach(items, id: id) { item in
+                content(item)
+                    .padding([.horizontal, .vertical], 2)
+                    .alignmentGuide(.leading, computeValue: { d in
+                        if abs(width - d.width) > geometry.size.width {
+                            width = 0
+                            height -= d.height
+                        }
+                        let result = width
+                        if item[keyPath: id] == items.last?[keyPath: id] {
+                            width = 0 // Last item
+                        } else {
+                            width -= d.width
+                        }
+                        return result
+                    })
+                    .alignmentGuide(.top, computeValue: { _ in
+                        let result = height
+                        if item[keyPath: id] == items.last?[keyPath: id] {
+                            height = 0 // Last item
+                        }
+                        return result
+                    })
+            }
+        }
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .preference(key: HeightPreferenceKey.self, value: geo.size.height)
+            }
+        )
+        .onPreferenceChange(HeightPreferenceKey.self) { self.totalHeight = $0 }
+    }
+}
+
+private struct HeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}

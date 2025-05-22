@@ -1,5 +1,12 @@
 import SwiftUI
 
+private let mockClasses: [SchoolClass] = [
+    SchoolClass(id: "1", name: "Math 9A", clazzCode: "M9A", courseCode: "MTH9A", gradeLevel: "9"),
+    SchoolClass(id: "2", name: "Science 10B", clazzCode: "S10B", courseCode: "SCI10B", gradeLevel: "10"),
+    SchoolClass(id: "3", name: "English 11C", clazzCode: "E11C", courseCode: "ENG11C", gradeLevel: "11"),
+    SchoolClass(id: "4", name: "History 9/10", clazzCode: "H910", courseCode: "HIST910", gradeLevel: "9,10")
+]
+
 struct AssignmentsView: View {
     @EnvironmentObject private var classService: ClassService
     @EnvironmentObject private var appSettings: AppSettings
@@ -34,23 +41,25 @@ struct AssignmentsView: View {
             let mathClass = SchoolClass(id: "1", name: "Math 9A", clazzCode: "M9A", courseCode: "MTH9A", gradeLevel: "9")
             let scienceClass = SchoolClass(id: "2", name: "Science 10B", clazzCode: "S10B", courseCode: "SCI10B", gradeLevel: "10")
             let englishClass = SchoolClass(id: "3", name: "English 11C", clazzCode: "E11C", courseCode: "ENG11C", gradeLevel: "11")
+            let historyClass = SchoolClass(id: "4", name: "History 9/10", clazzCode: "H910", courseCode: "HIST910", gradeLevel: "9,10")
             
             // Load rubrics
             let rubrics = RubricLoader.loadAllRubrics()
-            let mathRubric = rubrics.first { $0.id.contains("math") && $0.applicableGrades.contains(9) }
-            let scienceRubric = rubrics.first { $0.id.contains("science") && $0.applicableGrades.contains(10) }
-            let essayRubric = rubrics.first { $0.id.contains("essay") || $0.title.lowercased().contains("essay") }
+            let mathRubric = rubrics.first { $0.title.lowercased().contains("math") || $0.applicableGrades.contains(9) }
+            let scienceRubric = rubrics.first { $0.title.lowercased().contains("science") || $0.applicableGrades.contains(10) }
+            let essayRubric = rubrics.first { $0.title.lowercased().contains("essay") || $0.title.lowercased().contains("writing") }
+            let historyRubric = rubrics.first { $0.title.lowercased().contains("history") || $0.applicableGrades.contains(9) || $0.applicableGrades.contains(10) }
             
-            // Create mock assignments
+            // Create mock assignments with multiple grades/classes/rubrics
             let assignment1 = Assignment()
             assignment1.id = "a1"
             assignment1.title = "Algebra Quiz"
             assignment1.assignmentDescription = "Quiz on algebraic expressions"
             assignment1.dueDate = Date().addingTimeInterval(86400 * 2)
-            assignment1.classId = mathClass.id
+            assignment1.classIds.append(objectsIn: [mathClass.id, historyClass.id])
             assignment1.category = AssignmentCategory.quiz.rawValue
             assignment1.totalPoints = 30
-            assignment1.gradeLevels.append("9")
+            assignment1.gradeLevels.append(objectsIn: ["9", "10"])
             assignment1.isActive = true
             assignment1.rubricId = mathRubric?.id
             
@@ -59,10 +68,10 @@ struct AssignmentsView: View {
             assignment2.title = "Lab Report: Acids & Bases"
             assignment2.assignmentDescription = "Lab report for acids and bases experiment"
             assignment2.dueDate = Date().addingTimeInterval(86400 * 5)
-            assignment2.classId = scienceClass.id
+            assignment2.classIds.append(objectsIn: [scienceClass.id])
             assignment2.category = AssignmentCategory.lab.rawValue
             assignment2.totalPoints = 40
-            assignment2.gradeLevels.append("10")
+            assignment2.gradeLevels.append(objectsIn: ["10"])
             assignment2.isActive = true
             assignment2.rubricId = scienceRubric?.id
             
@@ -71,19 +80,34 @@ struct AssignmentsView: View {
             assignment3.title = "Essay: Shakespeare"
             assignment3.assignmentDescription = "Essay on Shakespeare's works"
             assignment3.dueDate = Date().addingTimeInterval(86400 * 7)
-            assignment3.classId = englishClass.id
+            assignment3.classIds.append(objectsIn: [englishClass.id, historyClass.id])
             assignment3.category = AssignmentCategory.essay.rawValue
             assignment3.totalPoints = 50
-            assignment3.gradeLevels.append("11")
+            assignment3.gradeLevels.append(objectsIn: ["10", "11"])
             assignment3.isActive = true
             assignment3.rubricId = essayRubric?.id
+            
+            let assignment4 = Assignment()
+            assignment4.id = "a4"
+            assignment4.title = "History Project: Ancient Civilizations"
+            assignment4.assignmentDescription = "Group project on ancient civilizations for grades 9 and 10."
+            assignment4.dueDate = Date().addingTimeInterval(86400 * 10)
+            assignment4.classIds.append(objectsIn: [historyClass.id])
+            assignment4.category = AssignmentCategory.project.rawValue
+            assignment4.totalPoints = 60
+            assignment4.gradeLevels.append(objectsIn: ["9", "10"])
+            assignment4.isActive = true
+            assignment4.rubricId = historyRubric?.id
             
             // Add to mock classes
             mathClass.assignments.append(assignment1)
             scienceClass.assignments.append(assignment2)
             englishClass.assignments.append(assignment3)
+            historyClass.assignments.append(assignment4)
+            historyClass.assignments.append(assignment1)
+            historyClass.assignments.append(assignment3)
             
-            assignments.append(contentsOf: [assignment1, assignment2, assignment3])
+            assignments.append(contentsOf: [assignment1, assignment2, assignment3, assignment4])
         } else {
             for schoolClass in classService.classes {
                 assignments.append(contentsOf: Array(schoolClass.assignments))
@@ -98,7 +122,7 @@ struct AssignmentsView: View {
         
         // Apply class filter
         if let filterClass = filterClass {
-            filtered = filtered.filter { $0.classId == filterClass.id }
+            filtered = filtered.filter { $0.classIds.contains(where: { $0 == filterClass.id }) }
         }
         
         // Apply category filter
@@ -225,11 +249,12 @@ struct AssignmentsView: View {
         }
         .sheet(isPresented: $showingAddAssignment) {
             NavigationView {
-                AssignmentsAddView(classes: classService.classes)
+                AssignmentsAddView(classes: mockClasses)
             }
             .platformPresentationDetent()
         }
         .onAppear {
+            classService.classes = [] // Force use of mock data
             loadData()
         }
     }
@@ -261,7 +286,7 @@ struct SearchFilterBar: View {
                     .foregroundColor(.gray)
                 
                 TextField("Search assignments...", text: $searchText)
-                    .foregroundColor(.primary)
+                    .appTextFieldStyle()
                 
                 if !searchText.isEmpty {
                     Button(action: {
@@ -319,15 +344,13 @@ struct SearchFilterBar: View {
             }
         }
         .sheet(isPresented: $showingFilters) {
-            NavigationView {
-                FiltersView(
-                    classFilter: $classFilter,
-                    categoryFilter: $categoryFilter,
-                    classes: classes
-                )
-            }
+            FiltersView(
+                classFilter: $classFilter,
+                categoryFilter: $categoryFilter,
+                classes: mockClasses
+            )
             #if os(iOS)
-            .presentationDetents([.height(300)])
+            .presentationDetents([.height(500)])
             #endif
         }
     }
@@ -423,6 +446,8 @@ struct FiltersView: View {
                         categoryFilter = category
                     }) {
                         HStack {
+                            Image(systemName: category.iconName)
+                                .foregroundColor(category.color)
                             Text(category.rawValue)
                             Spacer()
                             if categoryFilter == category {
@@ -457,6 +482,11 @@ struct FiltersView: View {
 struct AssignmentCard: View {
     let assignment: Assignment
     @EnvironmentObject var appSettings: AppSettings
+    
+    init(assignment: Assignment) {
+        self.assignment = assignment
+        print("Assignment '", assignment.title, "' gradeLevels:", assignment.gradeLevels, "classIds:", assignment.classIds)
+    }
     
     // Due date formatting and status
     private var dueStatus: (text: String, color: Color) {
@@ -507,6 +537,7 @@ struct AssignmentCard: View {
             
             // Grades, Classes, and Rubric as color-coded pills
             HStack(spacing: 6) {
+                // Show all grade levels as pills
                 if !assignment.gradeLevels.isEmpty {
                     ForEach(Array(assignment.gradeLevels), id: \.self) { grade in
                         Text("Grade \(grade)")
@@ -517,14 +548,33 @@ struct AssignmentCard: View {
                             .foregroundColor(.green)
                             .cornerRadius(8)
                     }
-                }
-                if let classId = assignment.classId, !classId.isEmpty {
-                    Text(className(for: classId))
+                } else {
+                    Text("No Grade Assigned")
                         .font(.caption2)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.purple.opacity(0.15))
-                        .foregroundColor(.purple)
+                        .background(Color.gray.opacity(0.15))
+                        .foregroundColor(.gray)
+                        .cornerRadius(8)
+                }
+                // Show all classes as pills
+                if !assignment.classIds.isEmpty {
+                    ForEach(Array(assignment.classIds), id: \.self) { classId in
+                        Text(className(for: classId))
+                            .font(.caption2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.purple.opacity(0.15))
+                            .foregroundColor(.purple)
+                            .cornerRadius(8)
+                    }
+                } else {
+                    Text("No Class Assigned")
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.gray.opacity(0.15))
+                        .foregroundColor(.gray)
                         .cornerRadius(8)
                 }
                 if let rubricId = assignment.rubricId, !rubricId.isEmpty {
@@ -586,6 +636,7 @@ struct AssignmentCard: View {
         case "1": return "Math 9A"
         case "2": return "Science 10B"
         case "3": return "English 11C"
+        case "4": return "History 9/10"
         default: return "Class \(classId)"
         }
     }
@@ -646,87 +697,6 @@ struct AssignmentsLoadingOverlay: View {
                 .progressViewStyle(CircularProgressViewStyle())
                 .scaleEffect(1.5)
                 .foregroundColor(.white)
-        }
-    }
-}
-
-// Rename to avoid duplicate declarations
-struct AssignmentsAddView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var title = ""
-    @State private var description = ""
-    @State private var dueDate = Date().addingTimeInterval(86400 * 7) // 1 week from now
-    @State private var selectedClassId = ""
-    @State private var category = AssignmentCategory.assignment
-    @State private var points = "100"
-    @State private var selectedRubric: RubricTemplate? = nil
-    @State private var showingRubricPicker = false
-    let classes: [SchoolClass]
-    let rubrics = RubricLoader.loadAllRubrics()
-    
-    var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Assignment Details")) {
-                    TextField("Title", text: $title)
-                    TextField("Description", text: $description)
-                        .lineLimit(4)
-                    Picker("Class", selection: $selectedClassId) {
-                        Text("Select a class").tag("")
-                        ForEach(classes) { schoolClass in
-                            Text(schoolClass.name).tag(schoolClass.id)
-                        }
-                    }
-                    Picker("Category", selection: $category) {
-                        ForEach(AssignmentCategory.allCases, id: \.self) { category in
-                            Text(category.rawValue).tag(category)
-                        }
-                    }
-                    TextField("Points", text: $points)
-                        #if os(iOS)
-                        .keyboardType(.numberPad)
-                        #endif
-                    DatePicker("Due Date", selection: $dueDate, displayedComponents: [.date, .hourAndMinute])
-                }
-                Section(header: Text("Rubric")) {
-                    if let rubric = selectedRubric {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(rubric.title)
-                                .font(.headline)
-                            Text(rubric.description)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    } else {
-                        Text("No rubric selected")
-                            .foregroundColor(.secondary)
-                    }
-                    Button(action: { showingRubricPicker = true }) {
-                        Text(selectedRubric == nil ? "Select Rubric" : "Change Rubric")
-                    }
-                }
-            }
-            .navigationTitle("Add Assignment")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        // Save the assignment, including rubricId if selected
-                        dismiss()
-                    }
-                    .disabled(title.isEmpty || selectedClassId.isEmpty)
-                }
-            }
-            .sheet(isPresented: $showingRubricPicker) {
-                RubricPickerView(rubrics: rubrics) { rubric in
-                    selectedRubric = rubric
-                }
-            }
         }
     }
 }

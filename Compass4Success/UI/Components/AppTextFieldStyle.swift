@@ -1,25 +1,27 @@
 import SwiftUI
 
-struct AppTextFieldStyle: ViewModifier {
+struct AppTextFieldFocusModifier: ViewModifier {
     @FocusState private var isFocused: Bool
+
     func body(content: Content) -> some View {
         content
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6))
-            )
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isFocused ? Color.accentColor : Color(.systemGray4), lineWidth: 2)
+                    .stroke(isFocused ? Color.accentColor : Color.accentColor.opacity(0.25), lineWidth: isFocused ? 2 : 1)
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+            .font(.body)
+            .foregroundColor(.primary)
+            .shadow(color: isFocused ? Color.accentColor.opacity(0.10) : Color.black.opacity(0.03), radius: isFocused ? 4 : 2, x: 0, y: 1)
             .focused($isFocused)
     }
 }
 
 extension View {
     func appTextFieldStyle() -> some View {
-        self.modifier(AppTextFieldStyle())
+        self.modifier(AppTextFieldFocusModifier())
     }
-} 
+}

@@ -533,6 +533,7 @@ struct ClassDetailView: View {
                 
                 TextField("Search students", text: $searchText)
                     .disableAutocorrection(true)
+                    .appTextFieldStyle()
                 
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {

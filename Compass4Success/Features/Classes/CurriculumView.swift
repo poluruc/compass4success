@@ -167,8 +167,9 @@ struct CustomStandardView: View {
             Form {
                 Section(header: Text("Standard Details")) {
                     TextField("Standard ID (e.g., MATH.CUSTOM.1)", text: $standardId)
-                    
+                    .appTextFieldStyle()
                     TextField("Description", text: $standardDescription)
+                        .appTextFieldStyle()
                         .frame(height: 100, alignment: .topLeading)
                         .multilineTextAlignment(.leading)
                 }

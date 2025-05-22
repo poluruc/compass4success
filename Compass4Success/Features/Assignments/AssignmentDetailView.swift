@@ -147,6 +147,50 @@ struct AssignmentDetailView: View {
                     Text("Details")
                         .font(.headline)
                     
+                    // Pills for grade levels and classes
+                    HStack(spacing: 6) {
+                        // Grade levels
+                        if !assignment.gradeLevels.isEmpty {
+                            ForEach(Array(assignment.gradeLevels), id: \.self) { grade in
+                                Text("Grade \(grade)")
+                                    .font(.caption2)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.green.opacity(0.15))
+                                    .foregroundColor(.green)
+                                    .cornerRadius(8)
+                            }
+                        } else {
+                            Text("No Grade Level")
+                                .font(.caption2)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.gray.opacity(0.15))
+                                .foregroundColor(.gray)
+                                .cornerRadius(8)
+                        }
+                        // Classes
+                        if !assignment.classIds.isEmpty {
+                            ForEach(Array(assignment.classIds), id: \.self) { classId in
+                                Text(className(for: classId))
+                                    .font(.caption2)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.purple.opacity(0.15))
+                                    .foregroundColor(.purple)
+                                    .cornerRadius(8)
+                            }
+                        } else {
+                            Text("No Class Assigned")
+                                .font(.caption2)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.gray.opacity(0.15))
+                                .foregroundColor(.gray)
+                                .cornerRadius(8)
+                        }
+                    }
+                    
                     // Show rubric if attached
                     if let rubricId = assignment.rubricId, !rubricId.isEmpty,
                        let rubric = RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId }) {
@@ -757,6 +801,16 @@ struct AssignmentDetailView: View {
         .padding(10)
         .background(color.opacity(0.08))
         .cornerRadius(10)
+    }
+    
+    // Helper to get class name from id (for mock data)
+    private func className(for classId: String) -> String {
+        switch classId {
+        case "1": return "Math 9A"
+        case "2": return "Science 10B"
+        case "3": return "English 11C"
+        default: return "Class \(classId)"
+        }
     }
 }
 

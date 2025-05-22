@@ -59,4 +59,19 @@ public enum AssignmentCategory: String, CaseIterable {
             return "clock"
         }
     }
+    
+    var iconName: String {
+        switch self {
+        case .assignment: return "doc.text"
+        case .quiz: return "questionmark.circle"
+        case .test: return "doc.text.magnifyingglass"
+        case .project: return "folder"
+        case .presentation: return "person.wave.2"
+        case .lab: return "testtube.2"
+        case .essay: return "text.quote"
+        case .homework: return "house"
+        case .midterm: return "clock"
+        case .final: return "clock.fill"
+        }
+    }
 }

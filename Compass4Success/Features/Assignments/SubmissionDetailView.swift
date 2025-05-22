@@ -503,9 +503,7 @@ struct SubmissionDetailView: View {
                             
                             TextField("Enter score", text: $score)
                                 .keyboardType(.decimalPad)
-                                .padding(8)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
+                                .appTextFieldStyle()
                                 .onChange(of: score) { newValue in
                                     // Validate score is within bounds
                                     if let scoreValue = Int(newValue), scoreValue > Int(viewModel.assignment.totalPoints) {
