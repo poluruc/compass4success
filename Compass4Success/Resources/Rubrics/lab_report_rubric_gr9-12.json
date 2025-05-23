@@ -1,43 +1,61 @@
 {
   "id": "lab_report_rubric_gr9-12",
-  "title": "Ontario Lab Report Rubric (Grades 9-12)",
-  "description": "Rubric for evaluating science lab reports in Ontario Grades 9-12.",
+  "title": "Ontario Lab Report Assessment Rubric (Grades 9-12)",
+  "rubricDescription": "Rubric for evaluating science lab reports in Ontario Grades 9-12.",
   "applicableGrades": [9, 10, 11, 12],
   "criteria": [
     {
-      "name": "Hypothesis & Purpose",
+      "name": "Purpose & Hypothesis",
       "levels": [
-        { "level": 1, "description": "Unclear or missing hypothesis/purpose." },
-        { "level": 2, "description": "Somewhat clear hypothesis/purpose." },
-        { "level": 3, "description": "Clear and relevant hypothesis/purpose." },
-        { "level": 4, "description": "Highly insightful and relevant hypothesis/purpose." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited clarity in purpose and hypothesis." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some clarity in purpose and hypothesis." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good clarity in purpose and hypothesis." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent clarity in purpose and hypothesis." }
       ]
     },
     {
-      "name": "Procedure & Method",
+      "name": "Materials & Methods",
       "levels": [
-        { "level": 1, "description": "Limited detail or clarity." },
-        { "level": 2, "description": "Some detail and clarity." },
-        { "level": 3, "description": "Clear and logical procedure." },
-        { "level": 4, "description": "Highly detailed and logical procedure." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited detail in materials and methods." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some detail in materials and methods." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good detail in materials and methods." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent detail in materials and methods." }
       ]
     },
     {
-      "name": "Analysis & Results",
+      "name": "Data & Observations",
       "levels": [
-        { "level": 1, "description": "Limited analysis or accuracy." },
-        { "level": 2, "description": "Some analysis and accuracy." },
-        { "level": 3, "description": "Accurate and logical analysis." },
-        { "level": 4, "description": "Highly insightful and accurate analysis." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited presentation of data and observations." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some presentation of data and observations." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good presentation of data and observations." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent presentation of data and observations." }
+      ]
+    },
+    {
+      "name": "Analysis & Discussion",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited analysis and discussion." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some analysis and discussion." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good analysis and discussion." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent analysis and discussion." }
       ]
     },
     {
       "name": "Conclusion",
       "levels": [
-        { "level": 1, "description": "Limited or unclear conclusion." },
-        { "level": 2, "description": "Somewhat clear conclusion." },
-        { "level": 3, "description": "Clear and relevant conclusion." },
-        { "level": 4, "description": "Highly insightful and relevant conclusion." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited conclusion." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some conclusion." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good conclusion." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent conclusion." }
+      ]
+    },
+    {
+      "name": "Communication",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited communication of scientific ideas." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some communication of scientific ideas." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good communication of scientific ideas." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent communication of scientific ideas." }
       ]
     }
   ]

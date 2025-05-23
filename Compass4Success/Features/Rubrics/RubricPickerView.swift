@@ -57,92 +57,15 @@ struct RubricPickerView: View {
                     ScrollView {
                         LazyVGrid(columns: gridColumns, spacing: 16) {
                             ForEach(filteredRubrics) { rubric in
-                                VStack(spacing: 0) {
-                                    // Rubric card
-                                    Button(action: {
-                                        if previewRubric?.id == rubric.id {
-                                            onSelect(rubric)
-                                            dismiss()
-                                        } else {
-                                            previewRubric = rubric
-                                        }
-                                    }) {
-                                        VStack(alignment: .leading, spacing: 12) {
-                                            HStack {
-                                                Text(rubric.title)
-                                                    .font(.headline)
-                                                    .foregroundColor(.primary)
-                                                Spacer()
-                                                if previewRubric?.id == rubric.id {
-                                                    Text("Tap to select")
-                                                        .font(.caption)
-                                                        .foregroundColor(.blue)
-                                                }
-                                            }
-                                            
-                                            Text(rubric.description)
-                                                .font(.subheadline)
-                                                .foregroundColor(.secondary)
-                                                .lineLimit(2)
-                                            
-                                            HStack(spacing: 6) {
-                                                ForEach(rubric.applicableGrades.sorted(), id: \.self) { grade in
-                                                    Text(grade == 0 ? "JK" : "Gr. \(grade)")
-                                                        .font(.caption2)
-                                                        .padding(.horizontal, 8)
-                                                        .padding(.vertical, 4)
-                                                        .background(Color.blue.opacity(0.12))
-                                                        .foregroundColor(.blue)
-                                                        .cornerRadius(6)
-                                                }
-                                            }
-                                            
-                                            if previewRubric?.id == rubric.id {
-                                                Divider()
-                                                    .padding(.vertical, 8)
-                                                
-                                                VStack(alignment: .leading, spacing: 16) {
-                                                    Text("Rubric Structure")
-                                                        .font(.subheadline)
-                                                        .fontWeight(.medium)
-                                                        .foregroundColor(.secondary)
-                                                    
-                                                    ForEach(rubric.criteria) { criterion in
-                                                        VStack(alignment: .leading, spacing: 8) {
-                                                            Text(criterion.name)
-                                                                .font(.callout)
-                                                                .fontWeight(.medium)
-                                                            
-                                                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
-                                                                ForEach(criterion.levels, id: \.level) { level in
-                                                                    VStack(alignment: .leading, spacing: 4) {
-                                                                        Text("Level \(level.level)")
-                                                                            .font(.caption)
-                                                                            .fontWeight(.medium)
-                                                                            .foregroundColor(.blue)
-                                                                        Text(level.description)
-                                                                            .font(.caption)
-                                                                            .foregroundColor(.secondary)
-                                                                    }
-                                                                    .padding(8)
-                                                                    .background(Color(.systemGray6))
-                                                                    .cornerRadius(8)
-                                                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        .padding()
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(Color(.systemBackground))
-                                        .cornerRadius(14)
-                                        .shadow(color: Color.black.opacity(0.07), radius: 6, x: 0, y: 2)
+                                RubricCardView(
+                                    rubric: rubric,
+                                    isPreview: previewRubric?.id == rubric.id,
+                                    onPreview: { previewRubric = rubric },
+                                    onSelect: {
+                                        onSelect(rubric)
+                                        dismiss()
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
+                                )
                             }
                         }
                         .padding()
@@ -176,5 +99,99 @@ struct RubricPickerView: View {
                 )
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct RubricCardView: View {
+    let rubric: RubricTemplate
+    let isPreview: Bool
+    let onPreview: () -> Void
+    let onSelect: () -> Void
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: {
+                if isPreview {
+                    onSelect()
+                } else {
+                    onPreview()
+                }
+            }) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text(rubric.title)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Spacer()
+                        if isPreview {
+                            Text("Tap to select")
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    Text(rubric.rubricDescription)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                    HStack(spacing: 6) {
+                        ForEach(rubric.applicableGrades.sorted(), id: \.self) { grade in
+                            Text(grade == 0 ? "JK" : "Gr. \(grade)")
+                                .font(.caption2)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.12))
+                                .foregroundColor(.blue)
+                                .cornerRadius(6)
+                        }
+                    }
+                    if isPreview {
+                        Divider()
+                            .padding(.vertical, 8)
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Rubric Structure")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.secondary)
+                            ForEach(rubric.criteria) { criterion in
+                                RubricCriterionPreviewView(criterion: criterion)
+                            }
+                        }
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.systemBackground))
+                .cornerRadius(14)
+                .shadow(color: Color.black.opacity(0.07), radius: 6, x: 0, y: 2)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+}
+
+struct RubricCriterionPreviewView: View {
+    let criterion: RubricTemplateCriterion
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(criterion.name)
+                .font(.callout)
+                .fontWeight(.medium)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 8)], spacing: 8) {
+                ForEach(criterion.levels) { level in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Level \(level.level)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                        Text(level.rubricTemplateLevelDescription)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(8)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
     }
 } 

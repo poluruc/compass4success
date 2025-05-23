@@ -1,7 +1,19 @@
 import Foundation
 
 class RubricLoader {
+    // Cache for loaded rubrics
+    private static var cachedRubrics: [RubricTemplate]?
+    private static var lastLoadTime: Date?
+    private static let cacheTimeout: TimeInterval = 300 // 5 minutes
+    
     static func loadAllRubrics() -> [RubricTemplate] {
+        // Return cached rubrics if they exist and haven't expired
+        if let cached = cachedRubrics,
+           let lastLoad = lastLoadTime,
+           Date().timeIntervalSince(lastLoad) < cacheTimeout {
+            return cached
+        }
+        
         print("🔍 Starting to load rubrics...")
         var templates: [RubricTemplate] = []
         let decoder = JSONDecoder()
@@ -79,8 +91,21 @@ class RubricLoader {
         } catch {
             print("❌ Error loading user rubrics: \(error)")
         }
+        
         print("✨ Finished loading \(templates.count) unique rubrics")
+        
+        // Update cache
+        cachedRubrics = templates
+        lastLoadTime = Date()
+        
         return templates
+    }
+    
+    // Force reload rubrics from disk
+    static func reloadRubrics() {
+        cachedRubrics = nil
+        lastLoadTime = nil
+        _ = loadAllRubrics()
     }
     
     private static func createDefaultRubrics(in directory: URL) throws {
@@ -89,7 +114,7 @@ class RubricLoader {
             {
                 "id": "jk_writing",
                 "title": "JK Writing Skills",
-                "description": "Evaluates early writing and mark-making skills for Junior Kindergarten students",
+                "rubricDescription": "Evaluates early writing and mark-making skills for Junior Kindergarten students",
                 "applicableGrades": [0],
                 "criteria": [
                     {
@@ -97,19 +122,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Makes random marks on paper"
+                                "rubricTemplateLevelDescription": "Makes random marks on paper"
                             },
                             {
                                 "level": 2,
-                                "description": "Makes controlled marks and basic shapes"
+                                "rubricTemplateLevelDescription": "Makes controlled marks and basic shapes"
                             },
                             {
                                 "level": 3,
-                                "description": "Creates recognizable shapes and letters"
+                                "rubricTemplateLevelDescription": "Creates recognizable shapes and letters"
                             },
                             {
                                 "level": 4,
-                                "description": "Forms clear letters and shapes with good control"
+                                "rubricTemplateLevelDescription": "Forms clear letters and shapes with good control"
                             }
                         ]
                     },
@@ -118,19 +143,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Attempts to write name with support"
+                                "rubricTemplateLevelDescription": "Attempts to write name with support"
                             },
                             {
                                 "level": 2,
-                                "description": "Writes some letters of name independently"
+                                "rubricTemplateLevelDescription": "Writes some letters of name independently"
                             },
                             {
                                 "level": 3,
-                                "description": "Writes full name with few errors"
+                                "rubricTemplateLevelDescription": "Writes full name with few errors"
                             },
                             {
                                 "level": 4,
-                                "description": "Writes name clearly and consistently"
+                                "rubricTemplateLevelDescription": "Writes name clearly and consistently"
                             }
                         ]
                     }
@@ -141,7 +166,7 @@ class RubricLoader {
             {
                 "id": "grade3_math",
                 "title": "Grade 3 Math Problem Solving",
-                "description": "Evaluates mathematical problem-solving skills for Grade 3 students",
+                "rubricDescription": "Evaluates mathematical problem-solving skills for Grade 3 students",
                 "applicableGrades": [3],
                 "criteria": [
                     {
@@ -149,19 +174,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Shows limited understanding of the problem"
+                                "rubricTemplateLevelDescription": "Shows limited understanding of the problem"
                             },
                             {
                                 "level": 2,
-                                "description": "Shows some understanding of the problem"
+                                "rubricTemplateLevelDescription": "Shows some understanding of the problem"
                             },
                             {
                                 "level": 3,
-                                "description": "Shows good understanding of the problem"
+                                "rubricTemplateLevelDescription": "Shows good understanding of the problem"
                             },
                             {
                                 "level": 4,
-                                "description": "Shows thorough understanding of the problem"
+                                "rubricTemplateLevelDescription": "Shows thorough understanding of the problem"
                             }
                         ]
                     },
@@ -170,19 +195,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Uses limited or inappropriate strategies"
+                                "rubricTemplateLevelDescription": "Uses limited or inappropriate strategies"
                             },
                             {
                                 "level": 2,
-                                "description": "Uses some appropriate strategies"
+                                "rubricTemplateLevelDescription": "Uses some appropriate strategies"
                             },
                             {
                                 "level": 3,
-                                "description": "Uses appropriate and effective strategies"
+                                "rubricTemplateLevelDescription": "Uses appropriate and effective strategies"
                             },
                             {
                                 "level": 4,
-                                "description": "Uses innovative and highly effective strategies"
+                                "rubricTemplateLevelDescription": "Uses innovative and highly effective strategies"
                             }
                         ]
                     },
@@ -191,19 +216,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Explains thinking with limited clarity"
+                                "rubricTemplateLevelDescription": "Explains thinking with limited clarity"
                             },
                             {
                                 "level": 2,
-                                "description": "Explains thinking with some clarity"
+                                "rubricTemplateLevelDescription": "Explains thinking with some clarity"
                             },
                             {
                                 "level": 3,
-                                "description": "Explains thinking clearly and completely"
+                                "rubricTemplateLevelDescription": "Explains thinking clearly and completely"
                             },
                             {
                                 "level": 4,
-                                "description": "Explains thinking with exceptional clarity and detail"
+                                "rubricTemplateLevelDescription": "Explains thinking with exceptional clarity and detail"
                             }
                         ]
                     }
@@ -214,7 +239,7 @@ class RubricLoader {
             {
                 "id": "grade5_writing",
                 "title": "Grade 5 Writing Assessment",
-                "description": "Comprehensive writing assessment for Grade 5 students focusing on organization, ideas, and conventions",
+                "rubricDescription": "Comprehensive writing assessment for Grade 5 students focusing on organization, ideas, and conventions",
                 "applicableGrades": [5],
                 "criteria": [
                     {
@@ -222,19 +247,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Basic ideas with limited development"
+                                "rubricTemplateLevelDescription": "Basic ideas with limited development"
                             },
                             {
                                 "level": 2,
-                                "description": "Ideas are generally focused with some development"
+                                "rubricTemplateLevelDescription": "Ideas are generally focused with some development"
                             },
                             {
                                 "level": 3,
-                                "description": "Clear, developed ideas with supporting details"
+                                "rubricTemplateLevelDescription": "Clear, developed ideas with supporting details"
                             },
                             {
                                 "level": 4,
-                                "description": "Rich, detailed ideas with thorough development"
+                                "rubricTemplateLevelDescription": "Rich, detailed ideas with thorough development"
                             }
                         ]
                     },
@@ -243,19 +268,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Limited organization and structure"
+                                "rubricTemplateLevelDescription": "Limited organization and structure"
                             },
                             {
                                 "level": 2,
-                                "description": "Basic organization with some transitions"
+                                "rubricTemplateLevelDescription": "Basic organization with some transitions"
                             },
                             {
                                 "level": 3,
-                                "description": "Clear organization with effective transitions"
+                                "rubricTemplateLevelDescription": "Clear organization with effective transitions"
                             },
                             {
                                 "level": 4,
-                                "description": "Sophisticated organization enhancing clarity"
+                                "rubricTemplateLevelDescription": "Sophisticated organization enhancing clarity"
                             }
                         ]
                     },
@@ -264,19 +289,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Simple language with limited variety"
+                                "rubricTemplateLevelDescription": "Simple language with limited variety"
                             },
                             {
                                 "level": 2,
-                                "description": "Some variety in language and sentence structure"
+                                "rubricTemplateLevelDescription": "Some variety in language and sentence structure"
                             },
                             {
                                 "level": 3,
-                                "description": "Effective language and varied sentence structure"
+                                "rubricTemplateLevelDescription": "Effective language and varied sentence structure"
                             },
                             {
                                 "level": 4,
-                                "description": "Rich language with sophisticated style"
+                                "rubricTemplateLevelDescription": "Rich language with sophisticated style"
                             }
                         ]
                     }
@@ -287,7 +312,7 @@ class RubricLoader {
             {
                 "id": "grade7_science",
                 "title": "Grade 7 Science Inquiry Skills",
-                "description": "Assesses scientific inquiry and communication for Grade 7 students",
+                "rubricDescription": "Assesses scientific inquiry and communication for Grade 7 students",
                 "applicableGrades": [7],
                 "criteria": [
                     {
@@ -295,19 +320,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Rarely asks questions or makes predictions"
+                                "rubricTemplateLevelDescription": "Rarely asks questions or makes predictions"
                             },
                             {
                                 "level": 2,
-                                "description": "Sometimes asks relevant questions or makes predictions"
+                                "rubricTemplateLevelDescription": "Sometimes asks relevant questions or makes predictions"
                             },
                             {
                                 "level": 3,
-                                "description": "Often asks thoughtful questions and makes logical predictions"
+                                "rubricTemplateLevelDescription": "Often asks thoughtful questions and makes logical predictions"
                             },
                             {
                                 "level": 4,
-                                "description": "Consistently asks insightful questions and makes well-reasoned predictions"
+                                "rubricTemplateLevelDescription": "Consistently asks insightful questions and makes well-reasoned predictions"
                             }
                         ]
                     },
@@ -316,19 +341,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Needs support to plan and conduct investigations"
+                                "rubricTemplateLevelDescription": "Needs support to plan and conduct investigations"
                             },
                             {
                                 "level": 2,
-                                "description": "Plans and conducts simple investigations with some support"
+                                "rubricTemplateLevelDescription": "Plans and conducts simple investigations with some support"
                             },
                             {
                                 "level": 3,
-                                "description": "Independently plans and conducts effective investigations"
+                                "rubricTemplateLevelDescription": "Independently plans and conducts effective investigations"
                             },
                             {
                                 "level": 4,
-                                "description": "Designs and conducts complex investigations with precision"
+                                "rubricTemplateLevelDescription": "Designs and conducts complex investigations with precision"
                             }
                         ]
                     },
@@ -337,19 +362,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Communicates results with limited clarity"
+                                "rubricTemplateLevelDescription": "Communicates results with limited clarity"
                             },
                             {
                                 "level": 2,
-                                "description": "Communicates results with some clarity and detail"
+                                "rubricTemplateLevelDescription": "Communicates results with some clarity and detail"
                             },
                             {
                                 "level": 3,
-                                "description": "Clearly communicates results with appropriate detail"
+                                "rubricTemplateLevelDescription": "Clearly communicates results with appropriate detail"
                             },
                             {
                                 "level": 4,
-                                "description": "Communicates results with exceptional clarity and insight"
+                                "rubricTemplateLevelDescription": "Communicates results with exceptional clarity and insight"
                             }
                         ]
                     }
@@ -360,7 +385,7 @@ class RubricLoader {
             {
                 "id": "grade10_english",
                 "title": "Grade 10 English Literary Analysis",
-                "description": "Evaluates literary analysis and writing skills for Grade 10 students",
+                "rubricDescription": "Evaluates literary analysis and writing skills for Grade 10 students",
                 "applicableGrades": [10],
                 "criteria": [
                     {
@@ -368,19 +393,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Thesis is unclear or missing; argument is weak"
+                                "rubricTemplateLevelDescription": "Thesis is unclear or missing; argument is weak"
                             },
                             {
                                 "level": 2,
-                                "description": "Thesis is present but basic; argument is somewhat developed"
+                                "rubricTemplateLevelDescription": "Thesis is present but basic; argument is somewhat developed"
                             },
                             {
                                 "level": 3,
-                                "description": "Clear thesis and well-developed argument"
+                                "rubricTemplateLevelDescription": "Clear thesis and well-developed argument"
                             },
                             {
                                 "level": 4,
-                                "description": "Insightful thesis and sophisticated, compelling argument"
+                                "rubricTemplateLevelDescription": "Insightful thesis and sophisticated, compelling argument"
                             }
                         ]
                     },
@@ -389,19 +414,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Little or no evidence provided"
+                                "rubricTemplateLevelDescription": "Little or no evidence provided"
                             },
                             {
                                 "level": 2,
-                                "description": "Some evidence provided, but not always relevant or explained"
+                                "rubricTemplateLevelDescription": "Some evidence provided, but not always relevant or explained"
                             },
                             {
                                 "level": 3,
-                                "description": "Relevant evidence is provided and explained"
+                                "rubricTemplateLevelDescription": "Relevant evidence is provided and explained"
                             },
                             {
                                 "level": 4,
-                                "description": "Extensive, well-chosen evidence with insightful explanation"
+                                "rubricTemplateLevelDescription": "Extensive, well-chosen evidence with insightful explanation"
                             }
                         ]
                     },
@@ -410,19 +435,19 @@ class RubricLoader {
                         "levels": [
                             {
                                 "level": 1,
-                                "description": "Disorganized and unclear writing style"
+                                "rubricTemplateLevelDescription": "Disorganized and unclear writing style"
                             },
                             {
                                 "level": 2,
-                                "description": "Some organization; writing style is basic"
+                                "rubricTemplateLevelDescription": "Some organization; writing style is basic"
                             },
                             {
                                 "level": 3,
-                                "description": "Well-organized and clear writing style"
+                                "rubricTemplateLevelDescription": "Well-organized and clear writing style"
                             },
                             {
                                 "level": 4,
-                                "description": "Exceptionally organized and engaging writing style"
+                                "rubricTemplateLevelDescription": "Exceptionally organized and engaging writing style"
                             }
                         ]
                     }

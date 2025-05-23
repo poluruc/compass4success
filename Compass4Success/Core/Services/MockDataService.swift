@@ -6,6 +6,7 @@ struct MockData {
     var students: [Student]
     var classes: [SchoolClass]
     var assignments: [Assignment]
+    var grades: [Grade]
 }
 
 // Service to generate mock data for previews and development
@@ -204,6 +205,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 2), // 2 days from now
             assignmentDescription: "Quiz covering linear equations"
         )
+        mathQuiz.rubricId = "grade3_math"
         
         let mathHomework = Assignment(
             id: "A002",
@@ -211,6 +213,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 4), // 4 days from now
             assignmentDescription: "Problems 1-20 in Chapter 3"
         )
+        mathHomework.rubricId = "grade3_math"
         
         // Science Assignments
         let scienceProject = Assignment(
@@ -219,6 +222,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 7), // 1 week from now
             assignmentDescription: "Write up the results of our cell division experiment"
         )
+        scienceProject.rubricId = "grade7_science"
         
         let scienceQuiz = Assignment(
             id: "A004",
@@ -226,6 +230,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 1), // Tomorrow
             assignmentDescription: "Quiz covering cell organelles and their functions"
         )
+        scienceQuiz.rubricId = "grade7_science"
         
         // History Assignments
         let historyEssay = Assignment(
@@ -234,6 +239,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 10), // 10 days from now
             assignmentDescription: "1500 word essay on the causes of World War II"
         )
+        historyEssay.rubricId = "grade7_science" // Placeholder rubric for history
         
         // English Assignments
         let englishPaper = Assignment(
@@ -242,6 +248,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 14), // 2 weeks from now
             assignmentDescription: "Character analysis of Hamlet"
         )
+        englishPaper.rubricId = "grade10_english"
         
         // Coding Assignments
         let codingProject = Assignment(
@@ -250,6 +257,7 @@ class MockDataService {
             dueDate: currentDate.addingTimeInterval(86400 * 21), // 3 weeks from now
             assignmentDescription: "Develop a simple iOS app using Swift"
         )
+        codingProject.rubricId = nil
         
         // Add assignments to classes
         let mathAssignments = List<Assignment>()
@@ -371,6 +379,34 @@ class MockDataService {
         isabellaEnglish.finalGrade = 90
         student10.courses.append(objectsIn: [isabellaCoding, isabellaEnglish])
         
-        return MockData(students: students, classes: classes, assignments: assignments)
+        // Generate random grades for each student-assignment pair
+        var generatedGrades: [Grade] = []
+        for student in students {
+            for assignment in assignments {
+                let randomScore = Double.random(in: 60...100)
+                let grade = Grade(studentId: student.id, 
+                                assignmentId: assignment.id, 
+                                classId: assignment.classId ?? "",
+                                score: randomScore,
+                                maxScore: 100)
+                grade.isMissing = Bool.random() && randomScore < 70
+                grade.isIncomplete = Bool.random() && randomScore < 80
+                // Attach a rubricScoreId if the assignment has a rubric
+                if let rubricId = assignment.rubricId, !rubricId.isEmpty {
+                    grade.rubricScoreId = "mock_rubric_score_\(assignment.id)_\(student.id)"
+                }
+                generatedGrades.append(grade)
+            }
+        }
+        // Add sample comments to about half the grades
+        let sampleComments = ["Great job!", "Needs improvement", "See me after class", "Excellent work", "Missing explanation", "Check your calculations", "Well done", "Incomplete submission"]
+        for i in 0..<generatedGrades.count {
+            if i % 2 == 0 {
+                generatedGrades[i].comments = sampleComments.randomElement()!
+            } else {
+                generatedGrades[i].comments = ""
+            }
+        }
+        return MockData(students: students, classes: classes, assignments: assignments, grades: generatedGrades)
     }
 }

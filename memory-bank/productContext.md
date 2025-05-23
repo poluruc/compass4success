@@ -31,6 +31,7 @@ Compass4Success addresses these challenges by providing:
 - Enable quick access to critical student information
 - Support evidence-based decision making through analytics
 - Facilitate easier communication with students and guardians
+- Track progress across multiple academic years with year-over-year comparisons
 
 ### For Administrators
 
@@ -53,6 +54,8 @@ Compass4Success addresses these challenges by providing:
 - **Modern Interface**: Utilizes latest iOS design patterns for an intuitive experience
 - **Offline Capability**: Functions in environments with limited connectivity
 - **Privacy-Focused**: Designed with Ontario's educational privacy requirements as a foundation
+- **Cross-Platform**: Consistent experience across iOS, iPadOS, and macOS without feature compromise
+- **Academic Year Tracking**: Built-in support for school year transitions and historical data analysis
 
 ---
 

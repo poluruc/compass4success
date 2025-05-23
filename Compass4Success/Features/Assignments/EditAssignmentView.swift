@@ -1,5 +1,60 @@
 import SwiftUI
 
+private struct ClassSelectionButton: View {
+    let schoolClass: SchoolClass
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                if isSelected { Image(systemName: "checkmark").font(.caption) }
+                Text(schoolClass.name).fontWeight(isSelected ? .semibold : .regular)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isSelected ? Color.accentColor : Color(.systemGray6))
+            .foregroundColor(isSelected ? .white : .accentColor)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.accentColor, lineWidth: isSelected ? 0 : 1)
+            )
+            .cornerRadius(18)
+            .shadow(color: isSelected ? Color.accentColor.opacity(0.15) : .clear, radius: 4, x: 0, y: 2)
+            .animation(.easeInOut(duration: 0.15), value: isSelected)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct GradeLevelButton: View {
+    let grade: GradeLevel
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                if isSelected { Image(systemName: "checkmark").font(.caption) }
+                Text(grade.rawValue).fontWeight(isSelected ? .semibold : .regular)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isSelected ? Color.green : Color(.systemGray6))
+            .foregroundColor(isSelected ? .white : .green)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.green, lineWidth: isSelected ? 0 : 1)
+            )
+            .cornerRadius(18)
+            .shadow(color: isSelected ? Color.green.opacity(0.15) : .clear, radius: 4, x: 0, y: 2)
+            .animation(.easeInOut(duration: 0.15), value: isSelected)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Main View
 struct EditAssignmentView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
@@ -14,12 +69,13 @@ struct EditAssignmentView: View {
     @State private var newResourceUrl: String = ""
     @State private var resourceUrls: [String]
     @State private var showingFilePicker = false
+    
     let classes: [SchoolClass]
     let rubrics: [RubricTemplate]
     let originalAssignment: Assignment
     let onSave: (Assignment) -> Void
     let onCancel: () -> Void
-
+    
     init(assignment: Assignment, classes: [SchoolClass], rubrics: [RubricTemplate], onSave: @escaping (Assignment) -> Void, onCancel: @escaping () -> Void) {
         self.originalAssignment = assignment
         self.classes = classes.isEmpty ? mockClasses : classes
@@ -45,232 +101,32 @@ struct EditAssignmentView: View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Group {
-                        TextField("Title", text: $title)
-                            .appTextFieldStyle()
-                        TextField("Description", text: $description)
-                            .appTextFieldStyle()
-                    }
-
-                    // Classes
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Classes").font(.caption).foregroundColor(.secondary)
-                        WrapHStack(items: classes, id: \.id) { schoolClass in
-                            let isSelected = selectedClassIds.contains(schoolClass.id)
-                            Button(action: {
-                                if isSelected { selectedClassIds.remove(schoolClass.id) }
-                                else { selectedClassIds.insert(schoolClass.id) }
-                            }) {
-                                HStack(spacing: 6) {
-                                    if isSelected { Image(systemName: "checkmark").font(.caption) }
-                                    Text(schoolClass.name).fontWeight(isSelected ? .semibold : .regular)
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(isSelected ? Color.accentColor : Color(.systemGray6))
-                                .foregroundColor(isSelected ? .white : .accentColor)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .stroke(Color.accentColor, lineWidth: isSelected ? 0 : 1)
-                                )
-                                .cornerRadius(18)
-                                .shadow(color: isSelected ? Color.accentColor.opacity(0.15) : .clear, radius: 4, x: 0, y: 2)
-                                .animation(.easeInOut(duration: 0.15), value: isSelected)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.vertical, 8)
-                        if selectedClassIds.isEmpty {
-                            Text("No Class Assigned")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .padding(.top, 8)
-                        }
-                    }
-
-                    // Grades
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Grade Levels").font(.caption).foregroundColor(.secondary)
-                        WrapHStack(items: GradeLevel.allCases, id: \.self) { grade in
-                            let isSelected = selectedGradeLevels.contains(grade.rawValue)
-                            Button(action: {
-                                if isSelected { selectedGradeLevels.remove(grade.rawValue) }
-                                else { selectedGradeLevels.insert(grade.rawValue) }
-                            }) {
-                                HStack(spacing: 6) {
-                                    if isSelected { Image(systemName: "checkmark").font(.caption) }
-                                    Text(grade.rawValue).fontWeight(isSelected ? .semibold : .regular)
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(isSelected ? Color.green : Color(.systemGray6))
-                                .foregroundColor(isSelected ? .white : .green)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18)
-                                        .stroke(Color.green, lineWidth: isSelected ? 0 : 1)
-                                )
-                                .cornerRadius(18)
-                                .shadow(color: isSelected ? Color.green.opacity(0.15) : .clear, radius: 4, x: 0, y: 2)
-                                .animation(.easeInOut(duration: 0.15), value: isSelected)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.vertical, 8)
-                        if selectedGradeLevels.isEmpty {
-                            Text("No Grade Level")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .padding(.top, 8)
-                        }
-                    }
-
-                    // Category, Points, Due Date
-                    HStack(spacing: 8) {
-                        Text("Category")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        HStack(spacing: 8) {
-                            Image(systemName: category.iconName)
-                                .foregroundColor(category.color)
-                                .font(.system(size: 20, weight: .semibold))
-                                .frame(width: 24, height: 24)
-                                .alignmentGuide(.firstTextBaseline) { d in d[.firstTextBaseline] }
-                            Picker("Category", selection: $category) {
-                                ForEach(AssignmentCategory.allCases, id: \.self) { category in
-                                    Text(category.rawValue).tag(category)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .accentColor(category.color)
-                            .font(.headline)
-                        }
-                    }
-
-                    HStack {
-                        Text("Points")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        TextField("Points", text: $points)
-                            .keyboardType(.numberPad)
-                            .appTextFieldStyle()
-                    }
-
-                    HStack {
-                        Text("Due Date")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        DatePicker("", selection: $dueDate, displayedComponents: [.date, .hourAndMinute])
-                    }
-
+                    AssignmentBasicDetailsView(title: $title, description: $description)
+                    ClassSelectionView(classes: classes, selectedClassIds: $selectedClassIds)
+                    GradeLevelSelectionView(selectedGradeLevels: $selectedGradeLevels)
+                    AssignmentMetadataView(category: $category, points: $points, dueDate: $dueDate)
+                    
                     // Resources
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Resources").font(.caption).foregroundColor(.secondary)
-                        ForEach(resourceUrls, id: \.self) { url in
-                            HStack {
-                                if isImage(url: url) {
-                                    if let urlObj = URL(string: url) {
-                                        if urlObj.isFileURL, let uiImage = loadLocalImage(from: url) {
-                                            Image(uiImage: uiImage)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 40, height: 40)
-                                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        } else {
-                                            AsyncImage(url: urlObj) { phase in
-                                                switch phase {
-                                                case .empty:
-                                                    ProgressView()
-                                                        .frame(width: 40, height: 40)
-                                                case .success(let image):
-                                                    image
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 40, height: 40)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                                case .failure:
-                                                    Image(systemName: "photo")
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .frame(width: 40, height: 40)
-                                                        .foregroundColor(.gray)
-                                                @unknown default:
-                                                    EmptyView()
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Image(systemName: "doc.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 32, height: 32)
-                                        .foregroundColor(.blue)
-                                }
-                                Text(url)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                Spacer()
-                                Button(action: {
-                                    resourceUrls.removeAll { $0 == url }
-                                }) {
-                                    Image(systemName: "trash").foregroundColor(.red)
-                                }
-                            }
-                        }
-                        HStack {
-                            TextField("Add file/link URL", text: $newResourceUrl)
-                            .appTextFieldStyle()
-                            Button(action: {
-                                guard !newResourceUrl.isEmpty else { return }
-                                resourceUrls.append(newResourceUrl)
-                                newResourceUrl = ""
-                            }) {
-                                Image(systemName: "plus.circle.fill")
-                            }
-                        }
-                        Button {
-                            showingFilePicker = true
-                        } label: {
-                            Label("Attach File", systemImage: "paperclip")
-                        }
-                        .sheet(isPresented: $showingFilePicker) {
-                            DocumentPicker { url in
-                                resourceUrls.append(url.absoluteString)
-                            }
-                        }
-                    }
-
-                    // Rubric
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Rubric").font(.caption).foregroundColor(.secondary)
-                        if let rubric = selectedRubric {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(rubric.title)
-                                    .font(.headline)
-                                Text(rubric.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        } else {
-                            Text("No rubric selected")
-                                .foregroundColor(.secondary)
-                        }
-                        Button(action: { showingRubricPicker = true }) {
-                            Text(selectedRubric == nil ? "Select Rubric" : "Change Rubric")
-                        }
-                    }
-                    .sheet(isPresented: $showingRubricPicker) {
-                        RubricPickerView(rubrics: rubrics) { rubric in
-                            selectedRubric = rubric
-                        }
-                    }
+                    AssignmentResourcesView(
+                        resourceUrls: $resourceUrls,
+                        newResourceUrl: $newResourceUrl,
+                        showingFilePicker: $showingFilePicker
+                    )
+                    
+                    RubricSelectionView(
+                        rubrics: rubrics,
+                        selectedRubric: $selectedRubric,
+                        showingRubricPicker: $showingRubricPicker
+                    )
                 }
                 .padding()
             }
             .navigationTitle("Edit Assignment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { onCancel(); dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { 
+                    Button("Cancel") { onCancel(); dismiss() } 
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         saveAssignment()
@@ -323,3 +179,135 @@ private let mockClasses: [SchoolClass] = [
     SchoolClass(id: "3", name: "English 11C", clazzCode: "E11C", courseCode: "ENG11C", gradeLevel: "11"),
     SchoolClass(id: "4", name: "History 9/10", clazzCode: "H910", courseCode: "HIST910", gradeLevel: "9,10")
 ]
+
+// Add these new view components before EditAssignmentView
+private struct ResourceItemView: View {
+    let url: String
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack {
+            ResourceThumbnailView(url: url)
+            Text(url)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+            Button(action: onDelete) {
+                Image(systemName: "trash").foregroundColor(.red)
+            }
+        }
+    }
+}
+
+private struct ResourceThumbnailView: View {
+    let url: String
+    
+    var body: some View {
+        Group {
+            if isImage(url: url) {
+                ImageThumbnailView(url: url)
+            } else {
+                DocumentThumbnailView()
+            }
+        }
+    }
+    
+    private func isImage(url: String) -> Bool {
+        let imageExtensions = ["jpg", "jpeg", "png", "gif", "heic"]
+        return imageExtensions.contains { url.lowercased().hasSuffix($0) }
+    }
+}
+
+private struct ImageThumbnailView: View {
+    let url: String
+    
+    var body: some View {
+        Group {
+            if let urlObj = URL(string: url) {
+                if urlObj.isFileURL, let uiImage = loadLocalImage(from: url) {
+                    LocalImageView(image: uiImage)
+                } else {
+                    RemoteImageView(url: urlObj)
+                }
+            }
+        }
+    }
+}
+
+private struct LocalImageView: View {
+    let image: UIImage
+    
+    var body: some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 40, height: 40)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+private struct RemoteImageView: View {
+    let url: URL
+    
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .empty:
+                ProgressView()
+                    .frame(width: 40, height: 40)
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            case .failure:
+                Image(systemName: "photo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 40)
+                    .foregroundColor(.gray)
+            @unknown default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+private struct DocumentThumbnailView: View {
+    var body: some View {
+        Image(systemName: "doc.fill")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 32, height: 32)
+            .foregroundColor(.blue)
+    }
+}
+
+private struct ResourceInputView: View {
+    @Binding var newResourceUrl: String
+    @Binding var showingFilePicker: Bool
+    let onAddResource: (String) -> Void
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                TextField("Add file/link URL", text: $newResourceUrl)
+                    .appTextFieldStyle()
+                Button(action: {
+                    guard !newResourceUrl.isEmpty else { return }
+                    onAddResource(newResourceUrl)
+                    newResourceUrl = ""
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                }
+            }
+            
+            Button {
+                showingFilePicker = true
+            } label: {
+                Label("Attach File", systemImage: "paperclip")
+            }
+        }
+    }
+}

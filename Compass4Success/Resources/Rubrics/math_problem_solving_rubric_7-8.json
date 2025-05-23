@@ -1,34 +1,43 @@
 {
   "id": "math_problem_solving_rubric_7-8",
-  "title": "Ontario Math Problem Solving Rubric (Grades 7-8)",
-  "description": "Rubric for evaluating math problem solving in Ontario Grades 7-8.",
+  "title": "Ontario Math Problem Solving Assessment Rubric (Grades 7-8)",
+  "rubricDescription": "Rubric for evaluating math problem solving in Ontario Grades 7-8.",
   "applicableGrades": [7, 8],
   "criteria": [
     {
       "name": "Understanding the Problem",
       "levels": [
-        { "level": 1, "description": "Limited understanding of the problem." },
-        { "level": 2, "description": "Some understanding of the problem." },
-        { "level": 3, "description": "Good understanding of the problem." },
-        { "level": 4, "description": "Thorough understanding of the problem." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited understanding of the problem." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some understanding of the problem." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good understanding of the problem." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent understanding of the problem." }
       ]
     },
     {
-      "name": "Strategy & Reasoning",
+      "name": "Strategy & Planning",
       "levels": [
-        { "level": 1, "description": "Limited strategy or reasoning." },
-        { "level": 2, "description": "Some strategy and reasoning." },
-        { "level": 3, "description": "Effective strategy and logical reasoning." },
-        { "level": 4, "description": "Highly effective strategy and insightful reasoning." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited use of appropriate strategies." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some use of appropriate strategies." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good use of appropriate strategies." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent use of appropriate strategies." }
+      ]
+    },
+    {
+      "name": "Solution & Accuracy",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited accuracy in solution." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some accuracy in solution." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good accuracy in solution." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent accuracy in solution." }
       ]
     },
     {
       "name": "Communication",
       "levels": [
-        { "level": 1, "description": "Explanation is unclear or incomplete." },
-        { "level": 2, "description": "Somewhat clear explanation." },
-        { "level": 3, "description": "Clear and complete explanation." },
-        { "level": 4, "description": "Exceptionally clear and thorough explanation." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited communication of mathematical thinking." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some communication of mathematical thinking." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good communication of mathematical thinking." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent communication of mathematical thinking." }
       ]
     }
   ]

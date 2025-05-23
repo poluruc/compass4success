@@ -1,43 +1,43 @@
 {
   "id": "science_rubric_gr6-8",
   "title": "Ontario Science Assessment Rubric (Grades 6-8)",
-  "description": "Comprehensive rubric for evaluating science in Ontario Grades 6-8.",
+  "rubricDescription": "Comprehensive rubric for evaluating science in Ontario Grades 6-8.",
   "applicableGrades": [6, 7, 8],
   "criteria": [
     {
-      "name": "Scientific Understanding",
+      "name": "Scientific Knowledge & Understanding",
       "levels": [
-        { "level": 1, "description": "Limited understanding of scientific concepts and principles." },
-        { "level": 2, "description": "Some understanding of scientific concepts and principles." },
-        { "level": 3, "description": "Good understanding of scientific concepts and principles." },
-        { "level": 4, "description": "Thorough understanding of scientific concepts and principles." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited understanding of scientific concepts and principles." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some understanding of scientific concepts and principles." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good understanding of scientific concepts and principles." },
+        { "level": 4, "rubricTemplateLevelDescription": "Thorough understanding of scientific concepts and principles." }
       ]
     },
     {
       "name": "Scientific Investigation",
       "levels": [
-        { "level": 1, "description": "Limited ability to conduct scientific investigations." },
-        { "level": 2, "description": "Some ability to conduct scientific investigations." },
-        { "level": 3, "description": "Good ability to conduct scientific investigations." },
-        { "level": 4, "description": "Excellent ability to conduct scientific investigations." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited ability to conduct scientific investigations." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some ability to conduct scientific investigations." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good ability to conduct scientific investigations." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent ability to conduct scientific investigations." }
       ]
     },
     {
       "name": "Scientific Communication",
       "levels": [
-        { "level": 1, "description": "Limited ability to communicate scientific ideas and findings." },
-        { "level": 2, "description": "Some ability to communicate scientific ideas and findings." },
-        { "level": 3, "description": "Good ability to communicate scientific ideas and findings." },
-        { "level": 4, "description": "Excellent ability to communicate scientific ideas and findings." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited ability to communicate scientific ideas and findings." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some ability to communicate scientific ideas and findings." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good ability to communicate scientific ideas and findings." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent ability to communicate scientific ideas and findings." }
       ]
     },
     {
       "name": "Application of Science",
       "levels": [
-        { "level": 1, "description": "Limited ability to apply scientific knowledge to real-world situations." },
-        { "level": 2, "description": "Some ability to apply scientific knowledge to real-world situations." },
-        { "level": 3, "description": "Good ability to apply scientific knowledge to real-world situations." },
-        { "level": 4, "description": "Excellent ability to apply scientific knowledge to real-world situations." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited ability to apply scientific knowledge to real-world situations." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some ability to apply scientific knowledge to real-world situations." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good ability to apply scientific knowledge to real-world situations." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent ability to apply scientific knowledge to real-world situations." }
       ]
     }
   ]

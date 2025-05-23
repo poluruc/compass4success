@@ -105,6 +105,15 @@
 - **Generic Type Inference Failures**: Compiler can't determine types
   - **Solution**: Explicitly specify generic parameters and ids
 
+- **Reserved Keyword Conflicts**: Using Swift keywords (like 'class') as variable names
+  - **Solution**: Use alternative names (e.g., 'schoolClass' instead of 'class')
+  
+- **Multiple View Declaration Errors**: Same view name defined in different files
+  - **Solution**: Use unique names or namespacing (e.g., DashboardAssignmentCard instead of AssignmentCard)
+  
+- **Missing Property Errors**: Properties referenced but not defined in model classes
+  - **Solution**: Add missing properties or create computed properties that provide compatibility
+
 ### Cross-Platform Build Process
 
 1. **iOS-First Development**: Build and test on iOS first

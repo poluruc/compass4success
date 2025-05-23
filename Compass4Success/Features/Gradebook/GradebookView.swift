@@ -9,6 +9,8 @@ struct GradebookView: View {
     @State private var filter: GradebookFilter = .all
     @State private var selectedAssignmentID: String? = nil
     @State private var selectedStudentID: String? = nil
+    @State private var showRubricDetail: Bool = false
+    @State private var rubricRefreshTrigger: Int = 0
     
     var body: some View {
         // Declare all filter/sort variables at the top
@@ -79,7 +81,7 @@ struct GradebookView: View {
                                 .zIndex(1)
                             ForEach(assignmentsToShow) { assignment in
                                 GradebookHeader(assignment: assignment)
-                                    .frame(width: 120)
+                                    .frame(width: 160)
                                     .zIndex(1)
                             }
                         }
@@ -132,23 +134,21 @@ struct GradebookView: View {
                                             .foregroundColor(.secondary)
                                     }
                                 }
-                                ForEach(assignmentsToShow) { assignment in
-                                    let cellID = GradeCellID(studentID: student.id, assignmentID: assignment.id)
-                                    let grade = viewModel.grades.first { $0.studentId == student.id && $0.assignmentId == assignment.id }
-                                    GradebookCell(
-                                        grade: grade,
-                                        isEditing: editingCell == cellID,
-                                        onEdit: { editingCell = cellID },
-                                        onSave: { newGrade in
-                                            viewModel.updateGrade(cellID: cellID, newScore: newGrade)
-                                            editingCell = nil
-                                        },
-                                        onUpdateComment: { comment in viewModel.updateComment(cellID: cellID, comment: comment) },
-                                        onCancel: { editingCell = nil }
-                                    )
-                                    .frame(width: 120)
-                                }
+                                // Use GradebookGrid for assignments
+                                GradebookGrid(
+                                    student: student,
+                                    assignments: assignmentsToShow,
+                                    grades: viewModel.grades,
+                                    editingCell: $editingCell,
+                                    onEdit: { cellID in editingCell = cellID },
+                                    onSave: { cellID, newGrade in viewModel.updateGrade(cellID: cellID, newScore: newGrade); editingCell = nil },
+                                    onUpdateComment: { cellID, comment in viewModel.updateComment(cellID: cellID, comment: comment) },
+                                    onCancel: { editingCell = nil },
+                                    rubricRefreshTrigger: rubricRefreshTrigger,
+                                    onRubricSaved: { rubricRefreshTrigger += 1 }
+                                )
                             }
+                            .padding(.vertical, 2)
                             .background(rowIndex % 2 == 0 ? Color(.systemGray6) : Color(.systemGray5))
                             .animation(.easeInOut, value: editingCell)
                         }
@@ -225,109 +225,35 @@ struct GradebookToolbar: View {
 
 // MARK: - Grid
 struct GradebookGrid: View {
-    let students: [Student]
+    let student: Student
     let assignments: [Assignment]
     let grades: [Grade]
     @Binding var editingCell: GradeCellID?
     var onEdit: (GradeCellID) -> Void
     var onSave: (GradeCellID, Int) -> Void
     var onUpdateComment: (GradeCellID, String) -> Void
-
-    @State private var selectedStudentID: String? = nil
+    var onCancel: () -> Void
+    var rubricRefreshTrigger: Int
+    var onRubricSaved: () -> Void
 
     var body: some View {
-        ScrollView([.horizontal, .vertical], showsIndicators: true) {
-            VStack(spacing: 0) {
-                // Sticky header row
-                HStack(spacing: 5) {
-                    Text("Student")
-                        .font(.headline)
-                        .frame(width: 160, alignment: .leading)
-                        .padding(.vertical, 10)
-                        .padding(.leading, 10)
-                        .background(Color(.systemGray6))
-                        .zIndex(1)
-                    Text("Overall")
-                        .font(.headline)
-                        .frame(width: 80, alignment: .center)
-                        .padding(.vertical, 10)
-                        .background(Color(.systemGray6))
-                        .zIndex(1)
-                    ForEach(assignments) { assignment in
-                        GradebookHeader(assignment: assignment)
-                            .frame(width: 120)
-                            .zIndex(1)
-                    }
-                }
-                .background(Color(.systemGray6))
-                .cornerRadius(12, corners: [.topLeft, .topRight])
-                .shadow(color: .black.opacity(0.04), radius: 2, x: 0, y: 1)
-
-                // Student rows
-                ForEach(Array(students.enumerated()), id: \ .element.id) { rowIndex, student in
-                    HStack(spacing: 5) {
-                        NavigationLink(destination: StudentDetailView(student: student), tag: student.id, selection: $selectedStudentID) {
-                            EmptyView()
-                        }.frame(width: 0, height: 0).hidden()
-                        Button(action: { selectedStudentID = student.id }) {
-                            Text(student.name)
-                                .font(.body)
-                                .fontWeight(.medium)
-                                .frame(width: 160, alignment: .leading)
-                                .padding(.vertical, 10)
-                                .padding(.leading, 10)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .background(Color(.systemBackground))
-                        // Overall Grade Cell
-                        Group {
-                            if let avg = student.averageGrade {
-                                let color: Color = {
-                                    switch avg {
-                                    case 90...: return .green
-                                    case 75..<90: return .yellow
-                                    case 60..<75: return .orange
-                                    default: return .red
-                                    }
-                                }()
-                                ZStack {
-                                    Circle()
-                                        .fill(color)
-                                        .frame(width: 36, height: 36)
-                                    VStack(spacing: 0) {
-                                        Text("\(Int(avg))")
-                                            .font(.subheadline).bold()
-                                            .foregroundColor(.white)
-                                        Text(letterGrade(for: avg))
-                                            .font(.caption2)
-                                            .foregroundColor(.white.opacity(0.85))
-                                    }
-                                }
-                                .frame(width: 80, height: 44, alignment: .center)
-                            } else {
-                                Text("--")
-                                    .frame(width: 80, height: 44, alignment: .center)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        ForEach(assignments) { assignment in
-                            let cellID = GradeCellID(studentID: student.id, assignmentID: assignment.id)
-                            let grade = grades.first { $0.studentId == student.id && $0.assignmentId == assignment.id }
-                            GradebookCell(
-                                grade: grade,
-                                isEditing: editingCell == cellID,
-                                onEdit: { onEdit(cellID) },
-                                onSave: { newGrade in onSave(cellID, newGrade) },
-                                onUpdateComment: { comment in onUpdateComment(cellID, comment) },
-                                onCancel: { editingCell = nil }
-                            )
-                            .frame(width: 120)
-                        }
-                    }
-                    .background(rowIndex % 2 == 0 ? Color(.systemGray6) : Color(.systemGray5))
-                    .animation(.easeInOut, value: editingCell)
-                }
-            }
+        ForEach(assignments) { assignment in
+            let cellID = GradeCellID(studentID: student.id, assignmentID: assignment.id)
+            let grade = grades.first { $0.studentId == student.id && $0.assignmentId == assignment.id }
+            GradebookCell(
+                grade: grade,
+                assignment: assignment,
+                isEditing: editingCell == cellID,
+                onEdit: { onEdit(cellID) },
+                onSave: { newGrade in onSave(cellID, newGrade) },
+                onUpdateComment: { comment in onUpdateComment(cellID, comment) },
+                onCancel: { onCancel() },
+                rubricRefreshTrigger: rubricRefreshTrigger,
+                onRubricSaved: onRubricSaved
+            )
+            .padding(.vertical, 2)
+            .frame(width: 160, height: 44)
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -347,7 +273,7 @@ struct GradebookHeader: View {
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }
-        .frame(width: 120, alignment: .center)
+        .frame(width: 160, alignment: .center)
         .padding(.vertical, 8)
         .background(Color(.systemGray6))
         .cornerRadius(8)
@@ -358,15 +284,30 @@ struct GradebookHeader: View {
 // MARK: - Cell
 struct GradebookCell: View {
     var grade: Grade?
+    var assignment: Assignment?
     var isEditing: Bool
     var onEdit: () -> Void
     var onSave: (Int) -> Void
     var onUpdateComment: (String) -> Void
     var onCancel: () -> Void
+    var rubricRefreshTrigger: Int
+    var onRubricSaved: () -> Void
     @State private var editValue: String = ""
     @State private var showCommentSheet = false
-    @State private var commentText: String = ""
+    @State private var commentText = ""
     @State private var wasEditing = false
+    @State private var showRubricDetail = false
+    @State private var showRubricScoring = false
+
+    // Returns the rubric score if available, otherwise nil
+    private var rubricScore: (score: Int, max: Int)? {
+        guard let grade = grade, let assignment = assignment else { return nil }
+        guard let rubricId = assignment.rubricId,
+              let rubric = RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId }) else { return nil }
+        let total = InMemoryRubricScoreStore.shared.totalScore(for: rubric, studentId: grade.studentId, assignmentId: assignment.id)
+        let max = InMemoryRubricScoreStore.shared.maxScore(for: assignment.id)
+        if total > 0 { return (total, max) } else { return nil }
+    }
 
     var body: some View {
         ZStack {
@@ -409,48 +350,91 @@ struct GradebookCell: View {
                     wasEditing = false
                 }
             } else {
-                HStack(alignment: .center, spacing: 6) {
-                    if let grade = grade {
-                        Text("\(Int(grade.percentage))")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(width: 36, height: 36)
-                            .background(gradeColor(for: grade))
-                            .clipShape(Circle())
-                        // Comment icon always visible, color depends on comment presence
-                        Button(action: { showCommentSheet = true; commentText = grade.comments }) {
-                            Image(systemName: "bubble.left.fill")
-                                .foregroundColor(grade.comments.isEmpty ? .gray : .blue)
+                VStack(spacing: 2) {
+                    HStack(alignment: .center, spacing: 6) {
+                        // Main score circle
+                        let displayScore: Int = {
+                            if let rubricScore = rubricScore {
+                                return rubricScore.score > 0 ? rubricScore.score * 100 / max(rubricScore.max, 1) : 0
+                            } else if let grade = grade {
+                                return Int(grade.percentage)
+                            } else {
+                                return 0
+                            }
+                        }()
+                        let color: Color = {
+                            switch displayScore {
+                            case 90...: return .green
+                            case 75..<90: return .yellow
+                            case 60..<75: return .orange
+                            default: return .red
+                            }
+                        }()
+                        ZStack {
+                            Circle()
+                                .fill(color)
+                                .frame(width: 46, height: 36)
+                            Text("\(displayScore)")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        // Rubric icon
+                        Button(action: { showRubricScoring = true }) {
+                            if rubricScore != nil {
+                                // Filled icon
+                                ZStack {
+                                    Circle().fill(Color.blue).frame(width: 24, height: 24)
+                                    Text("R")
+                                        .font(.caption).bold()
+                                        .foregroundColor(.white)
+                                }
+                            } else {
+                                // Outline icon
+                                ZStack {
+                                    Circle().stroke(Color.blue, lineWidth: 2).frame(width: 24, height: 24)
+                                    Text("R")
+                                        .font(.caption).bold()
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                        }
+                        .help("Score with Rubric")
+                        // Comment icon
+                        Button(action: { showCommentSheet = true; commentText = grade?.comments ?? "" }) {
+                            if let comment = grade?.comments, !comment.isEmpty {
+                                Image(systemName: "bubble.left.fill")
+                                    .foregroundColor(.blue)
+                            } else {
+                                Image(systemName: "bubble.left")
+                                    .foregroundColor(.blue)
+                            }
                         }
                         // Status icons
                         HStack(spacing: 4) {
-                            if grade.isMissing {
+                            if let grade = grade, grade.isMissing {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundColor(.orange)
                             }
-                            if grade.isIncomplete {
+                            if let grade = grade, grade.isIncomplete {
                                 Image(systemName: "clock.fill")
                                     .foregroundColor(.red)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Text("--")
-                            .foregroundColor(.secondary)
-                            .frame(width: 36, height: 36)
-                        // Always show comment icon, gray if no grade
-                        Button(action: { showCommentSheet = true; commentText = "" }) {
-                            Image(systemName: "bubble.left.fill")
-                                .foregroundColor(.gray)
-                        }
                     }
+                    .padding(.horizontal, 4)
                 }
-                .padding(.horizontal, 4)
             }
         }
-        .frame(height: 44)
+        .frame(width: 160, height: 44)
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 2)
         .onTapGesture { if !isEditing { onEdit() } }
+        .onAppear {
+            if let grade = grade {
+                print("DEBUG: Grade for studentId=\(grade.studentId), assignmentId=\(grade.assignmentId), rubricScoreId=\(grade.rubricScoreId ?? "nil")")
+            }
+        }
         .sheet(isPresented: $showCommentSheet) {
             VStack(spacing: 0) {
                 Spacer()
@@ -505,14 +489,16 @@ struct GradebookCell: View {
             }
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
         }
-    }
-
-    func gradeColor(for grade: Grade) -> Color {
-        switch grade.percentage {
-        case 90...: return .green
-        case 75..<90: return .yellow
-        case 60..<75: return .orange
-        default: return .red
+        // Rubric scoring modal
+        .sheet(isPresented: $showRubricScoring) {
+            if let assignment = assignment {
+                RubricScoringSheet(
+                    rubricId: assignment.rubricId ?? "",
+                    assignmentId: assignment.id,
+                    studentId: grade?.studentId ?? "",
+                    onRubricSaved: onRubricSaved
+                )
+            }
         }
     }
 }
@@ -575,31 +561,7 @@ class GradebookViewModel: ObservableObject {
         let mock = MockDataService.shared.generateMockData()
         self.students = mock.students
         self.assignments = mock.assignments
-        // Generate random grades for each student-assignment pair
-        var generatedGrades: [Grade] = []
-        for student in students {
-            for assignment in assignments {
-                let randomScore = Double.random(in: 60...100)
-                let grade = Grade(studentId: student.id, 
-                                assignmentId: assignment.id, 
-                                classId: assignment.classId ?? "",
-                                score: randomScore,
-                                maxScore: 100)
-                grade.isMissing = Bool.random() && randomScore < 70
-                grade.isIncomplete = Bool.random() && randomScore < 80
-                generatedGrades.append(grade)
-            }
-        }
-        // Add sample comments to about half the grades
-        let sampleComments = ["Great job!", "Needs improvement", "See me after class", "Excellent work", "Missing explanation", "Check your calculations", "Well done", "Incomplete submission"]
-        for i in 0..<generatedGrades.count {
-            if i % 2 == 0 {
-                generatedGrades[i].comments = sampleComments.randomElement()!
-            } else {
-                generatedGrades[i].comments = ""
-            }
-        }
-        self.grades = generatedGrades
+        self.grades = mock.grades
     }
     
     func filteredStudents(search: String, sort: SortOption, filter: GradebookFilter, grades: [Grade]) -> [Student] {
@@ -754,6 +716,214 @@ private func letterGrade(for percentage: Double) -> String {
     case 63..<67: return "D"
     case 60..<63: return "D-"
     default: return "F"
+    }
+}
+
+struct RubricDetailSheet: View {
+    var rubricId: String?
+    var rubric: RubricTemplate? {
+        guard let rubricId = rubricId else { return nil }
+        return RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
+    }
+    var body: some View {
+        VStack(spacing: 24) {
+            if let rubric = rubric {
+                Text(rubric.title)
+                    .font(.title2).bold()
+                if !rubric.rubricDescription.isEmpty {
+                    Text(rubric.rubricDescription)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Text("Criterion").font(.headline)
+                        Spacer()
+                        Text("Level").font(.headline)
+                        Spacer()
+                        Text("Description").font(.headline)
+                    }
+                    .padding(.vertical, 6)
+                    .background(Color(.systemGray6))
+                    ForEach(rubric.criteria, id: \ .name) { criterion in
+                        RubricCriterionRow(criterion: criterion)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray5))
+                .cornerRadius(12)
+            } else {
+                Text("No rubric found for this assignment.")
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Button("Close") { UIApplication.shared.windows.first?.rootViewController?.dismiss(animated: true) }
+                .padding()
+        }
+        .padding()
+    }
+}
+
+struct RubricCriterionRow: View {
+    let criterion: RubricTemplateCriterion
+    // For now, no rubricScore, just show --
+    var selectedLevel: Int { 0 } // Replace with actual score if available
+    var levelDesc: String {
+        criterion.levels.first(where: { $0.level == selectedLevel })?.rubricTemplateLevelDescription ?? "--"
+    }
+    var body: some View {
+        HStack(alignment: .top) {
+            Text(criterion.name).font(.body)
+            Spacer()
+            Text(selectedLevel == 0 ? "--" : "\(selectedLevel)").font(.body).bold()
+            Spacer()
+            Text(levelDesc).font(.body).foregroundColor(.secondary)
+        }
+        .padding(.vertical, 4)
+        .background(Color.clear)
+        .cornerRadius(6)
+    }
+}
+
+struct RubricScoringSheet: View {
+    var rubricId: String?
+    var assignmentId: String?
+    var studentId: String?
+    var onRubricSaved: (() -> Void)? = nil
+    @StateObject private var viewModel = GradebookViewModel()
+    @State private var rubricSelections: [String: Int] = [:]
+    var rubric: RubricTemplate? {
+        guard let rubricId = rubricId else { return nil }
+        return RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
+    }
+    var assignment: Assignment? {
+        guard let assignmentId = assignmentId else { return nil }
+        return viewModel.assignments.first(where: { $0.id == assignmentId })
+    }
+    // Calculate live score
+    private var liveScore: (score: Int, max: Int, percent: Double) {
+        guard let rubric = rubric, let assignmentId = assignmentId else { return (0, 0, 0) }
+        let total = InMemoryRubricScoreStore.shared.totalScore(
+            for: rubric,
+            studentId: studentId ?? "",
+            assignmentId: assignmentId,
+            selections: rubricSelections
+        )
+        let max = InMemoryRubricScoreStore.shared.maxScore(for: assignmentId)
+        let percent = max > 0 ? Double(total) / Double(max) : 0
+        return (total, max, percent)
+    }
+    var body: some View {
+        VStack(spacing: 24) {
+            if let rubric = rubric {
+                Text("Score with Rubric").font(.title2).bold()
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(rubric.criteria, id: \ .name) { criterion in
+                        VStack(alignment: .leading, spacing: 8) {
+                            // Only show the criterion name once, left-aligned
+                            Text(criterion.name)
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            // Level selection row, also left-aligned
+                            RubricScoringCriterionRow(
+                                criterion: criterion,
+                                selectedLevel: rubricSelections[criterion.name] ?? 0,
+                                onSelect: { level in rubricSelections[criterion.name] = level }
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.bottom, 8)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray5))
+                .cornerRadius(12)
+            } else {
+                Text("No rubric found for this assignment.")
+                    .foregroundColor(.secondary)
+            }
+            // Live score display
+            if let rubric = rubric {
+                let score = liveScore
+                let color: Color = {
+                    switch score.percent {
+                    case 0.9...: return .green
+                    case 0.75..<0.9: return .yellow
+                    case 0.6..<0.75: return .orange
+                    default: return .red
+                    }
+                }()
+                Text("\(score.score)/\(score.max)")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
+                    .background(color)
+                    .clipShape(Capsule())
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+            Spacer()
+
+            // Save/Cancel row
+            HStack {
+                Button("Cancel") { UIApplication.shared.windows.first?.rootViewController?.dismiss(animated: true) }
+                    .buttonStyle(.bordered)
+                Spacer()
+                Button("Save") {
+                    if let assignmentId = assignmentId, let studentId = studentId, let assignment = assignment {
+                        InMemoryRubricScoreStore.shared.saveSelections(
+                            studentId: studentId,
+                            assignmentId: assignmentId,
+                            selections: rubricSelections,
+                            totalPoints: assignment.totalPoints
+                        )
+                        onRubricSaved?()
+                    }
+                    UIApplication.shared.windows.first?.rootViewController?.dismiss(animated: true)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding(.horizontal)
+        }
+        .padding()
+        .onAppear {
+            if let assignmentId = assignmentId, let studentId = studentId {
+                rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: studentId, assignmentId: assignmentId)
+            }
+        }
+    }
+}
+
+struct RubricScoringCriterionRow: View {
+    let criterion: RubricTemplateCriterion
+    let selectedLevel: Int
+    let onSelect: (Int) -> Void
+    var levelDesc: String {
+        criterion.levels.first(where: { $0.level == selectedLevel })?.rubricTemplateLevelDescription ?? ""
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                ForEach(criterion.levels, id: \ .level) { level in
+                    Button(action: { onSelect(level.level) }) {
+                        Text("\(level.level)")
+                            .frame(width: 32, height: 32)
+                            .background(selectedLevel == level.level ? Color.blue : Color(.systemGray4))
+                            .foregroundColor(.white)
+                            .clipShape(Circle())
+                    }
+                    .help(level.rubricTemplateLevelDescription)
+                }
+            }
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if selectedLevel > 0 {
+                Text(levelDesc)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
     }
 }
 

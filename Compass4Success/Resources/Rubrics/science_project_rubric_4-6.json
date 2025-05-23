@@ -1,34 +1,43 @@
 {
   "id": "science_project_rubric_4-6",
-  "title": "Ontario Science Project Rubric (Grades 4-6)",
-  "description": "Rubric for evaluating science projects in Ontario Grades 4-6.",
+  "title": "Ontario Science Project Assessment Rubric (Grades 4-6)",
+  "rubricDescription": "Rubric for evaluating science projects in Ontario Grades 4-6.",
   "applicableGrades": [4, 5, 6],
   "criteria": [
     {
       "name": "Research & Question",
       "levels": [
-        { "level": 1, "description": "Limited research/question unclear." },
-        { "level": 2, "description": "Some research/question somewhat clear." },
-        { "level": 3, "description": "Good research/clear question." },
-        { "level": 4, "description": "Excellent research/very clear question." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited research and question development." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some research and question development." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good research and question development." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent research and question development." }
       ]
     },
     {
       "name": "Experiment & Data",
       "levels": [
-        { "level": 1, "description": "Limited experiment/data." },
-        { "level": 2, "description": "Some experiment/data." },
-        { "level": 3, "description": "Good experiment/data." },
-        { "level": 4, "description": "Excellent experiment/data." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited experiment design and data collection." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some experiment design and data collection." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good experiment design and data collection." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent experiment design and data collection." }
+      ]
+    },
+    {
+      "name": "Analysis & Conclusion",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited analysis and conclusion." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some analysis and conclusion." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good analysis and conclusion." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent analysis and conclusion." }
       ]
     },
     {
       "name": "Presentation",
       "levels": [
-        { "level": 1, "description": "Difficult to understand." },
-        { "level": 2, "description": "Somewhat clear." },
-        { "level": 3, "description": "Clear and organized." },
-        { "level": 4, "description": "Very clear and engaging." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited presentation of project." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some presentation of project." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good presentation of project." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent presentation of project." }
       ]
     }
   ]

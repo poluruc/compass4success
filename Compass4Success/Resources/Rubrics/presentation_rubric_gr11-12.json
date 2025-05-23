@@ -1,43 +1,43 @@
 {
   "id": "presentation_rubric_gr11-12",
-  "title": "Ontario Presentation Rubric (Grades 11-12)",
-  "description": "Rubric for evaluating oral presentations in Ontario Grades 11-12.",
+  "title": "Ontario Presentation Assessment Rubric (Grades 11-12)",
+  "rubricDescription": "Rubric for evaluating oral presentations in Ontario Grades 11-12.",
   "applicableGrades": [11, 12],
   "criteria": [
     {
-      "name": "Content",
+      "name": "Content & Organization",
       "levels": [
-        { "level": 1, "description": "Limited relevant content." },
-        { "level": 2, "description": "Some relevant content." },
-        { "level": 3, "description": "Considerable relevant content." },
-        { "level": 4, "description": "Extensive and insightful content." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited content development and organization." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some content development and organization." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good content development and organization." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent content development and organization." }
       ]
     },
     {
       "name": "Delivery",
       "levels": [
-        { "level": 1, "description": "Limited confidence and clarity." },
-        { "level": 2, "description": "Some confidence and clarity." },
-        { "level": 3, "description": "Clear and confident delivery." },
-        { "level": 4, "description": "Highly engaging and confident delivery." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited effectiveness in delivery." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some effectiveness in delivery." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good effectiveness in delivery." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent effectiveness in delivery." }
       ]
     },
     {
-      "name": "Use of Visuals",
+      "name": "Visual Aids",
       "levels": [
-        { "level": 1, "description": "Limited or ineffective visuals." },
-        { "level": 2, "description": "Some effective visuals." },
-        { "level": 3, "description": "Effective and relevant visuals." },
-        { "level": 4, "description": "Highly effective and creative visuals." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited use of visual aids." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some use of visual aids." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good use of visual aids." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent use of visual aids." }
       ]
     },
     {
       "name": "Audience Engagement",
       "levels": [
-        { "level": 1, "description": "Limited engagement with audience." },
-        { "level": 2, "description": "Some engagement with audience." },
-        { "level": 3, "description": "Considerable engagement with audience." },
-        { "level": 4, "description": "Outstanding engagement with audience." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited audience engagement." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some audience engagement." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good audience engagement." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent audience engagement." }
       ]
     }
   ]

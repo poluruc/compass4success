@@ -1,7 +1,7 @@
 {
     "id": "grade5_writing",
-    "title": "Grade 5 Writing Assessment",
-    "description": "Comprehensive writing assessment for Grade 5 students focusing on organization, ideas, and conventions",
+    "title": "Ontario Grade 5 Writing Assessment Rubric",
+    "rubricDescription": "Comprehensive writing assessment for Grade 5 students focusing on organization, ideas, and conventions",
     "applicableGrades": [5],
     "criteria": [
         {
@@ -9,19 +9,19 @@
             "levels": [
                 {
                     "level": 1,
-                    "description": "Basic ideas with limited development"
+                    "rubricTemplateLevelDescription": "Limited development of ideas and content."
                 },
                 {
                     "level": 2,
-                    "description": "Ideas are generally focused with some development"
+                    "rubricTemplateLevelDescription": "Some development of ideas and content."
                 },
                 {
                     "level": 3,
-                    "description": "Clear, developed ideas with supporting details"
+                    "rubricTemplateLevelDescription": "Good development of ideas and content."
                 },
                 {
                     "level": 4,
-                    "description": "Rich, detailed ideas with thorough development"
+                    "rubricTemplateLevelDescription": "Excellent development of ideas and content."
                 }
             ]
         },
@@ -30,40 +30,103 @@
             "levels": [
                 {
                     "level": 1,
-                    "description": "Limited organization and structure"
+                    "rubricTemplateLevelDescription": "Limited organization of writing."
                 },
                 {
                     "level": 2,
-                    "description": "Basic organization with some transitions"
+                    "rubricTemplateLevelDescription": "Some organization of writing."
                 },
                 {
                     "level": 3,
-                    "description": "Clear organization with effective transitions"
+                    "rubricTemplateLevelDescription": "Good organization of writing."
                 },
                 {
                     "level": 4,
-                    "description": "Sophisticated organization enhancing clarity"
+                    "rubricTemplateLevelDescription": "Excellent organization of writing."
                 }
             ]
         },
         {
-            "name": "Language & Style",
+            "name": "Voice & Style",
             "levels": [
                 {
                     "level": 1,
-                    "description": "Simple language with limited variety"
+                    "rubricTemplateLevelDescription": "Limited use of voice and style."
                 },
                 {
                     "level": 2,
-                    "description": "Some variety in language and sentence structure"
+                    "rubricTemplateLevelDescription": "Some use of voice and style."
                 },
                 {
                     "level": 3,
-                    "description": "Effective language and varied sentence structure"
+                    "rubricTemplateLevelDescription": "Good use of voice and style."
                 },
                 {
                     "level": 4,
-                    "description": "Rich language with sophisticated style"
+                    "rubricTemplateLevelDescription": "Excellent use of voice and style."
+                }
+            ]
+        },
+        {
+            "name": "Word Choice",
+            "levels": [
+                {
+                    "level": 1,
+                    "rubricTemplateLevelDescription": "Limited use of appropriate word choice."
+                },
+                {
+                    "level": 2,
+                    "rubricTemplateLevelDescription": "Some use of appropriate word choice."
+                },
+                {
+                    "level": 3,
+                    "rubricTemplateLevelDescription": "Good use of appropriate word choice."
+                },
+                {
+                    "level": 4,
+                    "rubricTemplateLevelDescription": "Excellent use of appropriate word choice."
+                }
+            ]
+        },
+        {
+            "name": "Sentence Fluency",
+            "levels": [
+                {
+                    "level": 1,
+                    "rubricTemplateLevelDescription": "Limited sentence fluency."
+                },
+                {
+                    "level": 2,
+                    "rubricTemplateLevelDescription": "Some sentence fluency."
+                },
+                {
+                    "level": 3,
+                    "rubricTemplateLevelDescription": "Good sentence fluency."
+                },
+                {
+                    "level": 4,
+                    "rubricTemplateLevelDescription": "Excellent sentence fluency."
+                }
+            ]
+        },
+        {
+            "name": "Conventions",
+            "levels": [
+                {
+                    "level": 1,
+                    "rubricTemplateLevelDescription": "Limited use of conventions."
+                },
+                {
+                    "level": 2,
+                    "rubricTemplateLevelDescription": "Some use of conventions."
+                },
+                {
+                    "level": 3,
+                    "rubricTemplateLevelDescription": "Good use of conventions."
+                },
+                {
+                    "level": 4,
+                    "rubricTemplateLevelDescription": "Excellent use of conventions."
                 }
             ]
         }

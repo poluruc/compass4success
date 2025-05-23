@@ -1,69 +1,111 @@
 {
     "id": "grade3_math",
-    "title": "Grade 3 Math Problem Solving",
-    "description": "Evaluates mathematical problem-solving skills for Grade 3 students",
+    "title": "Ontario Grade 3 Math Assessment Rubric",
+    "rubricDescription": "Evaluates mathematical problem-solving skills for Grade 3 students",
     "applicableGrades": [3],
     "criteria": [
         {
-            "name": "Understanding",
+            "name": "Number Sense & Numeration",
             "levels": [
                 {
                     "level": 1,
-                    "description": "Shows limited understanding of the problem"
+                    "rubricTemplateLevelDescription": "Limited understanding of number concepts and operations."
                 },
                 {
                     "level": 2,
-                    "description": "Shows some understanding of the problem"
+                    "rubricTemplateLevelDescription": "Some understanding of number concepts and operations."
                 },
                 {
                     "level": 3,
-                    "description": "Shows good understanding of the problem"
+                    "rubricTemplateLevelDescription": "Good understanding of number concepts and operations."
                 },
                 {
                     "level": 4,
-                    "description": "Shows thorough understanding of the problem"
+                    "rubricTemplateLevelDescription": "Excellent understanding of number concepts and operations."
                 }
             ]
         },
         {
-            "name": "Strategy & Procedures",
+            "name": "Measurement",
             "levels": [
                 {
                     "level": 1,
-                    "description": "Uses limited or inappropriate strategies"
+                    "rubricTemplateLevelDescription": "Limited understanding of measurement concepts."
                 },
                 {
                     "level": 2,
-                    "description": "Uses some appropriate strategies"
+                    "rubricTemplateLevelDescription": "Some understanding of measurement concepts."
                 },
                 {
                     "level": 3,
-                    "description": "Uses appropriate and effective strategies"
+                    "rubricTemplateLevelDescription": "Good understanding of measurement concepts."
                 },
                 {
                     "level": 4,
-                    "description": "Uses innovative and highly effective strategies"
+                    "rubricTemplateLevelDescription": "Excellent understanding of measurement concepts."
                 }
             ]
         },
         {
-            "name": "Communication",
+            "name": "Geometry & Spatial Sense",
             "levels": [
                 {
                     "level": 1,
-                    "description": "Explains thinking with limited clarity"
+                    "rubricTemplateLevelDescription": "Limited understanding of geometric concepts."
                 },
                 {
                     "level": 2,
-                    "description": "Explains thinking with some clarity"
+                    "rubricTemplateLevelDescription": "Some understanding of geometric concepts."
                 },
                 {
                     "level": 3,
-                    "description": "Explains thinking clearly and completely"
+                    "rubricTemplateLevelDescription": "Good understanding of geometric concepts."
                 },
                 {
                     "level": 4,
-                    "description": "Explains thinking with exceptional clarity and detail"
+                    "rubricTemplateLevelDescription": "Excellent understanding of geometric concepts."
+                }
+            ]
+        },
+        {
+            "name": "Patterning & Algebra",
+            "levels": [
+                {
+                    "level": 1,
+                    "rubricTemplateLevelDescription": "Limited understanding of patterns and relationships."
+                },
+                {
+                    "level": 2,
+                    "rubricTemplateLevelDescription": "Some understanding of patterns and relationships."
+                },
+                {
+                    "level": 3,
+                    "rubricTemplateLevelDescription": "Good understanding of patterns and relationships."
+                },
+                {
+                    "level": 4,
+                    "rubricTemplateLevelDescription": "Excellent understanding of patterns and relationships."
+                }
+            ]
+        },
+        {
+            "name": "Data Management & Probability",
+            "levels": [
+                {
+                    "level": 1,
+                    "rubricTemplateLevelDescription": "Limited understanding of data and probability concepts."
+                },
+                {
+                    "level": 2,
+                    "rubricTemplateLevelDescription": "Some understanding of data and probability concepts."
+                },
+                {
+                    "level": 3,
+                    "rubricTemplateLevelDescription": "Good understanding of data and probability concepts."
+                },
+                {
+                    "level": 4,
+                    "rubricTemplateLevelDescription": "Excellent understanding of data and probability concepts."
                 }
             ]
         }

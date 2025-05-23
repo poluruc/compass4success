@@ -93,6 +93,7 @@ struct SubmissionDetailView: View {
                 // Load student info for current submission
                 if let submission = currentSubmission {
                     viewModel.loadStudentInfo(studentId: submission.studentId)
+                    rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: submission.studentId, assignmentId: submission.assignmentId)
                 }
             }
             .onChange(of: viewModel.submissions) { newSubmissions in
@@ -108,13 +109,22 @@ struct SubmissionDetailView: View {
                 AttachmentViewer(url: selectedAttachmentURL)
             }
             .sheet(isPresented: $showingRubric) {
-                RubricScoringView(
-                    rubricId: viewModel.assignment.rubricId ?? "",
-                    onScoreSelected: { score in
-                        self.score = "\(score)"
-                        self.showingRubric = false
-                    }
-                )
+                if let submission = currentSubmission {
+                    SubmissionRubricScoringSheet(
+                        rubricId: viewModel.assignment.rubricId ?? "",
+                        assignmentId: submission.assignmentId,
+                        studentId: submission.studentId,
+                        onRubricSaved: {
+                            // Update local rubricSelections from the in-memory store
+                            rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: submission.studentId, assignmentId: submission.assignmentId)
+                            // Update score as well
+                            if let rubric = rubric {
+                                let total = InMemoryRubricScoreStore.shared.totalScore(for: rubric, studentId: submission.studentId, assignmentId: submission.assignmentId)
+                                score = "\(total)"
+                            }
+                        }
+                    )
+                }
             }
             .sheet(isPresented: $showingFeedbackTemplate) {
                 FeedbackTemplateSelector(onTemplateSelected: { template in
@@ -346,18 +356,23 @@ struct SubmissionDetailView: View {
             VStack(spacing: 16) {
                 // Current grade indicator
                 if let currentScore = Int(score), currentScore > 0 {
+                    let totalPoints = Int(viewModel.assignment.totalPoints)
+                    let percentage = Double(currentScore) / viewModel.assignment.totalPoints * 100
+                    let percentageInt = Int(percentage)
+                    let gradeColor = getGradeColor(percentage)
+                    
                     HStack {
                         Text("Current Grade:")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
-                        Text("\(currentScore) / \(Int(viewModel.assignment.totalPoints))")
+                        Text("\(currentScore) / \(totalPoints)")
                             .font(.headline)
                             .foregroundColor(.primary)
                         
-                        Text("(\(Int(Double(currentScore) / viewModel.assignment.totalPoints * 100))%)")
+                        Text("(\(percentageInt)%)")
                             .font(.subheadline)
-                            .foregroundColor(getGradeColor(Double(currentScore) / viewModel.assignment.totalPoints * 100))
+                            .foregroundColor(gradeColor)
                         
                         Spacer()
                         
@@ -399,62 +414,19 @@ struct SubmissionDetailView: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             ForEach(rubric.criteria) { criterion in
-                                VStack(alignment: .leading, spacing: 8) {
-                                    HStack {
-                                        Text(criterion.name)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        
-                                        Spacer()
-                                        
-                                        // Points indicator
-                                        if let selectedLevel = rubricSelections[criterion.name],
-                                           let level = criterion.levels.first(where: { $0.level == selectedLevel }) {
-                                            let points = calculatePointsForLevel(level.level, totalPoints: Int(viewModel.assignment.totalPoints), criteriaCount: rubric.criteria.count)
-                                            Text("\(points) pts")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
+                                RubricCriterionView(
+                                    criterion: criterion,
+                                    selectedLevel: rubricSelections[criterion.name],
+                                    totalPoints: Int(viewModel.assignment.totalPoints),
+                                    criteriaCount: rubric.criteria.count,
+                                    onLevelSelected: { level in
+                                        withAnimation {
+                                            rubricSelections[criterion.name] = level
+                                            score = "\(rubricScore)"
                                         }
-                                    }
-                                    
-                                    // Level selection buttons
-                                    HStack(spacing: 12) {
-                                        ForEach(criterion.levels, id: \.level) { level in
-                                            Button(action: {
-                                                withAnimation {
-                                                    rubricSelections[criterion.name] = level.level
-                                                    score = "\(rubricScore)"
-                                                }
-                                            }) {
-                                                VStack(alignment: .leading, spacing: 4) {
-                                                    Text("Level \(level.level)")
-                                                        .font(.caption)
-                                                        .fontWeight(.medium)
-                                                    
-                                                    Text(level.description)
-                                                        .font(.caption2)
-                                                        .foregroundColor(.secondary)
-                                                        .lineLimit(2)
-                                                        .multilineTextAlignment(.leading)
-                                                }
-                                                .frame(maxWidth: .infinity)
-                                                .padding(8)
-                                                .background(
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .fill(rubricSelections[criterion.name] == level.level ? 
-                                                              Color.blue.opacity(0.2) : Color(.systemGray6))
-                                                )
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .stroke(rubricSelections[criterion.name] == level.level ? 
-                                                               Color.blue : Color(.systemGray4), lineWidth: 1)
-                                                )
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                }
-                                .padding(.vertical, 4)
+                                    },
+                                    calculatePointsForLevel: calculatePointsForLevel
+                                )
                             }
                         }
                         .padding(.horizontal)
@@ -506,8 +478,9 @@ struct SubmissionDetailView: View {
                                 .appTextFieldStyle()
                                 .onChange(of: score) { newValue in
                                     // Validate score is within bounds
-                                    if let scoreValue = Int(newValue), scoreValue > Int(viewModel.assignment.totalPoints) {
-                                        score = "\(Int(viewModel.assignment.totalPoints))"
+                                    let totalPoints = Int(viewModel.assignment.totalPoints)
+                                    if let scoreValue = Int(newValue), scoreValue > totalPoints {
+                                        score = "\(totalPoints)"
                                     }
                                 }
                             
@@ -646,6 +619,18 @@ struct SubmissionDetailView: View {
         score = submission.score > 0 ? "\(submission.score)" : ""
         feedback = submission.comments
         
+        // Load rubric selections if using rubric scoring
+        if viewModel.selectedScoringMethod == .rubric {
+            rubricSelections = InMemoryRubricScoreStore.shared.getSelections(
+                studentId: submission.studentId,
+                assignmentId: submission.assignmentId
+            )
+            // Update score based on rubric selections
+            if !rubricSelections.isEmpty {
+                score = "\(rubricScore)"
+            }
+        }
+        
         // Ensure student data is loaded
         if viewModel.students[submission.studentId] == nil {
             viewModel.loadStudentInfo(studentId: submission.studentId)
@@ -663,6 +648,40 @@ struct SubmissionDetailView: View {
     private func saveGrade(moveToNext: Bool) {
         guard let submission = currentSubmission else { return }
         isSubmitting = true
+        
+        // Save rubric selections if using rubric scoring
+        if viewModel.selectedScoringMethod == .rubric {
+            InMemoryRubricScoreStore.shared.saveSelections(
+                studentId: submission.studentId,
+                assignmentId: submission.assignmentId,
+                selections: rubricSelections,
+                totalPoints: viewModel.assignment.totalPoints
+            )
+            // Scale rubric score to assignment total points
+            if let rubric = rubric {
+                let maxRubricScore = rubric.criteria.count * Int(viewModel.assignment.totalPoints) / max(1, rubric.criteria.count)
+                let scaledScore = maxRubricScore > 0 ? Int((Double(rubricScore) / Double(maxRubricScore)) * viewModel.assignment.totalPoints) : rubricScore
+                viewModel.updateSubmissionGrade(
+                    submission: submission,
+                    score: scaledScore,
+                    feedback: feedback
+                ) { success in
+                    isSubmitting = false
+                    if success {
+                        showSuccessToast("Grade saved successfully")
+                        if let updated = viewModel.submissions.first(where: { $0.id == submission.id }) {
+                            onSubmissionUpdated?(updated)
+                            viewModel.updateSubmission(updated)
+                        }
+                        if moveToNext && currentSubmissionIndex < viewModel.submissions.count - 1 {
+                            navigateToNext()
+                        }
+                    }
+                }
+                return
+            }
+        }
+        // Direct score entry or fallback
         let scoreValue = Int(score) ?? 0
         viewModel.updateSubmissionGrade(
             submission: submission,
@@ -858,9 +877,11 @@ struct AttachmentViewer: View {
     }
 }
 
-struct RubricScoringView: View {
+struct SubmissionRubricScoringSheet: View {
     let rubricId: String
-    let onScoreSelected: (Int) -> Void
+    let assignmentId: String
+    let studentId: String
+    let onRubricSaved: () -> Void
     
     @Environment(\.dismiss) var dismiss
     @State private var selectedScores: [String: Int] = [:]
@@ -940,7 +961,7 @@ struct RubricScoringView: View {
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Apply") {
-                        onScoreSelected(totalScore)
+                        onRubricSaved()
                     }
                     .disabled(selectedScores.count < rubricItems.count)
                 }
@@ -1230,5 +1251,87 @@ struct GradeHistoryView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+}
+
+// Add this new view struct before the SubmissionDetailView struct
+private struct RubricLevelButton: View {
+    let level: RubricTemplateLevel
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Level \(level.level)")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                
+                Text(level.rubricTemplateLevelDescription)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.blue.opacity(0.2) : Color(.systemGray6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? Color.blue : Color(.systemGray4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// Add this new view struct before the SubmissionDetailView struct
+private struct RubricCriterionView: View {
+    let criterion: RubricTemplateCriterion
+    let selectedLevel: Int?
+    let totalPoints: Int
+    let criteriaCount: Int
+    let onLevelSelected: (Int) -> Void
+    let calculatePointsForLevel: (Int, Int, Int) -> Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(criterion.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                
+                Spacer()
+                
+                // Points indicator (refactored for compiler performance)
+                let levelObj = selectedLevel.flatMap { level in
+                    criterion.levels.first(where: { $0.level == level })
+                }
+                let points: Int? = {
+                    guard let level = levelObj else { return nil }
+                    return calculatePointsForLevel(level.level, totalPoints, criteriaCount)
+                }()
+                if let points = points {
+                    Text("\(points) pts")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            // Level selection buttons
+            HStack(spacing: 12) {
+                ForEach(criterion.levels, id: \.level) { level in
+                    RubricLevelButton(
+                        level: level,
+                        isSelected: selectedLevel == level.level,
+                        onSelect: { onLevelSelected(level.level) }
+                    )
+                }
+            }
+        }
+        .padding(.vertical, 4)
     }
 } 

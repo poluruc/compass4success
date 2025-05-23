@@ -1,34 +1,34 @@
 {
   "id": "reading_rubric_jk-3",
   "title": "Ontario Reading Rubric (JK-3)",
-  "description": "Rubric for evaluating reading skills in Ontario JK-3.",
+  "rubricDescription": "Rubric for evaluating reading skills in Ontario JK-3.",
   "applicableGrades": [0, 1, 2, 3],
   "criteria": [
     {
       "name": "Comprehension",
       "levels": [
-        { "level": 1, "description": "Emerging understanding of story." },
-        { "level": 2, "description": "Developing understanding of story." },
-        { "level": 3, "description": "Good understanding of story." },
-        { "level": 4, "description": "Excellent understanding of story." }
+        { "level": 1, "rubricTemplateLevelDescription": "Emerging understanding of story." },
+        { "level": 2, "rubricTemplateLevelDescription": "Developing understanding of story." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good understanding of story." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent understanding of story." }
       ]
     },
     {
       "name": "Fluency",
       "levels": [
-        { "level": 1, "description": "Reads with much support." },
-        { "level": 2, "description": "Reads with some support." },
-        { "level": 3, "description": "Reads mostly independently." },
-        { "level": 4, "description": "Reads independently and smoothly." }
+        { "level": 1, "rubricTemplateLevelDescription": "Reads with much support." },
+        { "level": 2, "rubricTemplateLevelDescription": "Reads with some support." },
+        { "level": 3, "rubricTemplateLevelDescription": "Reads mostly independently." },
+        { "level": 4, "rubricTemplateLevelDescription": "Reads independently and smoothly." }
       ]
     },
     {
       "name": "Expression",
       "levels": [
-        { "level": 1, "description": "Little expression." },
-        { "level": 2, "description": "Some expression." },
-        { "level": 3, "description": "Good expression." },
-        { "level": 4, "description": "Excellent expression." }
+        { "level": 1, "rubricTemplateLevelDescription": "Little expression." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some expression." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good expression." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent expression." }
       ]
     }
   ]

@@ -1,34 +1,61 @@
 {
   "id": "writing_rubric_jk-3",
-  "title": "Ontario Writing Rubric (JK-3)",
-  "description": "Rubric for evaluating writing in Ontario JK-3.",
+  "title": "Ontario Writing Assessment Rubric (JK-3)",
+  "rubricDescription": "Rubric for evaluating writing in Ontario JK-3.",
   "applicableGrades": [0, 1, 2, 3],
   "criteria": [
     {
-      "name": "Ideas",
+      "name": "Ideas & Content",
       "levels": [
-        { "level": 1, "description": "Emerging ideas." },
-        { "level": 2, "description": "Developing ideas." },
-        { "level": 3, "description": "Clear ideas." },
-        { "level": 4, "description": "Excellent, creative ideas." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited development of ideas and content." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some development of ideas and content." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good development of ideas and content." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent development of ideas and content." }
       ]
     },
     {
       "name": "Organization",
       "levels": [
-        { "level": 1, "description": "Hard to follow." },
-        { "level": 2, "description": "Some order." },
-        { "level": 3, "description": "Mostly organized." },
-        { "level": 4, "description": "Very well organized." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited organization of writing." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some organization of writing." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good organization of writing." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent organization of writing." }
+      ]
+    },
+    {
+      "name": "Voice & Style",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited use of voice and style." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some use of voice and style." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good use of voice and style." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent use of voice and style." }
+      ]
+    },
+    {
+      "name": "Word Choice",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited use of appropriate word choice." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some use of appropriate word choice." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good use of appropriate word choice." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent use of appropriate word choice." }
+      ]
+    },
+    {
+      "name": "Sentence Fluency",
+      "levels": [
+        { "level": 1, "rubricTemplateLevelDescription": "Limited sentence fluency." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some sentence fluency." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good sentence fluency." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent sentence fluency." }
       ]
     },
     {
       "name": "Conventions",
       "levels": [
-        { "level": 1, "description": "Many errors." },
-        { "level": 2, "description": "Some errors." },
-        { "level": 3, "description": "Few errors." },
-        { "level": 4, "description": "Almost no errors." }
+        { "level": 1, "rubricTemplateLevelDescription": "Limited use of conventions." },
+        { "level": 2, "rubricTemplateLevelDescription": "Some use of conventions." },
+        { "level": 3, "rubricTemplateLevelDescription": "Good use of conventions." },
+        { "level": 4, "rubricTemplateLevelDescription": "Excellent use of conventions." }
       ]
     }
   ]

@@ -274,6 +274,48 @@ var schoolObj: School? {
 
 ## Critical Implementation Paths
 
+### School Year Tracking System
+
+The application now implements a standardized school year tracking system:
+
+1. **SchoolYearHelper Utility**
+   - Generates standardized "YYYY-YYYY" format strings
+   - Validates school year format
+   - Provides consistent representation across the application
+
+```swift
+// SchoolYearHelper implementation
+class SchoolYearHelper {
+    // Generate a school year string from a start year (e.g., 2024 -> "2024-2025")
+    static func generateSchoolYear(startYear: Int) -> String {
+        return "\(startYear)-\(startYear + 1)"
+    }
+    
+    // Validate a school year string format
+    static func isValidSchoolYear(_ year: String) -> Bool {
+        // Implementation validates "YYYY-YYYY" format with consecutive years
+        let components = year.split(separator: "-")
+        guard components.count == 2,
+              let firstYear = Int(components[0]),
+              let secondYear = Int(components[1]),
+              secondYear == firstYear + 1 else {
+            return false
+        }
+        return true
+    }
+}
+```
+
+2. **SchoolYear Model Integration**
+   - Board, School, and SchoolClass models include currentSchoolYear properties
+   - Consistent format enforced through helper methods
+   - Year-based filtering supported across analytics features
+
+3. **SchoolYearPickerSheet Component** 
+   - Reusable UI component for year selection
+   - Auto-generates reasonable range of school years
+   - Platform-independent implementation
+
 ### User Authentication
 
 1. Login view collects credentials
@@ -443,3 +485,74 @@ ForEach(analyticsService.schools as [School], id: \.id) { school in
     // ...
 }
 ```
+
+# Cross-Platform View Adaptation Patterns
+
+The application now includes several patterns for adapting views across platforms:
+
+## Conditional View Modifiers
+
+Created dedicated ViewExtension helpers for applying modifiers conditionally by platform:
+
+```swift
+extension View {
+    // Apply a modifier only on iOS
+    @ViewBuilder
+    func iOSOnly<Content: View>(@ViewBuilder content: (Self) -> Content) -> some View {
+        #if os(iOS)
+        content(self)
+        #else
+        self
+        #endif
+    }
+    
+    // Apply a modifier only on macOS
+    @ViewBuilder
+    func macOSOnly<Content: View>(@ViewBuilder content: (Self) -> Content) -> some View {
+        #if os(macOS)
+        content(self)
+        #else
+        self
+        #endif
+    }
+}
+```
+
+## Chart Component Pattern
+
+For SwiftUI Chart components (iOS 16+ / macOS 13+), implemented a consistent pattern:
+
+```swift
+struct AnalyticsChartView: View {
+    // Common properties across all platforms
+    
+    var body: some View {
+        if #available(macOS 13.0, iOS 16.0, *) {
+            modernChartView // Using SwiftUI Charts
+        } else {
+            legacyChartView // Fallback implementation
+        }
+    }
+    
+    // Platform-specific chart implementations
+    @available(macOS 13.0, iOS 16.0, *)
+    private var modernChartView: some View {
+        Chart {
+            // Modern chart implementation
+        }
+    }
+    
+    private var legacyChartView: some View {
+        // Legacy implementation using basic SwiftUI components
+        // Works on all supported platforms
+    }
+}
+```
+
+## Component Naming Convention
+
+To avoid view redeclaration conflicts, established naming conventions:
+
+- Feature-prefixed component names: `DashboardAssignmentCard` vs `GradebookAssignmentCard`
+- Context-specific component names rather than generic ones
+- Consistent naming patterns across related components
