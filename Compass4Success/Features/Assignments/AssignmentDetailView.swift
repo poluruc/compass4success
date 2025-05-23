@@ -18,7 +18,6 @@ struct AssignmentDetailView: View {
     @State private var feedbackMessage = ""
     @State private var feedbackType: FeedbackType = .success
     @State private var selectedSubmission: Submission?
-    @State private var showingSubmissionDetail = false
     @State private var showingGradeOverview = false
     
     // Properties
@@ -64,12 +63,10 @@ struct AssignmentDetailView: View {
                         assignment: assignment,
                         onSubmissionSelected: { submission in
                             selectedSubmission = submission
-                            showingSubmissionDetail = true
                         },
                         onGradeAll: {
                             if let firstSubmission = viewModel.submissions.first {
                                 selectedSubmission = firstSubmission
-                                showingSubmissionDetail = true
                             }
                         }
                     )
@@ -102,7 +99,19 @@ struct AssignmentDetailView: View {
         #endif
         .sheet(isPresented: $showingEdit) { editSheet }
         .sheet(isPresented: $showingGradeOverview) { gradeOverviewSheet }
-        .sheet(isPresented: $showingSubmissionDetail) { submissionDetailSheet }
+        .fullScreenCover(item: $selectedSubmission) { submission in
+            NavigationStack {
+                if let index = viewModel.submissions.firstIndex(where: { $0.id == submission.id }) {
+                    SubmissionDetailView(
+                        viewModel: viewModel,
+                        initialSubmissionIndex: index,
+                        onSubmissionUpdated: { updatedSubmission in
+                            viewModel.updateSubmission(updatedSubmission)
+                        }
+                    )
+                }
+            }
+        }
         .sheet(isPresented: $showingCrossClassAssignment) { crossClassAssignmentSheet }
         .alert("Delete Assignment", isPresented: $showingDeleteConfirmation) { deleteAlert }
         .overlay { loadingAndFeedbackOverlay }
@@ -113,14 +122,6 @@ struct AssignmentDetailView: View {
     
     private var toolbarContent: some ToolbarContent {
         Group {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                }
-            }
-            
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button(action: { showingEdit = true }) {
@@ -175,15 +176,13 @@ struct AssignmentDetailView: View {
         Group {
             if let submission = selectedSubmission,
                let index = viewModel.submissions.firstIndex(where: { $0.id == submission.id }) {
-                NavigationView {
-                    SubmissionDetailView(
-                        viewModel: viewModel,
-                        initialSubmissionIndex: index,
-                        onSubmissionUpdated: { updatedSubmission in
-                            viewModel.updateSubmission(updatedSubmission)
-                        }
-                    )
-                }
+                SubmissionDetailView(
+                    viewModel: viewModel,
+                    initialSubmissionIndex: index,
+                    onSubmissionUpdated: { updatedSubmission in
+                        viewModel.updateSubmission(updatedSubmission)
+                    }
+                )
             }
         }
     }

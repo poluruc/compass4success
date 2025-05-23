@@ -3,8 +3,11 @@ import Charts
 import Foundation
 
 struct SubmissionDetailView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: AssignmentViewModel
+    let initialSubmissionIndex: Int
+    let onSubmissionUpdated: ((Submission) -> Void)?
+    
     @State private var currentSubmissionIndex: Int
     @State private var score: String = ""
     @State private var feedback: String = ""
@@ -15,157 +18,149 @@ struct SubmissionDetailView: View {
     @State private var isSubmitting = false
     @State private var showingSuccessToast = false
     @State private var successMessage = ""
-    @State private var rubricSelections: [String: Int] = [:] // criterion name -> level
+    @State private var rubricSelections: [String: Int] = [:]
+    @State private var rubricScore: Int = 0
+    @State private var showingGradeHistory = false
     @State private var didSetInitialIndex = false
-    let initialSubmissionIndex: Int
-    let onSubmissionUpdated: ((Submission) -> Void)?
+    
     private var rubric: RubricTemplate? {
         guard let rubricId = viewModel.assignment.rubricId else { return nil }
         return RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
-    }
-    private var rubricScore: Int {
-        guard let rubric = rubric else { return 0 }
-        // For simplicity, each criterion is worth equal points
-        let totalPoints = Int(viewModel.assignment.totalPoints)
-        let pointsPerCriterion = totalPoints / max(1, rubric.criteria.count)
-        var total = 0
-        for criterion in rubric.criteria {
-            if let selectedLevel = rubricSelections[criterion.name],
-               let level = criterion.levels.first(where: { $0.level == selectedLevel }) {
-                // Ontario: Level 1=50%, 2=65%, 3=80%, 4=100%
-                let percent: Double =
-                    selectedLevel == 1 ? 0.5 :
-                    selectedLevel == 2 ? 0.65 :
-                    selectedLevel == 3 ? 0.8 :
-                    selectedLevel == 4 ? 1.0 : 0.0
-                total += Int(Double(pointsPerCriterion) * percent)
-            }
-        }
-        return total
     }
     
     init(viewModel: AssignmentViewModel, initialSubmissionIndex: Int, onSubmissionUpdated: ((Submission) -> Void)?) {
         self.viewModel = viewModel
         self.initialSubmissionIndex = initialSubmissionIndex
-        _currentSubmissionIndex = State(initialValue: initialSubmissionIndex)
         self.onSubmissionUpdated = onSubmissionUpdated
+        _currentSubmissionIndex = State(initialValue: initialSubmissionIndex)
     }
     
-    @ViewBuilder
     var body: some View {
-        if viewModel.submissions.isEmpty || currentSubmission == nil {
-            ProgressView("Loading submission...")
-                .onAppear {
-                    // Load student info for current submission
-                    if let submission = currentSubmission {
-                        viewModel.loadStudentInfo(studentId: submission.studentId)
-                    }
-                }
-        } else {
-            VStack(spacing: 0) {
+        ScrollView {
+            VStack(spacing: 16) {
                 // Top control bar - navigation and quick actions
                 topControlBar
                 
                 // Main content area
-                ScrollView {
-                    VStack(spacing: 16) {
-                        // Student info card
-                        studentInfoCard
-                        
-                        // Submission details
-                        submissionDetailsCard
-                        
-                        // Submission attachments
-                        attachmentsSection
-                        
-                        // Grading section
-                        gradingSection
-                    }
-                    .padding()
-                }
-                
-                // Bottom bar with save, next, previous
-                bottomControlBar
-            }
-            .background(Color(.systemGroupedBackground))
-            .navigationBarHidden(true)
-            .onAppear {
-                // Load student info for current submission
-                if let submission = currentSubmission {
-                    viewModel.loadStudentInfo(studentId: submission.studentId)
-                    rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: submission.studentId, assignmentId: submission.assignmentId)
+                VStack(spacing: 16) {
+                    // Student info card
+                    studentInfoCard
+                    
+                    // Submission details
+                    submissionDetailsCard
+                    
+                    // Submission attachments
+                    attachmentsSection
+                    
+                    // Grading section
+                    gradingSection
                 }
             }
-            .onChange(of: viewModel.submissions) { newSubmissions in
-                if !newSubmissions.isEmpty {
-                    if !didSetInitialIndex, newSubmissions.indices.contains(initialSubmissionIndex) {
-                        currentSubmissionIndex = initialSubmissionIndex
-                        didSetInitialIndex = true
-                    }
-                    loadCurrentSubmission()
-                }
-            }
-            .sheet(isPresented: $showingAttachmentViewer) {
-                AttachmentViewer(url: selectedAttachmentURL)
-            }
-            .sheet(isPresented: $showingRubric) {
-                if let submission = currentSubmission {
-                    SubmissionRubricScoringSheet(
-                        rubricId: viewModel.assignment.rubricId ?? "",
-                        assignmentId: submission.assignmentId,
-                        studentId: submission.studentId,
-                        onRubricSaved: {
-                            // Update local rubricSelections from the in-memory store
-                            rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: submission.studentId, assignmentId: submission.assignmentId)
-                            // Update score as well
-                            if let rubric = rubric {
-                                let total = InMemoryRubricScoreStore.shared.totalScore(for: rubric, studentId: submission.studentId, assignmentId: submission.assignmentId)
-                                score = "\(total)"
-                            }
-                        }
-                    )
-                }
-            }
-            .sheet(isPresented: $showingFeedbackTemplate) {
-                FeedbackTemplateSelector(onTemplateSelected: { template in
-                    self.feedback = template
-                    self.showingFeedbackTemplate = false
-                })
-            }
-            .overlay(
-                // Success toast
-                Group {
-                    if showingSuccessToast {
-                        VStack {
-                            Spacer()
-                            Text(successMessage)
-                                .padding()
-                                .background(Color.green.opacity(0.9))
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                                .padding(.bottom, 20)
-                        }
-                        .transition(.move(edge: .bottom))
-                        .animation(.easeInOut, value: showingSuccessToast)
-                    }
-                }
-            )
+            .padding()
         }
+        .navigationTitle("Submission Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(action: { dismiss() }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                        Text("Assignment Details")
+                    }
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    if rubric != nil {
+                        Button(action: { showingRubric = true }) {
+                            Label("Use Rubric", systemImage: "list.bullet.clipboard")
+                        }
+                    }
+                    Button(action: { showingFeedbackTemplate = true }) {
+                        Label("Feedback Templates", systemImage: "text.badge.checkmark")
+                    }
+                    if currentSubmission?.isLate == true {
+                        Button(action: { markAsExcused() }) {
+                            Label("Mark as Excused", systemImage: "hand.raised")
+                        }
+                    }
+                    Button(action: { resetGrade() }) {
+                        Label("Reset Grade", systemImage: "arrow.counterclockwise")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.headline)
+                }
+            }
+        }
+        .onAppear {
+            // Load student info for current submission
+            if let submission = currentSubmission {
+                viewModel.loadStudentInfo(studentId: submission.studentId)
+                rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: submission.studentId, assignmentId: submission.assignmentId)
+            }
+        }
+        .onChange(of: viewModel.submissions) { newSubmissions in
+            if !newSubmissions.isEmpty {
+                if !didSetInitialIndex, newSubmissions.indices.contains(initialSubmissionIndex) {
+                    currentSubmissionIndex = initialSubmissionIndex
+                    didSetInitialIndex = true
+                }
+                loadCurrentSubmission()
+            }
+        }
+        .sheet(isPresented: $showingAttachmentViewer) {
+            AttachmentViewer(url: selectedAttachmentURL)
+        }
+        .sheet(isPresented: $showingRubric) {
+            if let submission = currentSubmission {
+                SubmissionRubricScoringSheet(
+                    rubricId: viewModel.assignment.rubricId ?? "",
+                    assignmentId: submission.assignmentId,
+                    studentId: submission.studentId,
+                    onRubricSaved: {
+                        // Update local rubricSelections from the in-memory store
+                        rubricSelections = InMemoryRubricScoreStore.shared.getSelections(studentId: submission.studentId, assignmentId: submission.assignmentId)
+                        // Update score as well
+                        if let rubric = rubric {
+                            let total = InMemoryRubricScoreStore.shared.totalScore(for: rubric, studentId: submission.studentId, assignmentId: submission.assignmentId)
+                            score = "\(total)"
+                        }
+                    }
+                )
+            }
+        }
+        .sheet(isPresented: $showingFeedbackTemplate) {
+            FeedbackTemplateSelector(onTemplateSelected: { template in
+                self.feedback = template
+                self.showingFeedbackTemplate = false
+            })
+        }
+        .overlay(
+            // Success toast
+            Group {
+                if showingSuccessToast {
+                    VStack {
+                        Spacer()
+                        Text(successMessage)
+                            .padding()
+                            .background(Color.green.opacity(0.9))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .padding(.bottom, 20)
+                    }
+                    .transition(.move(edge: .bottom))
+                    .animation(.easeInOut, value: showingSuccessToast)
+                }
+            }
+        )
     }
     
     private var topControlBar: some View {
         HStack {
-            Button(action: { dismiss() }) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.secondary)
-                    .font(.headline)
-            }
-            .buttonStyle(PressableButtonStyle())
-            
             Spacer()
-            
             if let student = currentStudent {
-                Text("Submission - \(viewModel.assignment.title) by \(student.fullName)")
+                Text("\(viewModel.assignment.title) by \(student.fullName)")
                     .font(.headline)
                     .fontWeight(.semibold)
                     .lineLimit(1)
@@ -175,35 +170,7 @@ struct SubmissionDetailView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
             }
-            
             Spacer()
-            
-            Menu {
-                if rubric != nil {
-                    Button(action: { showingRubric = true }) {
-                        Label("Use Rubric", systemImage: "list.bullet.clipboard")
-                    }
-                }
-                
-                Button(action: { showingFeedbackTemplate = true }) {
-                    Label("Feedback Templates", systemImage: "text.badge.checkmark")
-                }
-                
-                if currentSubmission?.isLate == true {
-                    Button(action: { markAsExcused() }) {
-                        Label("Mark as Excused", systemImage: "hand.raised")
-                    }
-                }
-                
-                Button(action: { resetGrade() }) {
-                    Label("Reset Grade", systemImage: "arrow.counterclockwise")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-            }
-            .buttonStyle(PressableButtonStyle())
         }
         .padding()
         .background(Color(.systemBackground))
@@ -218,6 +185,7 @@ struct SubmissionDetailView: View {
                         .padding(.bottom, 5)
                 }
             }
+            .padding(.bottom, 6)
         )
     }
     
@@ -414,9 +382,10 @@ struct SubmissionDetailView: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             ForEach(rubric.criteria) { criterion in
+                                let selectedLevel = rubricSelections[criterion.name]
                                 RubricCriterionView(
                                     criterion: criterion,
-                                    selectedLevel: rubricSelections[criterion.name],
+                                    selectedLevel: selectedLevel,
                                     totalPoints: Int(viewModel.assignment.totalPoints),
                                     criteriaCount: rubric.criteria.count,
                                     onLevelSelected: { level in
@@ -547,42 +516,6 @@ struct SubmissionDetailView: View {
         .sheet(isPresented: $viewModel.showingGradeHistory) {
             GradeHistoryView(submission: currentSubmission, viewModel: viewModel)
         }
-    }
-    
-    private var bottomControlBar: some View {
-        HStack {
-            Button(action: navigateToPrevious) {
-                Label("Previous", systemImage: "chevron.left")
-                    .padding(.horizontal)
-            }
-            .disabled(currentSubmissionIndex <= 0 || isSubmitting)
-            .buttonStyle(PressableButtonStyle())
-            
-            Spacer()
-            
-            Button(action: saveAndStay) {
-                if isSubmitting {
-                    ProgressView()
-                } else {
-                    Text("Save")
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 20)
-                }
-            }
-            .disabled(isSubmitting)
-            .buttonStyle(PressableProminentButtonStyle())
-            
-            Spacer()
-            
-            Button(action: saveAndNext) {
-                Label("Next", systemImage: "chevron.right")
-                    .padding(.horizontal)
-            }
-            .disabled(currentSubmissionIndex >= viewModel.submissions.count - 1 || isSubmitting)
-            .buttonStyle(PressableButtonStyle())
-        }
-        .padding()
-        .background(Color(.systemBackground))
     }
     
     // Helper views

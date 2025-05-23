@@ -11,6 +11,8 @@ struct GradebookView: View {
     @State private var selectedStudentID: String? = nil
     @State private var showRubricDetail: Bool = false
     @State private var rubricRefreshTrigger: Int = 0
+    @State private var showGradeAllSheet = false
+    @State private var selectedTab = 0
     
     var body: some View {
         // Declare all filter/sort variables at the top
@@ -56,7 +58,7 @@ struct GradebookView: View {
                 searchText: $searchText,
                 sortOption: $sortOption,
                 onExport: { showExportSheet = true },
-                onGradeAll: viewModel.gradeAll
+                onGradeAll: { showGradeAllSheet = true }
             )
             .padding(.horizontal)
             .padding(.top)
@@ -65,29 +67,37 @@ struct GradebookView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 0) {
                         // Sticky header row
-                        HStack(spacing: 5) {
-                            Text("Student")
-                                .font(.headline)
-                                .frame(width: 160, alignment: .leading)
-                                .padding(.vertical, 10)
-                                .padding(.leading, 10)
-                                .background(Color(.systemGray6))
-                                .zIndex(1)
-                            Text("Overall")
-                                .font(.headline)
-                                .frame(width: 80, alignment: .center)
-                                .padding(.vertical, 10)
-                                .background(Color(.systemGray6))
-                                .zIndex(1)
-                            ForEach(assignmentsToShow) { assignment in
-                                GradebookHeader(assignment: assignment)
-                                    .frame(width: 160)
+                        ZStack {
+                            Color(.systemGray5)
+                                .cornerRadius(12, corners: [.topLeft, .topRight])
+                                .shadow(color: .black.opacity(0.04), radius: 2, x: 0, y: 1)
+                            HStack(spacing: 5) {
+                                Text("Student")
+                                    .font(.headline)
+                                    .frame(width: 160, alignment: .leading)
+                                    .padding(.vertical, 10)
+                                    .padding(.leading, 10)
+                                    // .background(Color(.systemGray6))
                                     .zIndex(1)
+                                Text("Overall")
+                                    .font(.headline)
+                                    .frame(width: 80, alignment: .center)
+                                    .padding(.vertical, 10)
+                                    // .background(Color(.systemGray6))
+                                    .zIndex(1)
+                                ForEach(assignmentsToShow) { assignment in
+                                    NavigationLink(destination: AssignmentDetailView(viewModel: AssignmentViewModel(assignment: assignment), assignment: assignment)) {
+                                        GradebookHeader(assignment: assignment)
+                                            .frame(width: 160)
+                                            .zIndex(1)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
                             }
                         }
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12, corners: [.topLeft, .topRight])
-                        .shadow(color: .black.opacity(0.04), radius: 2, x: 0, y: 1)
+                        .frame(maxWidth: .infinity)
+                        .frame(alignment: .leading)
+                                    
                         // Student rows
                         ForEach(Array(studentFiltered.enumerated()), id: \.element.id) { rowIndex, student in
                             HStack(spacing: 5) {
@@ -100,6 +110,7 @@ struct GradebookView: View {
                                         .fontWeight(.medium)
                                         .frame(width: 160, alignment: .leading)
                                         .padding(.vertical, 10)
+                                        .padding(.leading, 10)
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 // .background(Color(.systemBackground))
@@ -149,6 +160,7 @@ struct GradebookView: View {
                                 )
                             }
                             .padding(.vertical, 2)
+                            .padding(.trailing, 10)
                             .background(rowIndex % 2 == 0 ? Color(.systemGray6) : Color(.systemGray5))
                             .animation(.easeInOut, value: editingCell)
                         }
@@ -162,7 +174,26 @@ struct GradebookView: View {
         }
         .navigationTitle("Gradebook")
         .sheet(isPresented: $showExportSheet) {
-            ExportSheet(grades: viewModel.grades)
+            ExportOptionsView(
+                analyticType: .gradeDistribution, // Use a suitable analyticType or create one for Gradebook
+                onExport: { format in
+                    // Implement export logic here if needed
+                    showExportSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showGradeAllSheet) {
+            GradeAllSheet(
+                assignments: viewModel.assignments,
+                students: viewModel.students,
+                grades: viewModel.grades,
+                selectedAssignmentID: selectedAssignmentID,
+                onApply: { assignmentID, score in
+                    viewModel.gradeAll(for: assignmentID, with: score)
+                    showGradeAllSheet = false
+                },
+                onCancel: { showGradeAllSheet = false }
+            )
         }
     }
 }
@@ -275,7 +306,7 @@ struct GradebookHeader: View {
         }
         .frame(width: 160, alignment: .center)
         .padding(.vertical, 8)
-        .background(Color(.systemGray6))
+        // .background(Color(.systemGray6))
         .cornerRadius(8)
         .zIndex(1)
     }
@@ -292,13 +323,15 @@ struct GradebookCell: View {
     var onCancel: () -> Void
     var rubricRefreshTrigger: Int
     var onRubricSaved: () -> Void
+    
     @State private var editValue: String = ""
     @State private var showCommentSheet = false
     @State private var commentText = ""
     @State private var wasEditing = false
     @State private var showRubricDetail = false
     @State private var showRubricScoring = false
-
+    @FocusState private var isTextFieldFocused: Bool
+    
     // Returns the rubric score if available, otherwise nil
     private var rubricScore: (score: Int, max: Int)? {
         guard let grade = grade, let assignment = assignment else { return nil }
@@ -308,7 +341,7 @@ struct GradebookCell: View {
         let max = InMemoryRubricScoreStore.shared.maxScore(for: assignment.id)
         if total > 0 { return (total, max) } else { return nil }
     }
-
+    
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 10)
@@ -320,6 +353,18 @@ struct GradebookCell: View {
                         .keyboardType(.numberPad)
                         .frame(width: 44)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .focused($isTextFieldFocused)
+                        .onAppear {
+                            // Select all text when the field appears
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                if let text = editValue as NSString? {
+                                    let range = NSRange(location: 0, length: text.length)
+                                    if let textField = UIResponder.currentFirstResponder as? UITextField {
+                                        textField.selectedTextRange = textField.textRange(from: textField.beginningOfDocument, to: textField.endOfDocument)
+                                    }
+                                }
+                            }
+                        }
                     Button(action: {
                         if let val = Int(editValue), val >= 0, val <= 100 {
                             onSave(val)
@@ -344,39 +389,53 @@ struct GradebookCell: View {
                             editValue = ""
                         }
                         wasEditing = true
+                        // Focus the text field when editing starts
+                        isTextFieldFocused = true
                     }
                 }
                 .onDisappear {
                     wasEditing = false
+                    isTextFieldFocused = false
                 }
             } else {
                 VStack(spacing: 2) {
                     HStack(alignment: .center, spacing: 6) {
                         // Main score circle
-                        let displayScore: Int = {
+                        let displayScore: Int? = {
                             if let rubricScore = rubricScore {
                                 return rubricScore.score > 0 ? rubricScore.score * 100 / max(rubricScore.max, 1) : 0
                             } else if let grade = grade {
                                 return Int(grade.percentage)
                             } else {
-                                return 0
+                                return nil
                             }
                         }()
                         let color: Color = {
                             switch displayScore {
-                            case 90...: return .green
-                            case 75..<90: return .yellow
-                            case 60..<75: return .orange
-                            default: return .red
+                            case .some(let score):
+                                switch score {
+                                case 90...: return .green
+                                case 75..<90: return .yellow
+                                case 60..<75: return .orange
+                                default: return .red
+                                }
+                            case .none:
+                                return Color(.systemGray3)
                             }
                         }()
                         ZStack {
                             Circle()
                                 .fill(color)
                                 .frame(width: 46, height: 36)
-                            Text("\(displayScore)")
-                                .font(.headline)
-                                .foregroundColor(.white)
+                            if let score = displayScore {
+                                Text("\(score)")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                            } else {
+                                Text("--")
+                                    .font(.headline)
+                                    .foregroundColor(Color(.systemGray3))
+                            }
                         }
                         // Rubric icon
                         Button(action: { showRubricScoring = true }) {
@@ -429,10 +488,9 @@ struct GradebookCell: View {
         .frame(width: 160, height: 44)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 2)
-        .onTapGesture { if !isEditing { onEdit() } }
-        .onAppear {
-            if let grade = grade {
-                print("DEBUG: Grade for studentId=\(grade.studentId), assignmentId=\(grade.assignmentId), rubricScoreId=\(grade.rubricScoreId ?? "nil")")
+        .onTapGesture {
+            if !isEditing {
+                onEdit()
             }
         }
         .sheet(isPresented: $showCommentSheet) {
@@ -450,15 +508,8 @@ struct GradebookCell: View {
                     .padding(.top, 16)
                     TextField("Enter comment", text: $commentText, axis: .vertical)
                         .font(.body)
-                        .padding()
                         .frame(minHeight: 60, maxHeight: 120)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color(.systemGray4), lineWidth: 1)
-                        )
-                        .padding(.horizontal)
+                        .appTextFieldStyle( )
                     HStack(spacing: 16) {
                         Button(action: {
                             onUpdateComment(commentText)
@@ -500,6 +551,21 @@ struct GradebookCell: View {
                 )
             }
         }
+    }
+}
+
+// Helper extension to get the current first responder
+extension UIResponder {
+    private static weak var _currentFirstResponder: UIResponder?
+    
+    static var currentFirstResponder: UIResponder? {
+        _currentFirstResponder = nil
+        UIApplication.shared.sendAction(#selector(UIResponder._trap), to: nil, from: nil, for: nil)
+        return _currentFirstResponder
+    }
+    
+    @objc private func _trap() {
+        UIResponder._currentFirstResponder = self
     }
 }
 
@@ -562,6 +628,12 @@ class GradebookViewModel: ObservableObject {
         self.students = mock.students
         self.assignments = mock.assignments
         self.grades = mock.grades
+        // Remove grades for the first 3 students for the first two assignments
+        let studentsToRemove = students.prefix(3).map { $0.id }
+        let assignmentIDsToRemove = assignments.prefix(2).map { $0.id }
+        grades.removeAll { grade in
+            studentsToRemove.contains(grade.studentId) && assignmentIDsToRemove.contains(grade.assignmentId)
+        }
     }
     
     func filteredStudents(search: String, sort: SortOption, filter: GradebookFilter, grades: [Grade]) -> [Student] {
@@ -641,18 +713,70 @@ class GradebookViewModel: ObservableObject {
     }
     
     func gradeAll() {
-        // Example: set all empty grades to 100
+        print("Grading all assignments")
+        print("Current grades: \(grades.map { ($0.studentId, $0.assignmentId) })")
         for student in students {
             for assignment in assignments {
                 let cellID = GradeCellID(studentID: student.id, assignmentID: assignment.id)
-                if !grades.contains(where: { $0.studentId == cellID.studentID && $0.assignmentId == cellID.assignmentID }) {
+                if let idx = grades.firstIndex(where: { $0.studentId == cellID.studentID && $0.assignmentId == cellID.assignmentID }) {
+                    let old = grades[idx]
+                    grades[idx] = Grade(studentId: old.studentId, assignmentId: old.assignmentId, classId: old.classId, score: 100.0)
+                    print("Updated grade for student: \(cellID.studentID), assignment: \(cellID.assignmentID)")
+                } else {
                     let grade = Grade(studentId: cellID.studentID,
                                     assignmentId: cellID.assignmentID,
                                     classId: assignment.classId ?? "",
                                     score: 100.0)
                     grades.append(grade)
+                    print("Added grade for student: \(cellID.studentID), assignment: \(cellID.assignmentID)")
                 }
             }
+        }
+    }
+    
+    func gradeAll(for assignmentID: String) {
+        print("Grading all for assignment: \(assignmentID)")
+        print("Current grades: \(grades.map { ($0.studentId, $0.assignmentId) })")
+        for student in students {
+            let cellID = GradeCellID(studentID: student.id, assignmentID: assignmentID)
+            if let idx = grades.firstIndex(where: { $0.studentId == cellID.studentID && $0.assignmentId == cellID.assignmentID }) {
+                let old = grades[idx]
+                grades[idx] = Grade(studentId: old.studentId, assignmentId: old.assignmentId, classId: old.classId, score: 100.0)
+                print("Updated grade for student: \(cellID.studentID), assignment: \(cellID.assignmentID)")
+            } else {
+                let grade = Grade(studentId: cellID.studentID,
+                                assignmentId: assignmentID,
+                                classId: assignments.first(where: { $0.id == assignmentID })?.classId ?? "",
+                                score: 100.0)
+                grades.append(grade)
+                print("Added grade for student: \(cellID.studentID), assignment: \(cellID.assignmentID)")
+            }
+        }
+    }
+    
+    func gradeAll(for assignmentID: String, with score: Int) {
+        print("Grading all for assignment: \(assignmentID) with score: \(score)")
+        
+        // Get the set of already graded students for this assignment
+        let gradedStudentIDs = Set(grades.filter { $0.assignmentId == assignmentID }.map { $0.studentId })
+        
+        // Only process students who haven't been graded yet
+        let studentsToGrade = students.filter { !gradedStudentIDs.contains($0.id) }
+        print("DEBUG: Updating grades for \(studentsToGrade.count) ungraded students")
+        
+        for student in studentsToGrade {
+            print("DEBUG: Processing student: \(student.fullName)")
+            let cellID = GradeCellID(studentID: student.id, assignmentID: assignmentID)
+            
+            // Create new grade for ungraded student
+            let grade = Grade(
+                studentId: student.id,
+                assignmentId: assignmentID,
+                classId: assignments.first(where: { $0.id == assignmentID })?.classId ?? "",
+                score: Double(score)
+            )
+            grades.append(grade)
+            print("DEBUG: Added grade for student: \(student.fullName), assignment: \(assignmentID), score: \(score)")
         }
     }
 }
@@ -922,6 +1046,340 @@ struct RubricScoringCriterionRow: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+}
+
+// MARK: - Rubric Mode Picker
+struct RubricModePicker: View {
+    @Binding var selectedTab: Int
+    
+    var body: some View {
+        Section(header: Text("Mode")) {
+            Picker("Mode", selection: $selectedTab) {
+                Text("All Students").tag(0)
+                Text("Per Student").tag(1)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+        }
+    }
+}
+
+// MARK: - Bulk Rubric Scoring View
+struct BulkRubricScoringView: View {
+    let rubric: RubricTemplate
+    @Binding var bulkRubricSelections: [String: Int]
+    let assignmentID: String
+    let assignments: [Assignment]
+    
+    var body: some View {
+        Section(header: Text("Bulk Rubric Scoring (applies to all unless overridden)")) {
+            ForEach(rubric.criteria, id: \.name) { criterion in
+                RubricCriterionPickerView(
+                    criterion: criterion,
+                    selection: Binding(
+                        get: { bulkRubricSelections[criterion.name] ?? 0 },
+                        set: { bulkRubricSelections[criterion.name] = $0 }
+                    )
+                )
+            }
+            
+            if !bulkRubricSelections.isEmpty {
+                RubricScoreDisplayView(
+                    rubric: rubric,
+                    selections: bulkRubricSelections,
+                    assignmentID: assignmentID,
+                    assignments: assignments
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Rubric Criterion Picker View
+struct RubricCriterionPickerView: View {
+    let criterion: RubricTemplateCriterion
+    @Binding var selection: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(criterion.name)
+                .font(.subheadline)
+            Picker("Level", selection: $selection) {
+                ForEach(criterion.levels, id: \.level) { level in
+                    Text("Level \(level.level)").tag(level.level)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .frame(maxWidth: .infinity)
+            
+            if let levelObj = criterion.levels.first(where: { $0.level == selection }) {
+                Text(levelObj.rubricTemplateLevelDescription)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Rubric Score Display View
+struct RubricScoreDisplayView: View {
+    let rubric: RubricTemplate
+    let selections: [String: Int]
+    let assignmentID: String
+    let assignments: [Assignment]
+    
+    private var scoreInfo: (score: Int, total: Int, percent: Double) {
+        let totalPoints = Double(assignments.first(where: { $0.id == assignmentID })?.totalPoints ?? 100)
+        let criteriaCount = Double(rubric.criteria.count)
+        let pointsPerCriterion = totalPoints / max(1.0, criteriaCount)
+        let totalScore = rubric.criteria.reduce(0) { sum, criterion in
+            let selectedLevel = selections[criterion.name] ?? 0
+            let percent: Double = {
+                switch selectedLevel {
+                case 1: return 0.5
+                case 2: return 0.65
+                case 3: return 0.8
+                case 4: return 1.0
+                default: return 0.0
+                }
+            }()
+            return sum + Int(pointsPerCriterion * percent)
+        }
+        let percent = totalPoints > 0 ? Double(totalScore) / totalPoints : 0.0
+        return (score: totalScore, total: Int(totalPoints), percent: percent)
+    }
+    
+    var body: some View {
+        let score = scoreInfo
+        let color: Color = {
+            switch score.percent {
+            case 0.9...: return .green
+            case 0.75..<0.9: return .yellow
+            case 0.6..<0.75: return .orange
+            default: return .red
+            }
+        }()
+        
+        HStack {
+            Spacer()
+            Text("\(score.score) / \(score.total)")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 20)
+                .background(color)
+                .clipShape(Capsule())
+            Spacer()
+        }
+        .padding(.top, 8)
+    }
+}
+
+// MARK: - Per Student Rubric View
+struct PerStudentRubricView: View {
+    let rubric: RubricTemplate
+    let ungradedStudents: [Student]
+    @Binding var bulkRubricSelections: [String: Int]
+    @Binding var perStudentRubricSelections: [String: [String: Int]]
+    
+    var body: some View {
+        Section(header: Text("Per-Student Rubric Overrides")) {
+            if ungradedStudents.isEmpty {
+                Text("All students graded for this assignment.")
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(ungradedStudents, id: \.id) { student in
+                    StudentRubricOverrideView(
+                        student: student,
+                        rubric: rubric,
+                        bulkSelections: bulkRubricSelections,
+                        perStudentSelections: $perStudentRubricSelections
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Student Rubric Override View
+struct StudentRubricOverrideView: View {
+    let student: Student
+    let rubric: RubricTemplate
+    let bulkSelections: [String: Int]
+    @Binding var perStudentSelections: [String: [String: Int]]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(student.fullName)
+                .font(.headline)
+            ForEach(rubric.criteria, id: \.name) { criterion in
+                RubricCriterionPickerView(
+                    criterion: criterion,
+                    selection: Binding(
+                        get: { perStudentSelections[student.id]?[criterion.name] ?? bulkSelections[criterion.name] ?? 0 },
+                        set: { newValue in
+                            var overrides = perStudentSelections[student.id] ?? bulkSelections
+                            overrides[criterion.name] = newValue
+                            perStudentSelections[student.id] = overrides
+                        }
+                    )
+                )
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - GradeAllSheet (Refactored)
+struct GradeAllSheet: View {
+    let assignments: [Assignment]
+    let students: [Student]
+    let grades: [Grade]
+    var selectedAssignmentID: String?
+    var onApply: (String, Int) -> Void
+    var onCancel: () -> Void
+    
+    @State private var assignmentID: String = ""
+    @State private var scoreText: String = "100"
+    @State private var selectedTab = 0
+    @State private var bulkRubricSelections: [String: Int] = [:]
+    @State private var perStudentRubricSelections: [String: [String: Int]] = [:]
+    
+    private var rubric: RubricTemplate? {
+        guard let assignment = assignments.first(where: { $0.id == assignmentID }),
+              let rubricId = assignment.rubricId else { return nil }
+        return RubricLoader.loadAllRubrics().first(where: { $0.id == rubricId })
+    }
+    
+    private var ungradedStudents: [Student] {
+        let gradedStudentIDs = Set(grades.filter { $0.assignmentId == assignmentID }.map { $0.studentId })
+        return students.filter { !gradedStudentIDs.contains($0.id) }
+    }
+    
+    private func updateGradesWithRubric() {
+        guard let assignment = assignments.first(where: { $0.id == assignmentID }) else { return }
+        
+        // Get the set of already graded students for this assignment
+        let gradedStudentIDs = Set(grades.filter { $0.assignmentId == assignmentID }.map { $0.studentId })
+        
+        // Only process students who haven't been graded yet
+        let studentsToGrade = students.filter { !gradedStudentIDs.contains($0.id) }
+        print("DEBUG: Updating grades for \(studentsToGrade.count) ungraded students")
+        
+        for student in studentsToGrade {
+            print("DEBUG: Processing student: \(student.fullName)")
+            // Get the selections for this student (either per-student or bulk)
+            let selections = perStudentRubricSelections[student.id] ?? bulkRubricSelections
+            
+            // Save rubric selections
+            InMemoryRubricScoreStore.shared.saveSelections(
+                studentId: student.id,
+                assignmentId: assignmentID,
+                selections: selections,
+                totalPoints: assignment.totalPoints
+            )
+            
+            // Calculate and update the actual grade
+            if let rubric = rubric {
+                let totalScore = InMemoryRubricScoreStore.shared.totalScore(
+                    for: rubric,
+                    studentId: student.id,
+                    assignmentId: assignmentID,
+                    selections: selections
+                )
+                let maxScore = InMemoryRubricScoreStore.shared.maxScore(for: assignmentID)
+                let percentage = maxScore > 0 ? Double(totalScore) * 100.0 / Double(maxScore) : 0.0
+                
+                print("DEBUG: Setting grade for \(student.fullName) to \(percentage)%")
+                // Update the grade in the gradebook
+                onApply(assignmentID, Int(percentage))
+            }
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Assignment")) {
+                    Picker("Assignment", selection: $assignmentID) {
+                        ForEach(assignments, id: \.id) { assignment in
+                            Text(assignment.title).tag(assignment.id)
+                        }
+                    }
+                }
+                
+                if let rubric = rubric {
+                    RubricModePicker(selectedTab: $selectedTab)
+                    
+                    if selectedTab == 0 {
+                        BulkRubricScoringView(
+                            rubric: rubric,
+                            bulkRubricSelections: $bulkRubricSelections,
+                            assignmentID: assignmentID,
+                            assignments: assignments
+                        )
+                    } else {
+                        PerStudentRubricView(
+                            rubric: rubric,
+                            ungradedStudents: ungradedStudents,
+                            bulkRubricSelections: $bulkRubricSelections,
+                            perStudentRubricSelections: $perStudentRubricSelections
+                        )
+                    }
+                } else {
+                    Section(header: Text("Score for All")) {
+                        TextField("Score", text: $scoreText)
+                            .keyboardType(.numberPad)
+                    }
+                    
+                    Section(header: Text("Ungraded Students")) {
+                        if ungradedStudents.isEmpty {
+                            Text("All students graded for this assignment.")
+                                .foregroundColor(.secondary)
+                        } else {
+                            ForEach(ungradedStudents, id: \.id) { student in
+                                Text(student.fullName)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Grade All")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { onCancel() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Apply") {
+                        if let rubric = rubric {
+                            updateGradesWithRubric()
+                            onCancel()
+                        } else if let score = Int(scoreText), !assignmentID.isEmpty {
+                            onApply(assignmentID, score)
+                            onCancel()
+                        }
+                    }
+                    .disabled(assignmentID.isEmpty || (rubric == nil && Int(scoreText) == nil))
+                }
+            }
+            .onAppear {
+                if let selected = selectedAssignmentID {
+                    assignmentID = selected
+                } else if let first = assignments.first?.id {
+                    assignmentID = first
+                }
+                
+                if let rubric = rubric {
+                    for criterion in rubric.criteria {
+                        if bulkRubricSelections[criterion.name] == nil {
+                            bulkRubricSelections[criterion.name] = 0
+                        }
+                    }
+                }
             }
         }
     }

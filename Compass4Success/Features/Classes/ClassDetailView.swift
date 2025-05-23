@@ -71,22 +71,11 @@ struct ClassDetailView: View {
             // Class info with action buttons aligned
             VStack(spacing: 4) {
                 HStack(alignment: .center) {
-                    #if os(iOS)
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(.secondary)
-                    }
-                    #endif
-                    
                     Spacer()
-                    
                     Text(schoolClass.name)
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    
                     Spacer()
-                    
                     Menu {
                         Button(action: {}) {
                             Label("Edit Class", systemImage: "pencil")

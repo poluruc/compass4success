@@ -47,13 +47,14 @@ struct StudentDetailView: View {
     private var header: some View {
         VStack(spacing: 12) {
             HStack {
-#if os(iOS)
-                Button(action: { dismiss() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                }
-#endif
+                // Remove the close button
+                // #if os(iOS)
+                // Button(action: { dismiss() }) {
+                //     Image(systemName: "xmark.circle.fill")
+                //         .font(.title3)
+                //         .foregroundColor(.secondary)
+                // }
+                // #endif
                 
                 Spacer()
                 
